@@ -721,6 +721,10 @@
   "board": "ボード",
   "shortcut_hints": "ショートカットのヒントを表示",
   "shortcut_hints_desc": "サイドバーにキーボードショートカットのバッジを表示して、すばやく移動できるようにします。",
+  "use_mixed_script": "漢字ハングル混じり表記を使う",
+  "use_mixed_script_desc": "韓国語テキストを漢字ハングル混じりの表記で表示します。",
+  "prefer_kanji": "片仮名を減らす",
+  "prefer_kanji_desc": "よくある UI 用語で片仮名を減らし、より自然な日本語表記を優先します。",
   "show_bookmarks": "ブックマークを表示",
   "bookmarks_pin_hint": "ブックマークページでピン留めしたブックマークがここに表示されます。",
   "chat": "チャット",
@@ -798,5 +802,10 @@
   "unread": "未読",
   "waiting_reply": "返信待ち",
   "board_completed": "完了",
-  "archived": "アーカイブ済み"
+  "archived": "アーカイブ済み",
+  "switch_language": "言語を切り替え",
+  "toggle_menu": "メニューを切り替え",
+  "resize_calendar_sidebar": "カレンダーのサイドバーのサイズを変更",
+  "resize_mail_sidebar": "メールのサイドバーのサイズを変更",
+  "resize_bookmarks_sidebar": "ブックマークのサイドバーのサイズを変更"
 }

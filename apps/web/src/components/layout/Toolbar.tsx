@@ -3,7 +3,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { type AgentModelFilter } from "@/components/layout/AgentModelTabs";
 import { CalendarViewTabs, type CalendarViewMode } from "@/components/layout/CalendarViewTabs";
 import { BoardFilterBar } from "@/components/panels/BoardFilterBar";
-import type { ConversationBoardFilter } from "@/components/panels/BoardView";
+import type { BoardTaskFilter } from "@/components/panels/BoardView";
 import { CapabilityModeTabs } from "@/components/layout/CapabilityModeTabs";
 import { MailFolderTabs, type MailFolderFilter } from "@/components/layout/MailFolderTabs";
 import {
@@ -52,8 +52,8 @@ interface ToolbarProps {
   agentModelCounts: { all: number; local: number; cloud: number };
   capabilityViewMode?: CapabilityViewMode;
   onCapabilityViewModeChange?: (mode: CapabilityViewMode) => void;
-  boardFilter?: ConversationBoardFilter;
-  onBoardFilterChange?: (filter: ConversationBoardFilter) => void;
+  boardFilter?: BoardTaskFilter;
+  onBoardFilterChange?: (filter: BoardTaskFilter) => void;
   onOpenCreateGoal?: () => void;
   onOpenMailAccounts?: () => void;
   onRefresh?: () => void | Promise<void>;
@@ -147,22 +147,27 @@ export function Toolbar({
             {m.accounts()}
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={onToggleActivityPanel}
-            title={
-              activityPanelOpen
-                ? m.close_activity_panel()
-                : m.open_activity_panel()
-            }
-          >
-            {activityPanelOpen ? (
-              <HugeiconsIcon icon={PanelLeft} className="size-4" />
-            ) : (
-              <HugeiconsIcon icon={PanelRight} className="size-4" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={onToggleActivityPanel}
+                >
+                  {activityPanelOpen ? (
+                    <HugeiconsIcon icon={PanelLeft} className="size-4" />
+                  ) : (
+                    <HugeiconsIcon icon={PanelRight} className="size-4" />
+                  )}
+                </Button>
+              )}
+            />
+            <TooltipContent side="bottom">
+              {activityPanelOpen ? m.close_activity_panel() : m.open_activity_panel()}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
@@ -88,6 +89,7 @@ export function CreationView({
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(!creationSidebarCollapsed);
+  const [showBookmarks, setShowBookmarks] = useState(true);
   const autoCreatingConversationRef = useRef(false);
   const collapseTimerRef = useRef<number | null>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
@@ -171,6 +173,20 @@ export function CreationView({
       loadMessages(activeConversationId);
     }
   }, [activeConversationId, loadMessages]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      setShowBookmarks(false);
+      return;
+    }
+
+    if (!activeConversation) {
+      setShowBookmarks(true);
+      return;
+    }
+
+    setShowBookmarks(false);
+  }, [activeConversation, messages.length]);
 
   useEffect(() => {
     return () => {
@@ -380,8 +396,9 @@ export function CreationView({
               <div className="flex items-center gap-1">
                 <Tooltip>
                   <TooltipTrigger
-                    render={() => (
+                    render={(props) => (
                       <button
+                        {...props}
                         type="button"
                         className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
                         onClick={() => void handleNewConversation()}
@@ -394,8 +411,9 @@ export function CreationView({
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
-                    render={() => (
+                    render={(props) => (
                       <button
+                        {...props}
                         type="button"
                         className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
                         onClick={handleCollapseSidebar}
@@ -420,7 +438,7 @@ export function CreationView({
           <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-0.5 p-1.5">
                 {availableConversations.map((conversation) => {
-                  const isActive = conversation.id === activeConversationId;
+                  const isActive = conversation.id === activeConversationId && !showBookmarks;
 
                   return (
                     <div
@@ -431,7 +449,10 @@ export function CreationView({
                           ? "bg-accent font-medium text-accent-foreground"
                           : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
                       )}
-                      onClick={() => setActiveConversationId(conversation.id)}
+                      onClick={() => {
+                        setActiveConversationId(conversation.id);
+                        setShowBookmarks(false);
+                      }}
                     >
                       <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
                       <button type="button" className="flex-1 text-left">
@@ -442,8 +463,9 @@ export function CreationView({
 
                       <Tooltip>
                         <TooltipTrigger
-                          render={() => (
+                          render={(props) => (
                             <Button
+                              {...props}
                               type="button"
                               variant="ghost"
                               size="icon-xs"
@@ -478,8 +500,9 @@ export function CreationView({
                 {creationFilterButtons.map((filter) => (
                   <Tooltip key={filter.value}>
                     <TooltipTrigger
-                      render={() => (
+                      render={(props) => (
                         <button
+                          {...props}
                           type="button"
                           onClick={() => setCreationArchiveFilter(filter.value)}
                           aria-pressed={creationArchiveFilter === filter.value}
@@ -555,12 +578,14 @@ export function CreationView({
             isDraftConversation={!activeConversation}
             messages={uiMessages}
             sending={sending}
+            showBookmarks={showBookmarks}
+            onShowBookmarksChange={setShowBookmarks}
             runtimes={enabledRuntimes}
             customAgents={customAgents}
             selectedCustomAgentId={selectedCustomAgentId}
             onSelectCustomAgent={setSelectedCustomAgentId}
-            onUpdateConversation={handleUpdateConversation}
             onCreateConversation={handleCreateConversation}
+            onUpdateConversation={handleUpdateConversation}
             onSendMessage={async (content, targetConversation, customAgentId) => {
               const conversation = targetConversation ?? activeConversation;
               if (!conversation) return;
@@ -617,6 +642,8 @@ interface ChatAreaProps {
   isDraftConversation: boolean;
   messages: UIMessage[];
   sending: boolean;
+  showBookmarks: boolean;
+  onShowBookmarksChange: (value: boolean) => void;
   runtimes: RuntimeProfile[];
   customAgents: CustomAgent[];
   selectedCustomAgentId: string | null;
@@ -693,6 +720,8 @@ function ChatArea({
   isDraftConversation,
   messages,
   sending,
+  showBookmarks,
+  onShowBookmarksChange,
   runtimes,
   customAgents,
   selectedCustomAgentId,
@@ -705,7 +734,6 @@ function ChatArea({
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [isConversationUpdating, setIsConversationUpdating] = useState(false);
   const [inputCollapsed] = useState(false);
-  const [showBookmarks, setShowBookmarks] = useState(messages.length === 0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -836,7 +864,6 @@ function ChatArea({
     textareaRef.current?.focus();
   }, [conversation.id]);
 
-  // Track active toggle position for sliding indicator
   useEffect(() => {
     const container = toggleRef.current;
     const activeBtn = mode === "chat" ? chatBtnRef.current : searchBtnRef.current;
@@ -869,12 +896,12 @@ function ChatArea({
   }, [attachedFiles.length, conversation.id, input, syncTextareaHeight]);
 
   const queueConversationUpdate = useCallback(
-      (data: {
-        title?: string;
-        runtimeId?: string;
-        archived?: boolean;
-        deleted?: boolean;
-      }) => {
+    (data: {
+      title?: string;
+      runtimeId?: string;
+      archived?: boolean;
+      deleted?: boolean;
+    }) => {
       if (isDraftConversation) {
         if (data.runtimeId !== undefined) setDraftRuntimeId(data.runtimeId);
         return Promise.resolve();
@@ -898,7 +925,7 @@ function ChatArea({
 
   const handleSend = useCallback(async () => {
     if ((!input.trim() && attachedFiles.length === 0) || sending) return;
-    setShowBookmarks(false);
+    onShowBookmarksChange(false);
 
     if (mode === "search") {
       const engine = searchEngineMeta.find((e) => e.id === searchEngineId);
@@ -944,7 +971,9 @@ function ChatArea({
     isDraftConversation,
     mode,
     onCreateConversation,
+    onUpdateConversation,
     onSendMessage,
+    onShowBookmarksChange,
     searchEngineId,
     selectedCustomAgentId,
     sending,
@@ -962,272 +991,304 @@ function ChatArea({
     }
   }
 
-  return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
-      {/* Input area */}
-      {!inputCollapsed && (
-        <div className="shrink-0 overflow-visible bg-background px-4 py-4 md:px-6">
-          <div className="mx-auto max-w-3xl">
-            {allMessages.length === 0 && (
-              <div className="mb-3 px-1">
-                <p className="text-sm font-medium text-foreground/85">
-                  {m.creation_intro_title()}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {m.creation_intro_desc()}
-                </p>
+  const inputArea = !inputCollapsed ? (
+    <motion.div
+      layoutId="creation-shared-input"
+      transition={{ type: "spring", duration: 0.42, bounce: 0 }}
+      className="shrink-0 overflow-visible bg-background px-4 py-4 md:px-6"
+    >
+      <div className="mx-auto max-w-3xl">
+        {allMessages.length === 0 && (
+          <div className="mb-3 px-1">
+            <p className="text-sm font-medium text-foreground/85">
+              {m.creation_intro_title()}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {m.creation_intro_desc()}
+            </p>
+          </div>
+        )}
+        <BorderBeam
+          size="md"
+          theme="auto"
+          colorVariant="ocean"
+          strength={0.65}
+          duration={2.6}
+          className="rounded-xl"
+        >
+          <div className="relative flex flex-col gap-2 overflow-visible rounded-xl border border-border bg-background px-3 pt-3 pb-1.5">
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {attachedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="relative group overflow-hidden rounded-md border border-border bg-muted"
+                  >
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="h-12 w-12 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="absolute -right-1 -top-1 rounded-full border border-border bg-background p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:border-destructive/30 hover:bg-destructive/10"
+                    >
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        className="size-3 text-muted-foreground"
+                      />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-            <BorderBeam
-              size="md"
-              theme="auto"
-              colorVariant="ocean"
-              strength={0.65}
-              duration={2.6}
-              className="rounded-xl"
-            >
-              <div className="relative flex flex-col gap-2 overflow-visible rounded-xl border border-border bg-background px-3 pt-3 pb-1.5">
-                {attachedFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {attachedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="relative group rounded-md border border-border bg-muted overflow-hidden"
-                      >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="h-12 w-12 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFile(index)}
-                          className="absolute -right-1 -top-1 rounded-full border border-border bg-background p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:border-destructive/30 hover:bg-destructive/10"
-                        >
-                          <HugeiconsIcon
-                            icon={Delete02Icon}
-                            className="size-3 text-muted-foreground"
-                          />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={
-                    mode === "search"
-                      ? m.search_web_placeholder()
-                      : selectedRuntime
-                        ? m.message_runtime_placeholder({ name: selectedRuntime.name })
-                        : selectedCustomAgent
-                          ? m.message_agent_placeholder({ name: selectedCustomAgent.name })
-                        : m.creation_placeholder()
-                  }
-                  className="min-h-[40px] w-full resize-none bg-transparent py-1 text-sm leading-6 outline-none placeholder:text-muted-foreground"
-                  rows={1}
-                  onKeyDown={handleKeys}
-                  spellCheck={false}
-                  disabled={sending}
-                  style={{ maxHeight: "120px" }}
-                  onInput={syncTextareaHeight}
-                />
-                <div className="relative z-20 flex items-center justify-between gap-2 pt-2 pb-0.5">
-                  <div className="overflow-visible flex items-center gap-1">
-                    <div ref={toggleRef} className="relative flex items-center rounded-lg bg-muted p-0.5 gap-0.5">
-                      <div
-                        className="absolute inset-y-[3px] rounded-md bg-background shadow-sm dark:bg-input/30 transition-all pointer-events-none"
-                        style={{
-                          left: "var(--active-left, 4px)",
-                          width: "var(--active-width, 50%)",
-                          transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                          transitionDuration: "400ms",
-                        }}
-                      />
-                      <button
-                        ref={chatBtnRef}
-                        type="button"
-                        onClick={() => setMode("chat")}
-                        className={cn(
-                          "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors",
-                          mode === "chat"
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        <HugeiconsIcon icon={Chat01Icon} className="size-3" />
-                        {m.chat()}
-                      </button>
-                      <button
-                        ref={searchBtnRef}
-                        type="button"
-                        onClick={() => setMode("search")}
-                        className={cn(
-                          "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors",
-                          mode === "search"
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        <HugeiconsIcon icon={Search01Icon} className="size-3" />
-                        {m.web_search()}
-                      </button>
-                    </div>
-                    {mode === "chat" ? (
-                      <>
-                        <CustomAgentSelector
-                          agents={customAgents}
-                          selectedAgentId={selectedCustomAgentId}
-                          onSelect={(id) => {
-                            onSelectCustomAgent(id);
-                            if (id) queueConversationUpdate({ runtimeId: undefined });
-                          }}
-                        />
-
-                      </>
-                    ) : (
-                      <SearchEngineSelector
-                        engines={searchEngines}
-                        selectedEngineId={searchEngineId}
-                        onSelect={setSearchEngineId}
-                      />
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={
+                mode === "search"
+                  ? m.search_web_placeholder()
+                  : selectedRuntime
+                    ? m.message_runtime_placeholder({ name: selectedRuntime.name })
+                    : selectedCustomAgent
+                      ? m.message_agent_placeholder({ name: selectedCustomAgent.name })
+                      : m.creation_placeholder()
+              }
+              className="min-h-[40px] w-full resize-none bg-transparent py-1 text-sm leading-6 outline-none placeholder:text-muted-foreground"
+              rows={1}
+              onKeyDown={handleKeys}
+              spellCheck={false}
+              disabled={sending}
+              style={{ maxHeight: "120px" }}
+              onInput={syncTextareaHeight}
+            />
+            <div className="relative z-20 flex items-center justify-between gap-2 pt-2 pb-0.5">
+              <div className="overflow-visible flex items-center gap-1">
+                <div ref={toggleRef} className="relative flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+                  <div
+                    className="pointer-events-none absolute inset-y-[3px] rounded-md bg-background shadow-sm transition-all dark:bg-input/30"
+                    style={{
+                      left: "var(--active-left, 4px)",
+                      width: "var(--active-width, 50%)",
+                      transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                      transitionDuration: "400ms",
+                    }}
+                  />
+                  <button
+                    ref={chatBtnRef}
+                    type="button"
+                    onClick={() => setMode("chat")}
+                    className={cn(
+                      "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors",
+                      mode === "chat"
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={<Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className={cn(
-                            "text-muted-foreground hover:text-foreground",
-                            isListening && "text-red-500 hover:text-red-600",
-                          )}
-                          onClick={isListening ? stop : start}
-                          disabled={!isSupported}
-                        >
-                          <HugeiconsIcon
-                            icon={isListening ? Cancel01Icon : Mic01Icon}
-                            className="size-4"
-                          />
-                        </Button>}
-                      />
-                      <TooltipContent side="top">{isListening ? m.voice_input_stop() : m.voice_input()}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={<Button
-                          type="button"
-                          size="icon-sm"
-                          disabled={
-                            (!input.trim() && attachedFiles.length === 0) ||
-                            sending ||
-                            isConversationUpdating
-                          }
-                          onClick={handleSend}
-                        >
-                          {sending ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            <HugeiconsIcon
-                              icon={ArrowUp01Icon}
-                              className="size-3.5"
-                            />
-                          )}
-                        </Button>}
-                      />
-                      <TooltipContent side="top">{m.send()}</TooltipContent>
-                    </Tooltip>
-                  </div>
+                  >
+                    <HugeiconsIcon icon={Chat01Icon} className="size-3" />
+                    {m.chat()}
+                  </button>
+                  <button
+                    ref={searchBtnRef}
+                    type="button"
+                    onClick={() => setMode("search")}
+                    className={cn(
+                      "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors",
+                      mode === "search"
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <HugeiconsIcon icon={Search01Icon} className="size-3" />
+                    {m.web_search()}
+                  </button>
                 </div>
+                {mode === "chat" ? (
+                  <CustomAgentSelector
+                    agents={customAgents}
+                    selectedAgentId={selectedCustomAgentId}
+                    onSelect={(id) => {
+                      onSelectCustomAgent(id);
+                      if (id) queueConversationUpdate({ runtimeId: undefined });
+                    }}
+                  />
+                ) : (
+                  <SearchEngineSelector
+                    engines={searchEngines}
+                    selectedEngineId={searchEngineId}
+                    onSelect={setSearchEngineId}
+                  />
+                )}
               </div>
-            </BorderBeam>
-          </div>
-        </div>
-      )}
-
-      {/* Bookmarks + Browser Tabs */}
-      {showBookmarks && (
-        <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 md:px-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <HugeiconsIcon icon={PinIcon} className="size-3.5" />
-              {m.bookmarks()}
-            </span>
-            <div className="flex flex-1 flex-col min-h-0 gap-3 overflow-y-auto">
-              {pinnedGroups.length > 0 ? (
-                pinnedGroups.map((group) => (
-                  <div key={group.id} className="flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70">
-                      <HugeiconsIcon icon={Folder01Icon} className="size-3" />
-                      {group.name}
-                    </span>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {group.bookmarks.map((bookmark) => (
-                        <button
-                          key={bookmark.id}
-                          type="button"
-                          onClick={() => setInput(bookmark.url)}
-                          className="group flex items-start gap-3 rounded-2xl bg-card p-5 h-[108px] text-left ring-1 ring-black/[0.06] dark:ring-white/[0.08] shadow-sm transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] hover:ring-black/[0.08] dark:hover:ring-white/[0.13]"
-                        >
-                          <Favicon url={bookmark.url} />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium text-foreground">{bookmark.title}</div>
-                            <div className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
-                              {bookmark.url}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-1 flex-col justify-center mb-2 rounded-lg border border-dashed border-border/50 p-4">
-                  <p className="text-center text-xs text-muted-foreground/60">
-                    {m.bookmarks_pin_hint()}
-                  </p>
-                </div>
-              )}
+              <div className="flex shrink-0 items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={cn(
+                        "text-muted-foreground hover:text-foreground",
+                        isListening && "text-red-500 hover:text-red-600",
+                      )}
+                      onClick={isListening ? stop : start}
+                      disabled={!isSupported}
+                    >
+                      <HugeiconsIcon
+                        icon={isListening ? Cancel01Icon : Mic01Icon}
+                        className="size-4"
+                      />
+                    </Button>}
+                  />
+                  <TooltipContent side="top">{isListening ? m.voice_input_stop() : m.voice_input()}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<Button
+                      type="button"
+                      size="icon-sm"
+                      disabled={
+                        (!input.trim() && attachedFiles.length === 0) ||
+                        sending ||
+                        isConversationUpdating
+                      }
+                      onClick={handleSend}
+                    >
+                      {sending ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={ArrowUp01Icon}
+                          className="size-3.5"
+                        />
+                      )}
+                    </Button>}
+                  />
+                  <TooltipContent side="top">{m.send()}</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        </BorderBeam>
+      </div>
+    </motion.div>
+  ) : null;
 
-      {/* Messages */}
-      {!showBookmarks && (
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2 md:px-6">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <HugeiconsIcon icon={Chat01Icon} className="size-3.5" />
-              {m.conversation()}
-            </span>
-            <Tooltip>
-              <TooltipTrigger
-                render={<button
-                  type="button"
-                  onClick={() => setShowBookmarks(true)}
-                  className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
-                </button>}
-              />
-              <TooltipContent side="top">{m.show_bookmarks()}</TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="flex-1 space-y-4 px-4 py-4 md:px-6">
-            {allMessages.map((message) => (
-              <MessageBubble key={message.id} msg={message} userImageUrl={user?.imageUrl} />
-            ))}
-            {showPendingAssistantReply ? <ChatThinkingState /> : null}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-      )}
-    </div>
+  return (
+    <LayoutGroup id="creation-mode-layout">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
+        <AnimatePresence initial={false} mode="popLayout">
+          {showBookmarks ? (
+            <motion.div
+              key="bookmark-mode"
+              layout
+              transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+              className="contents"
+            >
+              {inputArea}
+              <motion.div
+                layout
+                transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+                className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 md:px-6"
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <HugeiconsIcon icon={PinIcon} className="size-3.5" />
+                    {m.bookmarks()}
+                  </span>
+                  <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+                    {pinnedGroups.length > 0 ? (
+                      pinnedGroups.map((group) => (
+                        <div key={group.id} className="flex flex-col gap-1.5">
+                          <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70">
+                            <HugeiconsIcon icon={Folder01Icon} className="size-3" />
+                            {group.name}
+                          </span>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {group.bookmarks.map((bookmark) => (
+                              <button
+                                key={bookmark.id}
+                                type="button"
+                                onClick={() => setInput(bookmark.url)}
+                                className="group flex h-[108px] items-start gap-3 rounded-2xl bg-card p-5 text-left shadow-sm ring-1 ring-black/[0.06] transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 hover:ring-black/[0.08] active:scale-[0.96] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]"
+                              >
+                                <Favicon url={bookmark.url} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-sm font-medium text-foreground">{bookmark.title}</div>
+                                  <div className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
+                                    {bookmark.url}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="mb-2 flex flex-1 flex-col justify-center rounded-lg border border-dashed border-border/50 p-4">
+                        <p className="text-center text-xs text-muted-foreground/60">
+                          {m.bookmarks_pin_hint()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="conversation-mode"
+              layout
+              transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+              className="contents"
+            >
+              <motion.div
+                layout
+                transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+              >
+                <div className="flex items-center justify-between px-4 py-2 md:px-6">
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <HugeiconsIcon icon={Chat01Icon} className="size-3.5" />
+                    {m.conversation()}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={<button
+                        type="button"
+                        onClick={() => onShowBookmarksChange(true)}
+                        className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
+                      </button>}
+                    />
+                    <TooltipContent side="top">{m.show_bookmarks()}</TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="flex-1 space-y-4 px-4 py-4 md:px-6">
+                  {allMessages.length > 0 || showPendingAssistantReply ? (
+                    <>
+                      {allMessages.map((message) => (
+                        <MessageBubble key={message.id} msg={message} userImageUrl={user?.imageUrl} />
+                      ))}
+                      {showPendingAssistantReply ? <ChatThinkingState /> : null}
+                      <div ref={messagesEndRef} />
+                    </>
+                  ) : (
+                    <div className="flex h-full min-h-48 items-center justify-center">
+                      <p className="text-sm text-muted-foreground">{m.no_messages_yet()}</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+              {inputArea}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </LayoutGroup>
   );
 }
 

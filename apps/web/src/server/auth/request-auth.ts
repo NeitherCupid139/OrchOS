@@ -1,5 +1,11 @@
 import { verifyToken } from "@clerk/backend";
 
+import {
+  getClerkVerifyTokenOptions,
+  isClerkServerAuthConfigured,
+  type ClerkServerAuthConfig,
+} from "./clerk-config";
+
 export interface AuthContext {
   userId: string | null;
   orgId: string | null;
@@ -23,8 +29,8 @@ function extractSessionToken(request: Request): string | null {
   return null;
 }
 
-export async function authenticateRequest(request: Request, jwtKey: string): Promise<AuthContext> {
-  if (!jwtKey) {
+export async function authenticateRequest(request: Request, config: ClerkServerAuthConfig): Promise<AuthContext> {
+  if (!isClerkServerAuthConfigured(config)) {
     return { userId: null, orgId: null, sessionId: null };
   }
 
@@ -34,7 +40,7 @@ export async function authenticateRequest(request: Request, jwtKey: string): Pro
   }
 
   try {
-    const claims = await verifyToken(token, { jwtKey });
+    const claims = await verifyToken(token, getClerkVerifyTokenOptions(config));
     return {
       userId: claims.sub ?? null,
       orgId: (claims.org_id as string | undefined) ?? null,

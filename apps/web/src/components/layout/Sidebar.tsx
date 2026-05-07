@@ -303,11 +303,7 @@ export function Sidebar({
                         )}
                       </DropdownMenuItem>
                     ))
-                  ) : (
-                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                      {m.no_spaces()}
-                    </div>
-                  )}
+                  ) : null}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>

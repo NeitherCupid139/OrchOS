@@ -7,6 +7,7 @@ export const settingsSchema = z.object({
   autoCommit: z.boolean(),
   autoFix: z.boolean(),
   modelStrategy: modelStrategySchema,
+  locale: z.string(),
   showShortcutHints: z.boolean(),
   useMixedScript: z.boolean(),
   preferKanji: z.boolean(),

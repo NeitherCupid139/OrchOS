@@ -6,6 +6,7 @@ import type {
   Conversation,
   ConversationMessage,
   CustomAgent,
+  CustomAgentModelsResponse,
   DetectRuntimesResponse,
   InboxMessage,
   InboxMessageType,
@@ -400,6 +401,12 @@ export const api = {
   setDefaultCustomAgentId: async (agentId: string | null): Promise<string | null> => {
     const result = (await orpc.customAgents.setDefault({ agentId })) as { agentId: string | null };
     return result.agentId;
+  },
+  listCustomAgentModels: async (data: {
+    url: string;
+    apiKey: string;
+  }): Promise<CustomAgentModelsResponse> => {
+    return (await orpc.customAgents.models(data)) as CustomAgentModelsResponse;
   },
   createCustomAgent: async (data: {
     name: string;

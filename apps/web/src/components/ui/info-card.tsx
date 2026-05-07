@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { m } from "@/paraglide/messages";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import React from "react";
 
 interface InfoCardTitleProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -175,29 +176,36 @@ function InfoCard({
               onMouseLeave={() => setIsHovered(false)}
             >
               {showDismissButton ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleDismissButtonClick}
-                  title={m.close()}
-                  className="absolute top-2 right-2 shrink-0 text-muted-foreground/60 hover:text-foreground"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4 4L10 10M10 4L4 10"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={handleDismissButtonClick}
+                        className="absolute top-2 right-2 shrink-0 text-muted-foreground/60 hover:text-foreground"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 4L10 10M10 4L4 10"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent side="top">{m.close()}</TooltipContent>
+                </Tooltip>
               ) : null}
               {children}
             </motion.div>

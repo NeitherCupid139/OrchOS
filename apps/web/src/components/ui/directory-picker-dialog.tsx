@@ -4,8 +4,10 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { FolderIcon, ArrowLeft01Icon, Home01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 
 interface DirectoryPickerDialogProps {
   open: boolean;
@@ -98,12 +100,26 @@ export function DirectoryPickerDialog({
 
             {/* Current path bar */}
             <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
-              <Button size="icon-xs" variant="ghost" onClick={handleGoUp} disabled={!parentPath}>
-                <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
-              </Button>
-              <Button size="icon-xs" variant="ghost" onClick={handleGoHome}>
-                <HugeiconsIcon icon={Home01Icon} className="size-3.5" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <Button {...props} size="icon-xs" variant="ghost" onClick={handleGoUp} disabled={!parentPath}>
+                      <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
+                    </Button>
+                  )}
+                />
+                <TooltipContent side="top">{m.back()}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <Button {...props} size="icon-xs" variant="ghost" onClick={handleGoHome}>
+                      <HugeiconsIcon icon={Home01Icon} className="size-3.5" />
+                    </Button>
+                  )}
+                />
+                <TooltipContent side="top">{m.home()}</TooltipContent>
+              </Tooltip>
               <div className="flex-1 rounded-md bg-muted px-2.5 py-1 text-xs font-mono text-foreground truncate">
                 {path}
               </div>

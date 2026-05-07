@@ -118,6 +118,7 @@ export interface ControlSettings {
   autoCommit: boolean;
   autoFix: boolean;
   modelStrategy: "local-first" | "cloud-first" | "adaptive";
+  locale: string;
   showShortcutHints: boolean;
   useMixedScript: boolean;
   preferKanji: boolean;

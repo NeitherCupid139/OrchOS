@@ -27,6 +27,7 @@ import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   api,
@@ -486,26 +487,40 @@ function MailPage() {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="active:-translate-y-0"
-                  onClick={() => setIsComposeDialogOpen(true)}
-                  title={m.compose_mail()}
-                >
-                  <HugeiconsIcon icon={MailEdit02Icon} className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="active:-translate-y-0"
-                  onClick={handleCollapseSidebar}
-                  title={m.collapse_sidebar()}
-                >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="active:-translate-y-0"
+                        onClick={() => setIsComposeDialogOpen(true)}
+                      >
+                        <HugeiconsIcon icon={MailEdit02Icon} className="size-4" />
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent side="bottom">{m.compose_mail()}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="active:-translate-y-0"
+                        onClick={handleCollapseSidebar}
+                      >
+                        <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent side="bottom">{m.collapse_sidebar()}</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -535,7 +550,7 @@ function MailPage() {
           <div
             role="separator"
             aria-orientation="vertical"
-            aria-label="Resize mail sidebar"
+            aria-label={m.resize_mail_sidebar()}
             onPointerDown={handleResizeStart}
             className={cn(
               "group absolute right-[-8px] top-0 z-20 h-full w-4",
@@ -562,16 +577,23 @@ function MailPage() {
 
         <div className="relative min-w-0 flex-1 overflow-hidden flex flex-col">
           {sidebarCollapsed ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
-              onClick={handleExpandSidebar}
-              title={m.expand_sidebar()}
-            >
-              <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={(props) => (
+                  <Button
+                    {...props}
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
+                    onClick={handleExpandSidebar}
+                  >
+                    <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                  </Button>
+                )}
+              />
+              <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+            </Tooltip>
           ) : null}
 
           {loading ? (

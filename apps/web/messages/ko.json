@@ -721,6 +721,10 @@
   "board": "보드",
   "shortcut_hints": "단축키 힌트 표시",
   "shortcut_hints_desc": "빠르게 탐색할 수 있도록 사이드바에 키보드 단축키 배지를 표시합니다.",
+  "use_mixed_script": "한자 혼용 표기 사용",
+  "use_mixed_script_desc": "한국어 텍스트를 한자 혼용 표기로 표시합니다.",
+  "prefer_kanji": "가타카나 줄이기",
+  "prefer_kanji_desc": "자주 쓰는 UI 용어에서 가타카나를 줄이고 더 자연스러운 일본어 표기를 우선합니다.",
   "show_bookmarks": "북마크 보기",
   "bookmarks_pin_hint": "북마크 페이지에서 북마크를 고정하면 여기에 표시됩니다.",
   "chat": "채팅",
@@ -798,5 +802,10 @@
   "unread": "읽지 않음",
   "waiting_reply": "답장 대기",
   "board_completed": "완료됨",
-  "archived": "보관됨"
+  "archived": "보관됨",
+  "switch_language": "언어 전환",
+  "toggle_menu": "메뉴 전환",
+  "resize_calendar_sidebar": "캘린더 사이드바 크기 조절",
+  "resize_mail_sidebar": "메일 사이드바 크기 조절",
+  "resize_bookmarks_sidebar": "북마크 사이드바 크기 조절"
 }

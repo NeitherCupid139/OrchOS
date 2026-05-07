@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
 import { isClerkConfigured } from "@/lib/auth";
-import { api } from "@/lib/api";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ActivityPanel } from "@/components/panels/ActivityPanel";
 import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
@@ -14,7 +13,7 @@ import { useUIStore } from "@/lib/store";
 import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useConversationStore } from "@/lib/stores/conversation";
+import { useBoardStore } from "@/lib/stores/board";
 import { AuthTransitionOverlay } from "@/components/ui/auth-transition-overlay";
 import type { SidebarView } from "@/lib/types";
 import { getCapabilityModeFromPath, getCapabilityPath, isCapabilityView } from "@/lib/capability-routing";
@@ -136,7 +135,7 @@ function DashboardContent() {
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<"general" | "notifications" | "runtimes" | "mail" | "about">("general");
   const revealTriggeredRef = useRef(false);
-  const { createConversation, setActiveConversationId } = useConversationStore();
+  const createBoardTask = useBoardStore((state) => state.createTask);
 
   const {
     runtimes,
@@ -328,24 +327,15 @@ function DashboardContent() {
           projects={projects}
           onClose={() => setCreateBoardDialogOpen(false)}
           onSubmit={async (values) => {
-            const created = await createConversation({
+            createBoardTask({
               title: values.title,
+              description: values.description,
               projectId: values.projectId,
+              dueDate: values.dueDate,
+              priority: values.priority,
+              tags: values.tags,
+              subtasks: values.subtasks,
             });
-            const noteSections = [
-              values.description ? `Notes:\n${values.description}` : "",
-              values.dueDate ? `Due date: ${values.dueDate}` : "",
-              `Priority: ${values.priority}`,
-              values.tags.length > 0 ? `Tags:\n${values.tags.map((item) => `- ${item}`).join("\n")}` : "",
-              values.subtasks.length > 0
-                ? `Subtasks:\n${values.subtasks.map((item) => `- [ ] ${item}`).join("\n")}`
-                : "",
-            ].filter(Boolean);
-            if (noteSections.length > 0) {
-              await api.sendConversationMessage(created.id, noteSections.join("\n\n"));
-            }
-            setActiveConversationId(created.id);
-            await navigate({ to: "/dashboard/creation" });
           }}
         />
       </div>

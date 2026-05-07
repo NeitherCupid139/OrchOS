@@ -351,3 +351,7 @@ export interface CustomAgent {
   model: string;
   createdAt: string;
 }
+
+export interface CustomAgentModelsResponse {
+  models: string[];
+}

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { m } from "@/paraglide/messages";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUIStore } from "@/lib/store";
 
 type ThemeMode = "light" | "dark" | "auto";
@@ -41,27 +42,48 @@ export default function ThemeToggle() {
   return (
     <Tabs value={theme} onValueChange={(v) => setTheme(v as ThemeMode)}>
       <TabsList>
-        <TabsTrigger
-          value="light"
-          aria-label={m.theme_switch_mode({ label: m.theme_light() })}
-          title={m.theme_switch_mode({ label: m.theme_light() })}
-        >
-          <Sun className="size-4" />
-        </TabsTrigger>
-        <TabsTrigger
-          value="dark"
-          aria-label={m.theme_switch_mode({ label: m.theme_dark() })}
-          title={m.theme_switch_mode({ label: m.theme_dark() })}
-        >
-          <Moon className="size-4" />
-        </TabsTrigger>
-        <TabsTrigger
-          value="auto"
-          aria-label={m.theme_switch_mode({ label: m.theme_system() })}
-          title={m.theme_switch_mode({ label: m.theme_system() })}
-        >
-          <Monitor className="size-4" />
-        </TabsTrigger>
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => (
+              <TabsTrigger
+                {...props}
+                value="light"
+                aria-label={m.theme_switch_mode({ label: m.theme_light() })}
+              >
+                <Sun className="size-4" />
+              </TabsTrigger>
+            )}
+          />
+          <TooltipContent side="bottom">{m.theme_switch_mode({ label: m.theme_light() })}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => (
+              <TabsTrigger
+                {...props}
+                value="dark"
+                aria-label={m.theme_switch_mode({ label: m.theme_dark() })}
+              >
+                <Moon className="size-4" />
+              </TabsTrigger>
+            )}
+          />
+          <TooltipContent side="bottom">{m.theme_switch_mode({ label: m.theme_dark() })}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => (
+              <TabsTrigger
+                {...props}
+                value="auto"
+                aria-label={m.theme_switch_mode({ label: m.theme_system() })}
+              >
+                <Monitor className="size-4" />
+              </TabsTrigger>
+            )}
+          />
+          <TooltipContent side="bottom">{m.theme_switch_mode({ label: m.theme_system() })}</TooltipContent>
+        </Tooltip>
       </TabsList>
     </Tabs>
   );

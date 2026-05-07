@@ -10,6 +10,10 @@ export const customAgentSchema = z.object({
   createdAt: z.string(),
 });
 
+const customAgentModelsSchema = z.object({
+  models: z.array(z.string()),
+});
+
 export const customAgentsContract = {
   list: oc.input(z.object({}).optional()).output(z.array(customAgentSchema)),
   getDefault: oc
@@ -18,6 +22,14 @@ export const customAgentsContract = {
   setDefault: oc
     .input(z.object({ agentId: z.string().nullable() }))
     .output(z.object({ agentId: z.string().nullable() })),
+  models: oc
+    .input(
+      z.object({
+        url: z.string(),
+        apiKey: z.string(),
+      }),
+    )
+    .output(customAgentModelsSchema),
   create: oc
     .input(
       z.object({

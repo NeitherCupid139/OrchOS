@@ -228,6 +228,24 @@ export interface Problem {
   updatedAt: string;
 }
 
+export type BoardTaskColumnId = "planning" | "in_progress" | "review" | "completed";
+export type BoardTaskFilter = "all" | BoardTaskColumnId;
+export type BoardTaskPriority = "low" | "medium" | "high";
+
+export interface BoardTask {
+  id: string;
+  title: string;
+  description?: string;
+  projectId?: string;
+  dueDate?: string;
+  priority: BoardTaskPriority;
+  tags: string[];
+  subtasks: string[];
+  column: BoardTaskColumnId;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function isInboxItem(problem: Problem): problem is Problem & { source: InboxSource } {
   return INBOX_SOURCES.includes(problem.source as InboxSource);
 }

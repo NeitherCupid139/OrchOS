@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ControlSettings } from "@/lib/types";
-import type { ConversationBoardFilter } from "@/components/panels/BoardView";
+import type { BoardTaskFilter } from "@/components/panels/BoardView";
 
 type SourceFilter = "all" | "github_pr" | "github_issue" | "mention" | "agent_request";
 type InboxStatusFilter = "all" | "open" | "assigned" | "fixed" | "ignored";
@@ -28,7 +28,7 @@ interface UIState {
   mailFolderFilter: MailFolderFilter;
   calendarViewMode: CalendarViewMode;
   capabilityViewMode: CapabilityViewMode;
-  boardFilter: ConversationBoardFilter;
+  boardFilter: BoardTaskFilter;
 
   // Panel states
   activityPanelOpen: boolean;
@@ -56,7 +56,7 @@ interface UIActions {
   setMailFolderFilter: (filter: MailFolderFilter) => void;
   setCalendarViewMode: (mode: CalendarViewMode) => void;
   setCapabilityViewMode: (mode: CapabilityViewMode) => void;
-  setBoardFilter: (filter: ConversationBoardFilter) => void;
+  setBoardFilter: (filter: BoardTaskFilter) => void;
   setActivityPanelOpen: (open: boolean) => void;
   toggleActivityPanel: () => void;
   setActivityExpanded: (expanded: boolean) => void;
@@ -100,7 +100,7 @@ export const useUIStore = create<UIState & UIActions>()(
       mailFolderFilter: "all" as MailFolderFilter,
       calendarViewMode: "week" as CalendarViewMode,
       capabilityViewMode: "mine" as CapabilityViewMode,
-      boardFilter: "all" as ConversationBoardFilter,
+      boardFilter: "all" as BoardTaskFilter,
 
       // Panel states
       activityPanelOpen: false,

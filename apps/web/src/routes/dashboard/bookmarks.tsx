@@ -24,6 +24,7 @@ import { RenameDialog } from "@/components/dialogs/RenameDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
@@ -634,26 +635,39 @@ function BookmarksPage() {
           <div className="flex h-10 items-center justify-between rounded-md px-2">
             <div className="text-sm font-semibold text-foreground">{m.bookmarks()}</div>
             <div className="flex items-center gap-1">
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleCreateCategory}
-                title={m.new_category()}
-              >
-                <HugeiconsIcon icon={Add01Icon} className="size-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="active:-translate-y-0"
-                onClick={handleCollapseSidebar}
-                title={m.collapse_sidebar()}
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={handleCreateCategory}
+                    >
+                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                    </Button>
+                  )}
+                />
+                <TooltipContent side="bottom">{m.new_category()}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="active:-translate-y-0"
+                      onClick={handleCollapseSidebar}
+                    >
+                      <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                    </Button>
+                  )}
+                />
+                <TooltipContent side="bottom">{m.collapse_sidebar()}</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -714,26 +728,40 @@ function BookmarksPage() {
                             <HugeiconsIcon icon={Folder01Icon} className="size-3.5 shrink-0 text-muted-foreground" />
                             <span className="min-w-0 flex-1 truncate text-sm text-foreground">{category.name}</span>
                           </button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={() => setRenameCategoryId(category.id)}
-                            className="opacity-0 transition-opacity group-hover:opacity-100"
-                            title={m.edit_category()}
-                          >
-                            <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={() => setDeleteCategoryId(category.id)}
-                            className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                            title={m.delete_category()}
-                          >
-                            <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={(props) => (
+                                <Button
+                                  {...props}
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => setRenameCategoryId(category.id)}
+                                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                                >
+                                  <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                </Button>
+                              )}
+                            />
+                            <TooltipContent side="top">{m.edit_category()}</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={(props) => (
+                                <Button
+                                  {...props}
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => setDeleteCategoryId(category.id)}
+                                  className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                                >
+                                  <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                </Button>
+                              )}
+                            />
+                            <TooltipContent side="top">{m.delete_category()}</TooltipContent>
+                          </Tooltip>
                           <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground group-hover:hidden">
                             {category.bookmarks.length}
                           </span>
@@ -750,7 +778,7 @@ function BookmarksPage() {
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label="Resize bookmarks sidebar"
+          aria-label={m.resize_bookmarks_sidebar()}
           onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4",
@@ -776,16 +804,23 @@ function BookmarksPage() {
 
       <div className="relative min-w-0 flex-1 overflow-hidden">
         {sidebarCollapsed ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
-            onClick={handleExpandSidebar}
-            title={m.expand_sidebar()}
-          >
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
+                  onClick={handleExpandSidebar}
+                >
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                </Button>
+              )}
+            />
+            <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+          </Tooltip>
         ) : null}
 
         <ScrollArea className="h-full">

@@ -3,6 +3,7 @@ import { createHighlighter } from "shiki";
 import { Check, Copy } from "lucide-react";
 
 import { m } from "@/paraglide/messages";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CHAT_CODE_LANGS = [
   "tsx",
@@ -129,14 +130,21 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
         <span className="font-mono text-[10px] text-muted-foreground/60">
           {language || "text"}
         </span>
-        <button
-          type="button"
-          className="rounded p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors"
-          onClick={() => void handleCopy()}
-          title={m.copy_file_content()}
-        >
-          {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-        </button>
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => (
+              <button
+                {...props}
+                type="button"
+                className="rounded p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors"
+                onClick={() => void handleCopy()}
+              >
+                {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+              </button>
+            )}
+          />
+          <TooltipContent side="top">{m.copy_file_content()}</TooltipContent>
+        </Tooltip>
       </div>
       <div className="overflow-x-auto">
         {loading ? (

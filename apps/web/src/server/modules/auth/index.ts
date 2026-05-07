@@ -1,13 +1,18 @@
 import { Elysia } from "elysia";
 import { status } from "elysia";
 import { authenticateRequest, type AuthContext } from "../../auth/request-auth";
+import {
+  getClerkServerAuthConfig,
+  isClerkServerAuthConfigured,
+  type ClerkServerAuthConfig,
+} from "../../auth/clerk-config";
 
-export function createAuthPlugin(jwtKey: string) {
-  const isClerkConfigured = jwtKey.length > 0;
+export function createAuthPlugin(config: ClerkServerAuthConfig = getClerkServerAuthConfig()) {
+  const isClerkConfigured = isClerkServerAuthConfigured(config);
 
   return new Elysia({ name: "auth" })
     .derive({ as: "global" }, async ({ request }): Promise<{ auth: AuthContext }> => {
-      const auth = await authenticateRequest(request, jwtKey);
+      const auth = await authenticateRequest(request, config);
       return { auth };
     })
     .macro(({ onBeforeHandle }) => ({

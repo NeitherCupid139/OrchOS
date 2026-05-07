@@ -121,7 +121,7 @@ export function Header() {
           className="md:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
-          aria-label="Toggle menu"
+          aria-label={m.toggle_menu()}
         >
           <MenuToggleIcon open={open} className="size-5" duration={300} />
         </Button>

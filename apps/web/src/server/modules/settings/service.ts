@@ -7,6 +7,7 @@ export class SettingsService {
     autoCommit: false,
     autoFix: true,
     modelStrategy: "adaptive",
+    locale: "en",
     showShortcutHints: false,
     useMixedScript: false,
     preferKanji: false,
@@ -26,6 +27,7 @@ export class SettingsService {
       if (row.key === "autoCommit") this.settings.autoCommit = row.value === "true";
       if (row.key === "autoFix") this.settings.autoFix = row.value === "true";
       if (row.key === "modelStrategy") this.settings.modelStrategy = row.value as ControlSettings["modelStrategy"];
+      if (row.key === "locale") this.settings.locale = row.value;
       if (row.key === "showShortcutHints") this.settings.showShortcutHints = row.value === "true";
       if (row.key === "useMixedScript") this.settings.useMixedScript = row.value === "true";
       if (row.key === "preferKanji") this.settings.preferKanji = row.value === "true";
@@ -56,6 +58,13 @@ export class SettingsService {
       await this.db.insert(settings).values({ key: "modelStrategy", value: patch.modelStrategy }).onConflictDoUpdate({
         target: settings.key,
         set: { value: patch.modelStrategy },
+      }).run();
+    }
+    if (patch.locale !== undefined) {
+      this.settings.locale = patch.locale;
+      await this.db.insert(settings).values({ key: "locale", value: patch.locale }).onConflictDoUpdate({
+        target: settings.key,
+        set: { value: patch.locale },
       }).run();
     }
     if (patch.showShortcutHints !== undefined) {

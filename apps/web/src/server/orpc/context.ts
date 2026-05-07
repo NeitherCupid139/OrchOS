@@ -1,20 +1,17 @@
 import { authenticateRequest } from "@/server/auth/request-auth";
+import { getClerkServerAuthConfig, isClerkServerAuthConfigured } from "@/server/auth/clerk-config";
 
 export interface ORPCContext {
   request: Request;
   headers: Headers;
 }
 
-function getJwtKey() {
-  return process.env.CLERK_SECRET_KEY?.trim() ?? "";
-}
-
 export function isClerkConfigured() {
-  return getJwtKey().length > 0;
+  return isClerkServerAuthConfigured(getClerkServerAuthConfig());
 }
 
 export async function authenticateORPCRequest(request: Request) {
-  return authenticateRequest(request, getJwtKey());
+  return authenticateRequest(request, getClerkServerAuthConfig());
 }
 
 export function extractBearerToken(request: Request) {

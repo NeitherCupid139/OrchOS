@@ -1,38 +1,32 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  Calendar03Icon,
   CheckmarkCircle02Icon,
   Delete02Icon,
   Edit02Icon,
   File02Icon,
   InformationCircleIcon,
   PlayCircleIcon,
+  Tag01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { InfoCard, InfoCardContent, InfoCardDescription } from "@/components/ui/info-card";
 import { RenameDialog } from "@/components/dialogs/RenameDialog";
-import { cn, getRuntimeIcon } from "@/lib/utils";
-import { type Conversation, type ConversationMessage } from "@/lib/api";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDashboard } from "@/lib/dashboard-context";
-import { useConversationStore } from "@/lib/stores/conversation";
+import { useBoardStore } from "@/lib/stores/board";
+import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
+import type { BoardTaskColumnId, BoardTaskFilter, BoardTaskPriority } from "@/lib/types";
 
-export type ConversationBoardColumnId = "planning" | "in_progress" | "review" | "completed";
-export type ConversationBoardFilter = "all" | ConversationBoardColumnId;
+export type { BoardTaskColumnId, BoardTaskFilter };
 
-interface ConversationBoardCard {
-  conversation: Conversation;
-  title: string;
-  summary: string;
-  updatedAt: string;
-  column: ConversationBoardColumnId;
-  hasUserMessage: boolean;
+interface BoardViewProps {
+  boardFilter: BoardTaskFilter;
 }
 
-const EMPTY_CONVERSATION_MESSAGES: ConversationMessage[] = [];
-
-function formatConversationTime(value?: string) {
+function formatBoardTime(value?: string) {
   if (!value) return "";
 
   const timestamp = Date.parse(value);
@@ -46,53 +40,22 @@ function formatConversationTime(value?: string) {
   }).format(new Date(timestamp));
 }
 
-function resolveConversationBoardColumn(
-  conversation: Conversation,
-  messages: ConversationMessage[],
-  pendingConversationId: string | null,
-): ConversationBoardColumnId {
-  if (pendingConversationId === conversation.id) return "planning";
-
-  const lastAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant");
-  const hasUserMessage = messages.some((message) => message.role === "user");
-
-  if ((lastAssistantMessage?.clarificationQuestions?.length ?? 0) > 0) {
-    return "planning";
-  }
-
-  if (conversation.archived) {
-    return "completed";
-  }
-
-  if (!hasUserMessage) {
-    return "planning";
-  }
-
-  if (
-    lastAssistantMessage?.error ||
-    lastAssistantMessage?.trace?.some((item) => item.kind === "tool" && !!item.errorText)
-  ) {
-    return "in_progress";
-  }
-
-  if (lastAssistantMessage) {
-    return "review";
-  }
-
-  return "in_progress";
-}
-
-interface BoardViewProps {
-  boardFilter: ConversationBoardFilter;
+function priorityTone(priority: BoardTaskPriority) {
+  if (priority === "low") return "text-emerald-600 dark:text-emerald-400";
+  if (priority === "medium") return "text-amber-600 dark:text-amber-400";
+  return "text-rose-600 dark:text-rose-400";
 }
 
 export function BoardView({ boardFilter }: BoardViewProps) {
-  const navigate = useNavigate();
-  const { runtimes } = useDashboard();
   const [renameCardId, setRenameCardId] = useState<string | null>(null);
   const [renameCardTitle, setRenameCardTitle] = useState("");
-  const conversationBoardColumns: Array<{
-    id: ConversationBoardColumnId;
+  const { projects } = useDashboard();
+  const tasks = useBoardStore((state) => state.tasks);
+  const updateTask = useBoardStore((state) => state.updateTask);
+  const deleteTask = useBoardStore((state) => state.deleteTask);
+
+  const boardColumns: Array<{
+    id: BoardTaskColumnId;
     label: string;
     icon: typeof PlayCircleIcon;
     tone: string;
@@ -128,41 +91,16 @@ export function BoardView({ boardFilter }: BoardViewProps) {
     },
   ];
 
-  const {
-    conversations,
-    activeConversationId,
-    pendingConversationId,
-    messagesByConversationId,
-    setActiveConversationId,
-    updateConversation,
-    deleteConversation,
-  } = useConversationStore();
-
-  const boardCards = useMemo<ConversationBoardCard[]>(() => {
-    return conversations
-      .filter((item) => !item.deleted)
-      .map((item) => {
-        const itemMessages = messagesByConversationId[item.id] ?? EMPTY_CONVERSATION_MESSAGES;
-        const firstUserMessage = itemMessages.find((message) => message.role === "user")?.content?.trim() ?? "";
-
-        return {
-          conversation: item,
-          title: item.title || firstUserMessage || m.untitled_conversation(),
-                        summary: firstUserMessage || m.board_waiting_for_input(),
-          updatedAt: item.updatedAt,
-          column: resolveConversationBoardColumn(item, itemMessages, pendingConversationId),
-          hasUserMessage: !!firstUserMessage,
-        };
-      })
-      .filter((card) => card.hasUserMessage)
-      .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
-  }, [conversations, messagesByConversationId, pendingConversationId]);
+  const boardCards = useMemo(
+    () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
+    [tasks],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background px-4 py-4 md:px-6">
-      <div className="mx-auto flex w-full max-w-full min-h-0 flex-1 flex-col gap-3 px-0 pb-2 md:px-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-full flex-1 flex-col gap-3 px-0 pb-2 md:px-6">
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row lg:items-stretch lg:overflow-x-auto">
-          {conversationBoardColumns
+          {boardColumns
             .filter((column) => boardFilter === "all" || column.id === boardFilter)
             .map((column) => {
               const columnCards = boardCards.filter((card) => card.column === column.id);
@@ -200,107 +138,115 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                     )}
                   >
                     {columnCards.map((card) => {
-                      const isRenameDialogOpen = renameCardId === card.conversation.id;
-                      const cardRuntime = runtimes.find((runtime) => runtime.id === card.conversation.runtimeId);
-                      const runtimeIcon = cardRuntime
-                        ? getRuntimeIcon({
-                            id: cardRuntime.registryId || cardRuntime.id,
-                            name: cardRuntime.name,
-                            command: cardRuntime.command,
-                          })
-                        : undefined;
-                      const runtimeLabel = cardRuntime?.name || m.creation_placeholder();
+                      const linkedProject = projects?.find((project) => project.id === card.projectId);
 
                       return (
                         <div
-                          key={card.conversation.id}
-                          role="button"
-                          tabIndex={isRenameDialogOpen ? -1 : 0}
-                          onClick={() => {
-                            if (isRenameDialogOpen) return;
-                            setActiveConversationId(card.conversation.id);
-                            void navigate({ to: "/dashboard/creation" });
-                          }}
-                          onKeyDown={(event) => {
-                            if (isRenameDialogOpen) return;
-                            if (event.key === "Enter") {
-                              setActiveConversationId(card.conversation.id);
-                              void navigate({ to: "/dashboard/creation" });
-                            }
-                          }}
-                          className="group/card cursor-pointer rounded-xl text-left transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none"
+                          key={card.id}
+                          className="group/card rounded-xl text-left transition-transform duration-200 hover:-translate-y-0.5"
                         >
-                            <InfoCard
-                              showDismissButton={false}
-                              className={cn(
-                              "border-border/40 bg-background/80 p-4 text-left transition-all duration-200 group-hover/card:border-border/80 group-hover/card:bg-background",
-                              activeConversationId === card.conversation.id && "border-border bg-background",
-                            )}
-                            >
-                              <InfoCardContent className="gap-3">
+                          <InfoCard
+                            showDismissButton={false}
+                            className="border-border/40 bg-background/80 p-4 text-left transition-all duration-200 group-hover/card:border-border/80 group-hover/card:bg-background"
+                          >
+                            <InfoCardContent className="gap-3">
                               <div className="relative min-w-0 flex-1">
                                 <div className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/card:pointer-events-auto group-hover/card:opacity-100">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-xs"
-                                     title={m.board_rename_conversation()}
-                                    onMouseDown={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                    }}
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      setRenameCardId(card.conversation.id);
-                                      setRenameCardTitle(card.title);
-                                    }}
-                                    className="text-muted-foreground/60 hover:text-foreground"
-                                  >
-                                    <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-xs"
-                                     title={m.board_delete_conversation()}
-                                    onMouseDown={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                    }}
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      void deleteConversation(card.conversation.id);
-                                    }}
-                                    className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
-                                  >
-                                    <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                  </Button>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={(props) => (
+                                        <Button
+                                          {...props}
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onMouseDown={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                          }}
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            setRenameCardId(card.id);
+                                            setRenameCardTitle(card.title);
+                                          }}
+                                          className="text-muted-foreground/60 hover:text-foreground"
+                                        >
+                                          <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                        </Button>
+                                      )}
+                                    />
+                                    <TooltipContent side="top">{m.board_rename_conversation()}</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={(props) => (
+                                        <Button
+                                          {...props}
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onMouseDown={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                          }}
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            deleteTask(card.id);
+                                          }}
+                                          className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
+                                        >
+                                          <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                        </Button>
+                                      )}
+                                    />
+                                    <TooltipContent side="top">{m.board_delete_conversation()}</TooltipContent>
+                                  </Tooltip>
                                 </div>
                               </div>
 
                               <div className="space-y-1">
                                 <div className="line-clamp-1 text-sm font-medium text-foreground/90">{card.title}</div>
-                                <InfoCardDescription className="line-clamp-2 text-xs leading-relaxed text-muted-foreground/60">
-                                  {card.summary}
+                                <InfoCardDescription className="line-clamp-3 text-xs leading-relaxed text-muted-foreground/60">
+                                  {card.description?.trim() || m.board_no_tasks()}
                                 </InfoCardDescription>
                               </div>
 
+                              <div className="flex flex-wrap items-center gap-2">
+                                {linkedProject ? (
+                                  <span className="inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground/80">
+                                    {linkedProject.name}
+                                  </span>
+                                ) : null}
+                                <span className={cn("inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px]", priorityTone(card.priority))}>
+                                  {card.priority}
+                                </span>
+                                {card.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground/75"
+                                  >
+                                    <HugeiconsIcon icon={Tag01Icon} className="size-3" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+
                               <div className="flex items-center justify-between gap-2 border-t border-border/15 pt-2">
-                                <div className="flex min-w-0 items-center gap-2">
-                                  {runtimeIcon ? (
-                                    <div className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground/80">
-                                      <img src={runtimeIcon} alt="" className="size-3 object-contain" />
-                                      {runtimeLabel}
-                                    </div>
+                                <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground/45">
+                                  {card.dueDate ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
+                                      {card.dueDate}
+                                    </span>
                                   ) : null}
-                                  {activeConversationId !== card.conversation.id && (
-                                    <span className="text-[11px] text-muted-foreground/40">{column.label}</span>
-                                  )}
+                                  {card.subtasks.length > 0 ? (
+                                    <span>{card.subtasks.length} subtasks</span>
+                                  ) : null}
                                 </div>
                                 <span className="text-[11px] tabular-nums text-muted-foreground/45">
-                                  {formatConversationTime(card.updatedAt)}
+                                  {formatBoardTime(card.updatedAt)}
                                 </span>
                               </div>
                             </InfoCardContent>
@@ -320,25 +266,25 @@ export function BoardView({ boardFilter }: BoardViewProps) {
               );
             })}
         </div>
-        </div>
+      </div>
 
-        <RenameDialog
-          open={renameCardId !== null}
-           title={m.board_rename_conversation()}
-          initialValue={renameCardTitle}
-          placeholder={m.untitled_conversation()}
-          onClose={() => {
-            setRenameCardId(null);
-            setRenameCardTitle("");
-          }}
-          onSubmit={(name) => {
-            if (renameCardId && name !== renameCardTitle) {
-              void updateConversation(renameCardId, { title: name });
-            }
-            setRenameCardId(null);
-            setRenameCardTitle("");
-          }}
-        />
+      <RenameDialog
+        open={renameCardId !== null}
+        title={m.board_rename_conversation()}
+        initialValue={renameCardTitle}
+        placeholder={m.untitled_conversation()}
+        onClose={() => {
+          setRenameCardId(null);
+          setRenameCardTitle("");
+        }}
+        onSubmit={(name) => {
+          if (renameCardId && name !== renameCardTitle) {
+            updateTask(renameCardId, { title: name });
+          }
+          setRenameCardId(null);
+          setRenameCardTitle("");
+        }}
+      />
     </div>
   );
 }

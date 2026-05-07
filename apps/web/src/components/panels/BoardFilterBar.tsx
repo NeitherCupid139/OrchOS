@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ConversationBoardFilter } from "./BoardView";
+import type { BoardTaskFilter } from "./BoardView";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { m } from "@/paraglide/messages";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 const conversationBoardColumns: Array<{
-  id: ConversationBoardFilter;
+  id: BoardTaskFilter;
   label: string;
   icon: typeof File02Icon;
   tone: string;
@@ -54,8 +54,8 @@ const conversationBoardColumns: Array<{
 ];
 
 interface BoardFilterBarProps {
-  boardFilter: ConversationBoardFilter;
-  onBoardFilterChange: (filter: ConversationBoardFilter) => void;
+  boardFilter: BoardTaskFilter;
+  onBoardFilterChange: (filter: BoardTaskFilter) => void;
   boardCardsCount?: number;
 }
 
@@ -93,7 +93,7 @@ export function BoardFilterBar({
             <button
               key={column.id}
               type="button"
-              onClick={() => onBoardFilterChange(column.id as ConversationBoardFilter)}
+              onClick={() => onBoardFilterChange(column.id as BoardTaskFilter)}
               aria-pressed={boardFilter === column.id}
                className={cn(
                  "inline-flex h-7 cursor-pointer items-center gap-2 rounded-full border px-3 text-[11px] font-medium transition-colors",
