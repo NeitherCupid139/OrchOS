@@ -10,7 +10,7 @@ export const bookmarksRouter = {
     return BookmarkService.replaceAll(await getLocalDb(), input.categories);
   }),
   createCategory: os.bookmarks.createCategory.handler(async ({ input }) => {
-    return BookmarkService.createCategory(await getLocalDb(), input.name);
+    return BookmarkService.createCategory(await getLocalDb(), input.name, input.icon);
   }),
   createItem: os.bookmarks.createItem.handler(async ({ input }) => {
     return BookmarkService.createBookmark(await getLocalDb(), input.categoryId, {
@@ -19,7 +19,10 @@ export const bookmarksRouter = {
     });
   }),
   updateCategory: os.bookmarks.updateCategory.handler(async ({ input }) => {
-    return BookmarkService.updateCategory(await getLocalDb(), input.id, input.name);
+    return BookmarkService.updateCategory(await getLocalDb(), input.id, {
+      name: input.name,
+      icon: input.icon,
+    });
   }),
   deleteCategory: os.bookmarks.deleteCategory.handler(async ({ input }) => {
     return BookmarkService.deleteCategory(await getLocalDb(), input.id);

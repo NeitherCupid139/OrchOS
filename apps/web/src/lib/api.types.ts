@@ -340,6 +340,7 @@ export interface BookmarkItem {
 export interface BookmarkCategory {
   id: string;
   name: string;
+  icon: string;
   bookmarks: BookmarkItem[];
 }
 

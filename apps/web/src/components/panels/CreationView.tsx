@@ -1179,18 +1179,15 @@ function ChatArea({
   return (
     <LayoutGroup id="creation-mode-layout">
       <div className="relative flex flex-1 flex-col overflow-hidden">
-        <AnimatePresence initial={false} mode="popLayout">
+        <AnimatePresence initial={false} mode="wait">
           {showBookmarks ? (
-            <motion.div
-              key="bookmark-mode"
-              layout
-              transition={{ type: "spring", duration: 0.35, bounce: 0 }}
-              className="contents"
-            >
+            <motion.div key="bookmark-mode" className="contents">
               {inputArea}
               <motion.div
-                layout
-                transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+                initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
+                transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
                 className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 md:px-6"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -1238,15 +1235,12 @@ function ChatArea({
               </motion.div>
             </motion.div>
           ) : (
-            <motion.div
-              key="conversation-mode"
-              layout
-              transition={{ type: "spring", duration: 0.35, bounce: 0 }}
-              className="contents"
-            >
+            <motion.div key="conversation-mode" className="contents">
               <motion.div
-                layout
-                transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+                initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
+                transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
                 className="flex min-h-0 flex-1 flex-col overflow-y-auto"
               >
                 <div className="flex items-center justify-between px-4 py-2 md:px-6">

@@ -338,8 +338,8 @@ export const api = {
   ): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.replaceAll({ categories })) as BookmarkCategory[];
   },
-  createBookmarkCategory: async (name: string): Promise<BookmarkCategory[]> => {
-    return (await orpc.bookmarks.createCategory({ name })) as BookmarkCategory[];
+  createBookmarkCategory: async (name: string, icon?: string): Promise<BookmarkCategory[]> => {
+    return (await orpc.bookmarks.createCategory({ name, icon })) as BookmarkCategory[];
   },
   createBookmarkItem: async (
     categoryId: string,
@@ -353,9 +353,9 @@ export const api = {
   },
   updateBookmarkCategory: async (
     id: string,
-    name: string,
+    data: { name?: string; icon?: string },
   ): Promise<BookmarkCategory[]> => {
-    return (await orpc.bookmarks.updateCategory({ id, name })) as BookmarkCategory[];
+    return (await orpc.bookmarks.updateCategory({ id, ...data })) as BookmarkCategory[];
   },
   deleteBookmarkCategory: async (id: string): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.deleteCategory({ id })) as BookmarkCategory[];

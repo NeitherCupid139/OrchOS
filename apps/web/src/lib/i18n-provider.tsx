@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, createContext, useContext, type ReactNode } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useUIStore } from "@/lib/store";
-import { getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
+import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
 
 interface I18nContextValue {
   locale: string;
@@ -30,6 +30,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       syncRuntimeLocale(locale);
     }
   }, [locale]);
+
+  // Apply any persisted client locale after hydration.
+  useEffect(() => {
+    const hydratedLocale = getHydratedClientLocale();
+    if (hydratedLocale && hydratedLocale !== locale) {
+      setLocaleState(hydratedLocale);
+    }
+  }, []);
 
   // If settings change (e.g. from server fetch), sync to locale state
   useEffect(() => {

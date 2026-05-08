@@ -78,7 +78,7 @@ function ClerkAuthGate({ children }: { children: React.ReactNode }) {
     }
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <AsciiLoading label={m.loading()} />
+        <AsciiLoading label="Loading..." />
       </div>
     );
   }
@@ -86,7 +86,7 @@ function ClerkAuthGate({ children }: { children: React.ReactNode }) {
   if (!isSignedIn) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <AsciiLoading label={m.loading()} />
+        <AsciiLoading label="Loading..." />
       </div>
     );
   }

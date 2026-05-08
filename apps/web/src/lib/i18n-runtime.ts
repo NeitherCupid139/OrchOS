@@ -86,6 +86,11 @@ export function initializeClientLocale() {
 }
 
 export function getInitialLocale() {
+  // Keep the first client render aligned with SSR to avoid hydration mismatches.
+  return getParaglideLocale();
+}
+
+export function getHydratedClientLocale() {
   if (typeof window === "undefined") {
     return getParaglideLocale();
   }

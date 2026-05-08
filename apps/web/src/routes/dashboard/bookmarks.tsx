@@ -5,17 +5,22 @@ import {
   ArrowRight01Icon,
   Add01Icon,
   Bookmark01Icon,
+  CodeIcon,
   Delete02Icon,
   Edit02Icon,
   Folder01Icon,
+  GlobeIcon,
+  Home01Icon,
+  Link01Icon,
   PinIcon,
   Search01Icon,
+  StarIcon,
   Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
 
-import { api } from "@/lib/api";
+import { api, type BookmarkCategory } from "@/lib/api";
 import { useDashboard } from "@/lib/dashboard-context";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
@@ -39,16 +44,38 @@ type ImportedBookmark = {
   pinned: boolean;
 };
 
-type BookmarkCategory = {
-  id: string;
-  name: string;
-  bookmarks: ImportedBookmark[];
-};
-
 type BookmarkDraft = {
   title: string;
   url: string;
 };
+
+const BOOKMARK_CATEGORY_ICONS = ["folder", "globe", "code", "star", "home", "link"] as const;
+
+function getBookmarkCategoryIcon(icon: string) {
+  switch (icon) {
+    case "globe":
+      return GlobeIcon;
+    case "code":
+      return CodeIcon;
+    case "star":
+      return StarIcon;
+    case "home":
+      return Home01Icon;
+    case "link":
+      return Link01Icon;
+    default:
+      return Folder01Icon;
+  }
+}
+
+function getNextBookmarkCategoryIcon(icon: string) {
+  const currentIndex = BOOKMARK_CATEGORY_ICONS.indexOf(icon as (typeof BOOKMARK_CATEGORY_ICONS)[number]);
+  if (currentIndex === -1) {
+    return BOOKMARK_CATEGORY_ICONS[0];
+  }
+
+  return BOOKMARK_CATEGORY_ICONS[(currentIndex + 1) % BOOKMARK_CATEGORY_ICONS.length];
+}
 
 function slugify(value: string) {
   return value
@@ -88,6 +115,7 @@ function normalizeCategory(name: string, bookmarks: ImportedBookmark[], used: Se
   return {
     id: dedupeCategoryId(createImportId("bookmark-category", trimmedName), used),
     name: trimmedName,
+    icon: "folder",
     bookmarks,
   } satisfies BookmarkCategory;
 }
@@ -349,6 +377,7 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
 }
 
 function BookmarksPage() {
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
@@ -420,8 +449,7 @@ function BookmarksPage() {
 
   const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const sidebarEl = event.currentTarget.parentElement;
-    const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
+    const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
 
     setIsResizingSidebar(true);
     document.body.style.cursor = "col-resize";
@@ -488,6 +516,7 @@ function BookmarksPage() {
     const newCategory: BookmarkCategory = {
       id: `custom-${Date.now()}`,
       name,
+      icon: "folder",
       bookmarks: [],
     };
 
@@ -614,6 +643,7 @@ function BookmarksPage() {
       />
 
       <div
+        ref={sidebarRef}
         className={cn(
           "relative hidden min-h-0 shrink-0 flex-col bg-card transition-[width] duration-300 ease-out lg:flex",
           sidebarCollapsed ? "w-0 overflow-hidden" : "w-[var(--bookmarks-sidebar-width)] overflow-visible border-r",
@@ -685,6 +715,7 @@ function BookmarksPage() {
                 <div className="space-y-1">
                     {categories.map((category) => {
                       const isActive = category.id === selectedCategory?.id;
+                      const CategoryIcon = getBookmarkCategoryIcon(category.icon);
 
                       return (
                         <div
@@ -725,46 +756,73 @@ function BookmarksPage() {
                             onClick={() => setSelectedCategoryId(category.id)}
                             className="flex min-w-0 flex-1 items-center gap-3 text-left"
                           >
-                            <HugeiconsIcon icon={Folder01Icon} className="size-3.5 shrink-0 text-muted-foreground" />
+                            <HugeiconsIcon icon={CategoryIcon} className="size-3.5 shrink-0 text-muted-foreground" />
                             <span className="min-w-0 flex-1 truncate text-sm text-foreground">{category.name}</span>
                           </button>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={(props) => (
-                                <Button
-                                  {...props}
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => setRenameCategoryId(category.id)}
-                                  className="opacity-0 transition-opacity group-hover:opacity-100"
-                                >
-                                  <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                                </Button>
-                              )}
-                            />
-                            <TooltipContent side="top">{m.edit_category()}</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={(props) => (
-                                <Button
-                                  {...props}
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => setDeleteCategoryId(category.id)}
-                                  className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                                >
-                                  <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                </Button>
-                              )}
-                            />
-                            <TooltipContent side="top">{m.delete_category()}</TooltipContent>
-                          </Tooltip>
-                          <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground group-hover:hidden">
-                            {category.bookmarks.length}
-                          </span>
+                          <div className="relative ml-auto h-6 w-[76px] shrink-0">
+                            <div className="absolute inset-0 flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={(props) => (
+                                    <Button
+                                      {...props}
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => {
+                                        const nextIcon = getNextBookmarkCategoryIcon(category.icon);
+                                        void api.updateBookmarkCategory(category.id, { icon: nextIcon }).then((saved) => {
+                                          setCategories(saved);
+                                          setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
+                                        }).catch((error) => {
+                                          toast.error(error instanceof Error ? error.message : m.failed_to_rename_category());
+                                        });
+                                      }}
+                                    >
+                                      <HugeiconsIcon icon={CategoryIcon} className="size-3.5" />
+                                    </Button>
+                                  )}
+                                />
+                                <TooltipContent side="top">{m.edit_category()}</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={(props) => (
+                                    <Button
+                                      {...props}
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => setRenameCategoryId(category.id)}
+                                    >
+                                      <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                    </Button>
+                                  )}
+                                />
+                                <TooltipContent side="top">{m.edit_category()}</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={(props) => (
+                                    <Button
+                                      {...props}
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => setDeleteCategoryId(category.id)}
+                                      className="hover:text-destructive"
+                                    >
+                                      <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                    </Button>
+                                  )}
+                                />
+                                <TooltipContent side="top">{m.delete_category()}</TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <span className="absolute inset-y-0 right-0 flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
+                              {category.bookmarks.length}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -779,16 +837,16 @@ function BookmarksPage() {
           role="separator"
           aria-orientation="vertical"
           aria-label={m.resize_bookmarks_sidebar()}
-          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4",
+            "group pointer-events-none absolute right-[-8px] top-0 z-20 h-full w-4",
             sidebarCollapsed && "hidden",
             isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
+            onPointerDown={handleResizeStart}
             className={cn(
-              "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >
@@ -833,7 +891,13 @@ function BookmarksPage() {
               <>
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <h1 className="text-2xl font-semibold text-foreground truncate">{selectedCategory.name}</h1>
+                    <h1 className="flex items-center gap-2 truncate text-2xl font-semibold text-foreground">
+                      <HugeiconsIcon
+                        icon={getBookmarkCategoryIcon(selectedCategory.icon)}
+                        className="size-5 shrink-0 text-muted-foreground"
+                      />
+                      <span className="truncate">{selectedCategory.name}</span>
+                    </h1>
                     <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
                       {m.bookmark_count({ count: selectedCategory.bookmarks.length })}
                     </p>
@@ -997,10 +1061,14 @@ function BookmarksPage() {
         placeholder={m.category_name()}
         onClose={() => setRenameCategoryId(null)}
         onSubmit={(name) => {
-          const nextCategories = categories.map((category) =>
-            category.id === renameCategoryId ? { ...category, name } : category,
-          );
-          void persistCategories(nextCategories, selectedCategoryId).then(() => {
+          const category = categories.find((item) => item.id === renameCategoryId);
+          if (!category) {
+            return;
+          }
+
+          void api.updateBookmarkCategory(category.id, { name }).then((saved) => {
+            setCategories(saved);
+            setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
             setRenameCategoryId(null);
             toast.success(m.category_renamed());
           }).catch((error) => {

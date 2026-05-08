@@ -112,12 +112,17 @@ export function runLightweightMigrations(db: AppDb) {
       CREATE TABLE "bookmark_categories" (
         "id" TEXT PRIMARY KEY NOT NULL,
         "name" TEXT NOT NULL,
+        "icon" TEXT NOT NULL DEFAULT 'folder',
         "sort_order" TEXT NOT NULL DEFAULT '0',
         "created_at" TEXT NOT NULL,
         "updated_at" TEXT NOT NULL
       )
     `);
     exec("CREATE INDEX \"idx_bookmark_categories_sort_order\" ON \"bookmark_categories\" (\"sort_order\")");
+  }
+
+  if (hasTable("bookmark_categories") && !hasColumn("bookmark_categories", "icon")) {
+    exec("ALTER TABLE bookmark_categories ADD COLUMN icon TEXT NOT NULL DEFAULT 'folder'");
   }
 
   if (!hasTable("bookmarks")) {
