@@ -4,10 +4,18 @@ import {
   Add01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Calendar01Icon,
   Calendar03Icon,
+  Calendar04Icon,
+  CalendarCheckIn01Icon,
+  CalendarFavorite01Icon,
+  CalendarLove01Icon,
+  CalendarUserIcon,
+  CalendarsIcon,
   Delete02Icon,
   Edit02Icon,
   GoogleIcon,
+  ViewOffSlashIcon,
   SquareArrowDataTransferHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -15,14 +23,18 @@ import { toast } from "@/components/ui/toast";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
+import { FullScreenCalendar, type FullScreenCalendarDay } from "@/components/ui/fullscreen-calendar";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { api, type Integration } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { useBoardStore } from "@/lib/stores/board";
 import { useUIStore } from "@/lib/store";
+import type { BoardTaskColumnId } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
 type CalendarIntegrationAccount = {
@@ -48,6 +60,7 @@ type LocalCalendar = {
   name: string;
   color: string;
   description: string;
+  icon: string;
 };
 
 type LocalCalendarEvent = {
@@ -67,6 +80,17 @@ type LocalCalendarStore = {
   events: LocalCalendarEvent[];
 };
 
+type CalendarRenderableEvent = LocalCalendarEvent & {
+  source?: "calendar" | "task";
+};
+
+type CalendarEventDetail = {
+  event: CalendarRenderableEvent;
+  task?: ReturnType<typeof useBoardStore.getState>["tasks"][number];
+  calendar?: LocalCalendar;
+  group?: LocalCalendarGroup;
+};
+
 type LocalGroupFormState = {
   id: string | null;
   name: string;
@@ -78,6 +102,7 @@ type LocalCalendarFormState = {
   name: string;
   color: string;
   description: string;
+  icon: string;
 };
 
 type LocalEventFormState = {
@@ -93,6 +118,16 @@ type LocalEventFormState = {
 
 const LOCAL_CALENDAR_STORAGE_KEY = "orchos-local-calendars";
 const LOCAL_CALENDAR_COLORS = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#ea580c", "#dc2626", "#db2777"];
+const LOCAL_CALENDAR_ICONS: { name: string; component: typeof Calendar03Icon }[] = [
+  { name: "Calendar01", component: Calendar01Icon },
+  { name: "Calendar03", component: Calendar03Icon },
+  { name: "Calendar04", component: Calendar04Icon },
+  { name: "CalendarCheckIn01", component: CalendarCheckIn01Icon },
+  { name: "CalendarFavorite01", component: CalendarFavorite01Icon },
+  { name: "CalendarLove01", component: CalendarLove01Icon },
+  { name: "CalendarUser", component: CalendarUserIcon },
+  { name: "Calendars", component: CalendarsIcon },
+];
 
 export const Route = createFileRoute("/dashboard/calendar")({ component: CalendarPage });
 
@@ -100,6 +135,7 @@ function CalendarPage() {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [selectedSidebarItem, setSelectedSidebarItem] = useState<string>("google-overview");
+  const [hiddenCalendarIds, setHiddenCalendarIds] = useState<string[]>([]);
   const [isCalendarSourceDialogOpen, setIsCalendarSourceDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLocalGroupDialogOpen, setIsLocalGroupDialogOpen] = useState(false);
@@ -116,7 +152,9 @@ function CalendarPage() {
   const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(new Date()));
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const calendarViewMode = useUIStore((s) => s.calendarViewMode);
-  const viewMode = calendarViewMode;
+  const boardTasks = useBoardStore((state) => state.tasks);
+  const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "events" | "tasks">("all");
+  const [selectedEventDetailId, setSelectedEventDetailId] = useState<string | null>(null);
   const [localGroupForm, setLocalGroupForm] = useState<LocalGroupFormState>({ id: null, name: "" });
   const [localCalendarForm, setLocalCalendarForm] = useState<LocalCalendarFormState>({
     id: null,
@@ -124,9 +162,11 @@ function CalendarPage() {
     name: "",
     color: LOCAL_CALENDAR_COLORS[0],
     description: "",
+    icon: "Calendar03",
   });
   const [localEventForm, setLocalEventForm] = useState<LocalEventFormState>(() => createEmptyEventForm());
   const collapseTimerRef = useRef<number | null>(null);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({
     label: "",
     clientId: "",
@@ -144,19 +184,6 @@ function CalendarPage() {
   const localCalendars = localStore.calendars;
   const localEvents = localStore.events;
   const hasSidebarCalendars = accounts.length > 0 || localGroups.length > 0;
-  const selectedLocalGroupId = selectedSidebarItem.startsWith("local-group:")
-    ? selectedSidebarItem.slice("local-group:".length)
-    : null;
-  const selectedLocalCalendarId = selectedSidebarItem.startsWith("local-calendar:")
-    ? selectedSidebarItem.slice("local-calendar:".length)
-    : null;
-  const selectedLocalGroup = selectedLocalGroupId
-    ? localGroups.find((group) => group.id === selectedLocalGroupId) ?? null
-    : null;
-  const selectedLocalCalendar = selectedLocalCalendarId
-    ? localCalendars.find((calendar) => calendar.id === selectedLocalCalendarId) ?? null
-    : null;
-
   const groupedLocalCalendars = useMemo(
     () =>
       localGroups.map((group) => ({
@@ -167,16 +194,10 @@ function CalendarPage() {
   );
 
   const activeLocalCalendarIds = useMemo(() => {
-    if (selectedLocalCalendar) {
-      return [selectedLocalCalendar.id];
-    }
-
-    if (selectedLocalGroup) {
-      return localCalendars.filter((calendar) => calendar.groupId === selectedLocalGroup.id).map((calendar) => calendar.id);
-    }
-
-    return localCalendars.map((calendar) => calendar.id);
-  }, [localCalendars, selectedLocalCalendar, selectedLocalGroup]);
+    return localCalendars
+      .filter((calendar) => !hiddenCalendarIds.includes(calendar.id))
+      .map((calendar) => calendar.id);
+  }, [hiddenCalendarIds, localCalendars]);
 
   const localEventsInScope = useMemo(() => {
     const ids = new Set(activeLocalCalendarIds);
@@ -199,9 +220,66 @@ function CalendarPage() {
     return grouped;
   }, [localEventsInScope]);
 
-  const selectedDateEvents = eventsByDay.get(selectedLocalDate) ?? [];
+  const renderableEvents = useMemo<CalendarRenderableEvent[]>(
+    () => [...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })), ...boardTasksToCalendarEvents(boardTasks)],
+    [boardTasks, localEventsInScope],
+  );
 
-  const monthDays = useMemo(() => buildMonthGrid(visibleMonth), [visibleMonth]);
+  const fullScreenCalendarData = useMemo<FullScreenCalendarDay[]>(
+    () =>
+      renderableEvents
+        .filter((event) => {
+          if (calendarSourceFilter === "events") return event.source !== "task";
+          if (calendarSourceFilter === "tasks") return event.source === "task";
+          return true;
+        })
+        .reduce<FullScreenCalendarDay[]>((groups, event) => {
+        const day = new Date(event.startAt);
+        const dayKey = formatDayKey(day);
+        const entry = {
+          id: event.id,
+          name: event.title,
+          time: event.allDay ? m.calendar_all_day() : formatTime(event.startAt),
+          datetime: event.startAt,
+          endDatetime: event.endAt,
+          source: event.source,
+        };
+        const existing = groups.find((item) => formatDayKey(item.day) === dayKey);
+
+        if (existing) {
+          existing.events.push(entry);
+          return groups;
+        }
+
+        groups.push({ day, events: [entry] });
+        return groups;
+      }, []),
+    [calendarSourceFilter, renderableEvents],
+  );
+
+  const selectedEventDetail = useMemo<CalendarEventDetail | null>(() => {
+    if (!selectedEventDetailId) return null;
+
+    const event = renderableEvents.find((item) => String(item.id) === selectedEventDetailId);
+    if (!event) return null;
+
+    if (event.source === "task") {
+      const taskId = String(event.id).replace(/^task-/, "");
+      const task = boardTasks.find((item) => item.id === taskId);
+      return {
+        event,
+        task,
+      };
+    }
+
+    const calendar = localCalendars.find((item) => item.id === event.calendarId);
+    const group = calendar ? localGroups.find((item) => item.id === calendar.groupId) : undefined;
+    return {
+      event,
+      calendar,
+      group,
+    };
+  }, [boardTasks, localCalendars, localGroups, renderableEvents, selectedEventDetailId]);
 
   useEffect(() => {
     void loadIntegrations();
@@ -257,18 +335,8 @@ function CalendarPage() {
   }, [localStore, localStoreLoaded]);
 
   useEffect(() => {
-    if (selectedSidebarItem.startsWith("local-calendar:") && !selectedLocalCalendar) {
-      setSelectedSidebarItem(localGroups.length > 0 ? "local-overview" : "google-overview");
-      return;
-    }
-
-    if (selectedSidebarItem.startsWith("local-group:") && !selectedLocalGroup) {
-      setSelectedSidebarItem(localGroups.length > 0 ? "local-overview" : "google-overview");
-    }
-  }, [localGroups.length, selectedLocalCalendar, selectedLocalGroup, selectedSidebarItem]);
-
-  useEffect(() => {
-    if (selectedDateEvents.length > 0) {
+    const selectedDay = eventsByDay.get(selectedLocalDate);
+    if (selectedDay && selectedDay.length > 0) {
       return;
     }
 
@@ -276,7 +344,113 @@ function CalendarPage() {
     if (nextAvailableDay) {
       setSelectedLocalDate(nextAvailableDay);
     }
-  }, [eventsByDay, selectedDateEvents.length]);
+  }, [eventsByDay, selectedLocalDate]);
+
+  const handleCalendarSelectDay = useCallback((day: Date) => {
+    setSelectedLocalDate(formatDayKey(day));
+    setVisibleMonth(startOfMonth(day));
+  }, []);
+
+  const handleCalendarMonthChange = useCallback((day: Date) => {
+    const nextMonth = startOfMonth(day);
+    setVisibleMonth(nextMonth);
+    setSelectedLocalDate((current) => {
+      const currentDate = parseDayKey(current);
+      if (calendarViewMode !== "month") {
+        return formatDayKey(day);
+      }
+      return currentDate.getMonth() === nextMonth.getMonth() && currentDate.getFullYear() === nextMonth.getFullYear()
+        ? current
+        : formatDayKey(nextMonth);
+    });
+  }, [calendarViewMode]);
+
+  const updateBoardTask = useBoardStore((state) => state.updateTask);
+
+  const handleCreateCalendarSlot = useCallback((start: Date, end: Date) => {
+    const defaultCalendarId = activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
+    if (!defaultCalendarId) {
+      toast.error(m.calendar_create_local_first());
+      return;
+    }
+
+    setSelectedLocalDate(formatDayKey(start));
+    setVisibleMonth(startOfMonth(start));
+    setLocalEventForm({
+      id: null,
+      calendarId: defaultCalendarId,
+      title: "",
+      description: "",
+      location: "",
+      startAt: toDateTimeLocalValue(start),
+      endAt: toDateTimeLocalValue(end),
+      allDay: false,
+    });
+    setIsLocalEventDialogOpen(true);
+  }, [activeLocalCalendarIds, localCalendars]);
+
+  const handleUpdateTaskEvent = useCallback((eventId: string, updates: { start: Date; end: Date }) => {
+    const taskId = eventId.replace(/^task-/, "");
+    updateBoardTask(taskId, {
+      dueDate: formatDayKey(updates.start),
+    });
+  }, [updateBoardTask]);
+
+  const handleCycleTaskStatus = useCallback((eventId: string) => {
+    const taskId = eventId.replace(/^task-/, "");
+    const task = boardTasks.find((item) => item.id === taskId);
+    if (!task) return;
+
+    const order = ["planning", "in_progress", "review", "completed"] as const;
+    const nextColumn = order[(order.indexOf(task.column) + 1) % order.length];
+    updateBoardTask(taskId, { column: nextColumn });
+  }, [boardTasks, updateBoardTask]);
+
+  const toggleCalendarVisibility = useCallback((calendarId: string) => {
+    setHiddenCalendarIds((current) =>
+      current.includes(calendarId)
+        ? current.filter((id) => id !== calendarId)
+        : [...current, calendarId],
+    );
+  }, []);
+
+  const openEventDetail = useCallback((eventId: string) => {
+    setSelectedEventDetailId(eventId);
+    const event = renderableEvents.find((item) => String(item.id) === eventId);
+    if (!event) return;
+
+    const date = new Date(event.startAt);
+    setSelectedLocalDate(formatDayKey(date));
+    setVisibleMonth(startOfMonth(date));
+  }, [renderableEvents]);
+
+  const handleOpenCalendarEvent = useCallback((event: FullScreenCalendarDay["events"][number]) => {
+    openEventDetail(String(event.id));
+  }, [openEventDetail]);
+
+  const handleCloseEventDetail = useCallback(() => {
+    setSelectedEventDetailId(null);
+  }, []);
+
+  const handleEditSelectedEvent = useCallback(() => {
+    if (!selectedEventDetail || selectedEventDetail.event.source === "task") return;
+    openLocalEventDialog(formatDayKey(new Date(selectedEventDetail.event.startAt)), selectedEventDetail.event);
+  }, [selectedEventDetail]);
+
+  const handleMoveSelectedTaskDate = useCallback((days: number) => {
+    if (!selectedEventDetail?.task?.dueDate) return;
+    const current = parseDayKey(selectedEventDetail.task.dueDate);
+    const next = new Date(current);
+    next.setDate(current.getDate() + days);
+    updateBoardTask(selectedEventDetail.task.id, {
+      dueDate: formatDayKey(next),
+    });
+  }, [selectedEventDetail, updateBoardTask]);
+
+  const handleSetSelectedTaskColumn = useCallback((column: BoardTaskColumnId) => {
+    if (!selectedEventDetail?.task) return;
+    updateBoardTask(selectedEventDetail.task.id, { column });
+  }, [selectedEventDetail, updateBoardTask]);
 
   async function loadIntegrations() {
     setLoading(true);
@@ -341,30 +515,8 @@ function CalendarPage() {
     setIsLocalGroupDialogOpen(true);
   }
 
-  function openLocalCalendarDialog(groupId?: string, calendar?: LocalCalendar) {
-    setIsCalendarSourceDialogOpen(false);
-    if (calendar) {
-      setLocalCalendarForm({
-        id: calendar.id,
-        groupId: calendar.groupId,
-        name: calendar.name,
-        color: calendar.color,
-        description: calendar.description,
-      });
-    } else {
-      setLocalCalendarForm({
-        id: null,
-        groupId: groupId ?? localGroups[0]?.id ?? "",
-        name: "",
-        color: LOCAL_CALENDAR_COLORS[0],
-        description: "",
-      });
-    }
-    setIsLocalCalendarDialogOpen(true);
-  }
-
   function openLocalEventDialog(dayKey?: string, event?: LocalCalendarEvent) {
-    const defaultCalendarId = event?.calendarId ?? selectedLocalCalendar?.id ?? activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
+    const defaultCalendarId = event?.calendarId ?? activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
 
     if (!defaultCalendarId) {
       toast.error(m.calendar_create_local_first());
@@ -461,6 +613,7 @@ function CalendarPage() {
                   name,
                   color: localCalendarForm.color,
                   description: localCalendarForm.description.trim(),
+                  icon: localCalendarForm.icon,
                 }
               : calendar,
           ),
@@ -480,6 +633,7 @@ function CalendarPage() {
             name,
             color: localCalendarForm.color,
             description: localCalendarForm.description.trim(),
+            icon: localCalendarForm.icon,
           },
         ],
       };
@@ -558,32 +712,6 @@ function CalendarPage() {
     toast.success(m.calendar_group_deleted());
   }
 
-  function handleDeleteLocalCalendar(calendar: LocalCalendar) {
-    if (!window.confirm(m.calendar_delete_calendar_confirm({ name: calendar.name }))) {
-      return;
-    }
-
-    setLocalStore((current) => ({
-      ...current,
-      calendars: current.calendars.filter((item) => item.id !== calendar.id),
-      events: current.events.filter((item) => item.calendarId !== calendar.id),
-    }));
-    setSelectedSidebarItem(`local-group:${calendar.groupId}`);
-    toast.success(m.calendar_calendar_deleted());
-  }
-
-  function handleDeleteLocalEvent(event: LocalCalendarEvent) {
-    if (!window.confirm(m.calendar_delete_event_confirm({ title: event.title }))) {
-      return;
-    }
-
-    setLocalStore((current) => ({
-      ...current,
-      events: current.events.filter((item) => item.id !== event.id),
-    }));
-    toast.success(m.calendar_event_deleted());
-  }
-
   const handleCollapseSidebar = useCallback(() => {
     if (collapseTimerRef.current !== null) {
       window.clearTimeout(collapseTimerRef.current);
@@ -608,8 +736,7 @@ function CalendarPage() {
 
   const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const sidebarEl = event.currentTarget.parentElement;
-    const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
+    const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
 
     setIsResizingSidebar(true);
     document.body.style.cursor = "col-resize";
@@ -633,9 +760,10 @@ function CalendarPage() {
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
+          ref={sidebarRef}
           className={cn(
             "relative hidden min-h-0 shrink-0 flex-col bg-card transition-[width] duration-300 ease-out lg:flex",
             sidebarCollapsed ? "w-0 overflow-hidden" : "w-[var(--calendar-sidebar-width)] overflow-visible border-r",
@@ -763,17 +891,11 @@ function CalendarPage() {
                     {groupedLocalCalendars.length > 0 ? (
                       <div className="space-y-0.5">
                         {groupedLocalCalendars.map(({ group, calendars }) => {
-                          const isGroupActive = selectedSidebarItem === `local-group:${group.id}`;
-
                           return (
-                              <div key={group.id}>
+                            <div key={group.id}>
                               <div
-                                onClick={() => setSelectedSidebarItem(`local-group:${group.id}`)}
                                 className={cn(
-                                  "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
-                                  isGroupActive
-                                    ? "bg-accent font-medium text-accent-foreground"
-                                    : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                  "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
                                 )}
                               >
                                 <HugeiconsIcon
@@ -787,7 +909,10 @@ function CalendarPage() {
                                       type="button"
                                       variant="ghost"
                                       size="icon-xs"
-                                      onClick={(e) => { e.stopPropagation(); openLocalGroupDialog(group); }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openLocalGroupDialog(group);
+                                      }}
                                       title={m.edit()}
                                     >
                                       <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
@@ -796,38 +921,48 @@ function CalendarPage() {
                                       type="button"
                                       variant="ghost"
                                       size="icon-xs"
-                                      onClick={(e) => { e.stopPropagation(); handleDeleteLocalGroup(group); }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteLocalGroup(group);
+                                      }}
                                       className="hover:text-destructive"
                                       title={m.calendar_delete_group()}
                                     >
                                       <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
                                     </Button>
                                   </div>
-                                  <span className="col-start-1 row-start-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0 pointer-events-none">{calendars.length}</span>
+                                  <span className="pointer-events-none col-start-1 row-start-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
+                                    {calendars.length}
+                                  </span>
                                 </div>
                               </div>
 
                               <div className="ml-3 space-y-0.5">
                                 {calendars.map((calendar) => {
-                                  const isCalendarActive = selectedSidebarItem === `local-calendar:${calendar.id}`;
+                                  const isHidden = hiddenCalendarIds.includes(calendar.id);
 
                                   return (
                                     <div
                                       key={calendar.id}
-                                      onClick={() => setSelectedSidebarItem(`local-calendar:${calendar.id}`)}
                                       className={cn(
-                                        "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
-                                        isCalendarActive
-                                          ? "bg-accent font-medium text-accent-foreground"
-                                          : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                        "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                        isHidden && "opacity-45",
                                       )}
                                     >
-                                      <span
-                                        className="size-2 shrink-0 rounded-full"
-                                        style={{ backgroundColor: calendar.color }}
-                                        aria-hidden="true"
+                                      <HugeiconsIcon
+                                        icon={LOCAL_CALENDAR_ICONS.find((i) => i.name === calendar.icon)?.component ?? Calendar03Icon}
+                                        className="size-3.5 shrink-0"
+                                        style={{ color: calendar.color }}
                                       />
                                       <span className="min-w-0 flex-1 truncate">{calendar.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleCalendarVisibility(calendar.id)}
+                                        className="mr-1 inline-flex size-7 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-background/70 group-hover:opacity-100"
+                                        aria-label={isHidden ? "Show calendar" : "Hide calendar"}
+                                      >
+                                        <HugeiconsIcon icon={ViewOffSlashIcon} className={cn("size-3.5", isHidden && "opacity-60")} />
+                                      </button>
                                       <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                         {localEvents.filter((event) => event.calendarId === calendar.id).length}
                                       </span>
@@ -841,7 +976,10 @@ function CalendarPage() {
                       </div>
                     ) : (
                       <div className="py-6 text-center">
-                        <HugeiconsIcon icon={Calendar03Icon} className="mx-auto mb-1.5 size-5 text-muted-foreground/30" />
+                        <HugeiconsIcon
+                          icon={Calendar03Icon}
+                          className="mx-auto mb-1.5 size-5 text-muted-foreground/30"
+                        />
                         <p className="text-xs text-muted-foreground">{m.calendar_no_groups_desc()}</p>
                       </div>
                     )}
@@ -853,35 +991,36 @@ function CalendarPage() {
             )}
           </div>
 
+        </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={m.resize_calendar_sidebar()}
+          className={cn(
+            "group pointer-events-none absolute right-[-8px] top-0 z-20 h-full w-4",
+            sidebarCollapsed && "hidden",
+            isResizingSidebar &&
+              "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
+          )}
+        >
           <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label={m.resize_calendar_sidebar()}
             onPointerDown={handleResizeStart}
             className={cn(
-              "group absolute right-[-8px] top-0 z-20 h-full w-4",
-              sidebarCollapsed && "hidden",
-              isResizingSidebar &&
-                "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
+              "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >
             <div
               className={cn(
-                "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
-                isResizingSidebar && "border-border bg-muted shadow-md",
+                "h-8 w-px rounded-full bg-border transition-[background-color] duration-150 ease-out group-hover:bg-foreground/35",
+                isResizingSidebar && "opacity-0",
               )}
-            >
-              <div
-                className={cn(
-                  "h-8 w-px rounded-full bg-border transition-[background-color] duration-150 ease-out group-hover:bg-foreground/35",
-                  isResizingSidebar && "opacity-0",
-                )}
-              />
-            </div>
+            />
           </div>
         </div>
 
-        <div className="relative min-w-0 flex-1 overflow-hidden">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {sidebarCollapsed ? (
             <Tooltip>
               <TooltipTrigger
@@ -928,29 +1067,22 @@ function CalendarPage() {
                       className="w-full max-w-lg"
                     />
                   </div>
-                ) : selectedLocalCalendar ? (
-                  <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+                ) : (
+                  <section className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
                     <div className="space-y-6">
                       <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-3">
-                              <span className="size-3 rounded-full" style={{ backgroundColor: selectedLocalCalendar.color }} aria-hidden="true" />
-                              <h2 className="text-balance text-xl font-semibold text-foreground">{selectedLocalCalendar.name}</h2>
-                            </div>
-                            <p className="mt-2 text-sm text-muted-foreground">
-                              {selectedLocalCalendar.description || m.calendar_fallback_desc()}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <div className="text-sm font-medium text-muted-foreground">{m.calendar_overview()}</div>
+                            <h2 className="mt-1 text-balance text-2xl font-semibold text-foreground">{m.calendar_local_workspace()}</h2>
+                            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                              All calendars are shown together by default. Hide any calendar from the sidebar eye control.
                             </p>
-                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                              <span className="rounded-full bg-muted px-2.5 py-1">{selectedLocalGroup?.name ?? m.calendar_ungrouped()}</span>
-                              <span className="rounded-full bg-muted px-2.5 py-1">
-                                {m.calendar_n_events({ n: localEventsInScope.length })}
-                              </span>
-                            </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <Button type="button" variant="outline" onClick={() => openLocalCalendarDialog(selectedLocalCalendar.groupId, selectedLocalCalendar)}>
-                              {m.calendar_edit_calendar()}
+                            <Button type="button" variant="outline" onClick={() => openLocalGroupDialog()}>
+                              <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                              {m.calendar_new_group()}
                             </Button>
                             <Button type="button" onClick={() => openLocalEventDialog(selectedLocalDate)}>
                               <HugeiconsIcon icon={Add01Icon} className="size-4" />
@@ -958,636 +1090,68 @@ function CalendarPage() {
                             </Button>
                           </div>
                         </div>
+
+                        <div className="mt-6 grid gap-4 md:grid-cols-4">
+                          <MetricCard label={m.calendar_groups()} value={localGroups.length} />
+                          <MetricCard label={m.calendar_calendars()} value={localCalendars.length} />
+                          <MetricCard label={m.calendar_events()} value={localEvents.length} />
+                          <MetricCard label="Tasks" value={boardTasksToCalendarEvents(boardTasks).length} />
+                        </div>
                       </div>
 
-                      <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="text-lg font-semibold text-foreground">
-                              {viewMode === "day"
-                                ? formatLongDate(selectedLocalDate)
-                                : viewMode === "week"
-                                  ? formatWeekRange(parseDayKey(selectedLocalDate))
-                                  : formatMonthLabel(visibleMonth)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={<Button type="button" variant="outline" size="sm" onClick={() => {
-                                  if (viewMode === "month") setVisibleMonth((c) => addMonths(c, -1));
-                                  else if (viewMode === "week") setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), -7)));
-                                  else setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), -1)));
-                                }}>
-                                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                                </Button>}
-                              />
-                              <TooltipContent side="top">{m.previous()}</TooltipContent>
-                            </Tooltip>
-                            <Button type="button" variant="outline" size="sm" onClick={() => {
-                              const today = formatDayKey(new Date());
-                              setSelectedLocalDate(today);
-                              setVisibleMonth(startOfMonth(new Date()));
-                            }}>
-                              {m.today()}
-                            </Button>
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={<Button type="button" variant="outline" size="sm" onClick={() => {
-                                  if (viewMode === "month") setVisibleMonth((c) => addMonths(c, 1));
-                                  else if (viewMode === "week") setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), 7)));
-                                  else setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), 1)));
-                                }}>
-                                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                                </Button>}
-                              />
-                              <TooltipContent side="top">{m.next()}</TooltipContent>
-                            </Tooltip>
-                          </div>
+                      <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
+                        <div className="border-b border-border/60 px-4 py-3">
+                          <Tabs value={calendarSourceFilter} onValueChange={(value) => setCalendarSourceFilter(value as "all" | "events" | "tasks")}>
+                            <TabsList>
+                              <TabsTrigger value="all">All</TabsTrigger>
+                              <TabsTrigger value="events">Events</TabsTrigger>
+                              <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
                         </div>
-
-                        {viewMode === "day" ? (
-                          <div className="mt-4 space-y-3">
-                            {selectedDateEvents.length > 0 ? selectedDateEvents.map((event) => {
-                              const calendar = localCalendars.find((item) => item.id === event.calendarId);
-                              return (
-                                <div key={event.id} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-4">
-                                  <div className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: calendar?.color ?? LOCAL_CALENDAR_COLORS[0] }} />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="text-sm font-medium text-foreground">{event.title}</div>
-                                    <div className="mt-0.5 text-xs text-muted-foreground">
-                                      {event.allDay ? m.calendar_all_day() : `${formatTime(event.startAt)} – ${formatTime(event.endAt)}`}
-                                    </div>
-                                    {event.description ? <p className="mt-2 text-sm text-muted-foreground">{event.description}</p> : null}
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => openLocalEventDialog(selectedLocalDate, event)}
-                                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                    >
-                                      <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteLocalEvent(event)}
-                                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
-                                    >
-                                      <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            }) : (
-                              <div className="rounded-2xl border border-dashed border-border/60 px-4 py-12 text-center text-sm text-muted-foreground">
-                                {m.calendar_no_events_day()}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                              {getWeekdayLabels().map((label) => (
-                                <div key={label} className="py-2">{label}</div>
-                              ))}
-                            </div>
-
-                            <div className={cn("grid gap-2", viewMode === "week" ? "grid-cols-7" : "grid-cols-7")}>
-                              {(viewMode === "week" ? buildWeekDays(parseDayKey(selectedLocalDate)) : monthDays).map((day) => {
-                                const dayKey = formatDayKey(day);
-                                const dayEvents = eventsByDay.get(dayKey) ?? [];
-                                const isCurrentMonth = viewMode === "month" ? day.getMonth() === visibleMonth.getMonth() : true;
-                                const isToday = dayKey === formatDayKey(new Date());
-                                const isSelected = dayKey === selectedLocalDate;
-
-                                return (
-                                  <button
-                                    key={dayKey}
-                                    type="button"
-                                    onClick={() => setSelectedLocalDate(dayKey)}
-                                    className={cn(
-                                      viewMode === "week" ? "min-h-24 rounded-xl p-2" : "min-h-28 rounded-2xl p-3",
-                                      "border text-left shadow-sm transition-colors hover:bg-accent/40",
-                                      isSelected ? "border-primary/40 bg-primary/5" : "border-border/60 bg-background/80",
-                                      !isCurrentMonth && "opacity-55",
-                                    )}
-                                  >
-                                    <div className="flex items-center justify-between gap-2">
-                                      <span
-                                        className={cn(
-                                          "inline-flex items-center justify-center rounded-full text-sm font-medium tabular-nums",
-                                          viewMode === "week" ? "size-6 text-xs" : "size-7",
-                                          isToday && "bg-foreground text-background",
-                                        )}
-                                      >
-                                        {day.getDate()}
-                                      </span>
-                                      <span className="text-[11px] text-muted-foreground">{dayEvents.length}</span>
-                                    </div>
-                                    <div className={cn("space-y-1", viewMode === "week" ? "mt-2" : "mt-3")}>
-                                      {dayEvents.slice(0, viewMode === "week" ? 2 : 3).map((event) => {
-                                        const calendar = localCalendars.find((item) => item.id === event.calendarId);
-                                        return (
-                                          <div
-                                            key={event.id}
-                                            className="truncate rounded-lg px-1.5 py-0.5 text-xs font-medium"
-                                            style={{
-                                              backgroundColor: `${calendar?.color ?? LOCAL_CALENDAR_COLORS[0]}1A`,
-                                              color: calendar?.color ?? LOCAL_CALENDAR_COLORS[0],
-                                            }}
-                                          >
-                                            {event.title}
-                                          </div>
-                                        );
-                                      })}
-                                      {dayEvents.length > (viewMode === "week" ? 2 : 3) ? (
-                                        <div className="text-xs text-muted-foreground">+{dayEvents.length - (viewMode === "week" ? 2 : 3)} {m.calendar_n_more()}</div>
-                                      ) : null}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
+                        <FullScreenCalendar
+                          data={fullScreenCalendarData}
+                          currentMonth={visibleMonth}
+                          selectedDay={parseDayKey(selectedLocalDate)}
+                          viewMode={calendarViewMode}
+                          onSelectDay={handleCalendarSelectDay}
+                          onCurrentMonthChange={handleCalendarMonthChange}
+                          onCreateEvent={() => openLocalEventDialog(selectedLocalDate)}
+                          onCreateSlot={handleCreateCalendarSlot}
+                          onUpdateTaskEvent={handleUpdateTaskEvent}
+                          onCycleTaskStatus={handleCycleTaskStatus}
+                          onOpenEvent={handleOpenCalendarEvent}
+                        />
                       </div>
                     </div>
 
                     <div className="space-y-6">
                       <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-muted-foreground">{m.calendar_selected_day()}</div>
-                            <div className="mt-1 text-lg font-semibold text-foreground">{formatLongDate(selectedLocalDate)}</div>
-                          </div>
-                          <Button type="button" variant="outline" size="sm" onClick={() => openLocalEventDialog(selectedLocalDate)}>
-                            <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                            {m.add()}
-                          </Button>
+                        <div>
+                          <div className="text-sm font-medium text-muted-foreground">{m.calendar_upcoming()}</div>
+                          <div className="mt-1 text-lg font-semibold text-foreground">{m.calendar_next_events()}</div>
                         </div>
 
                         <div className="mt-5 space-y-3">
-                          {selectedDateEvents.length > 0 ? (
-                            selectedDateEvents.map((event) => {
-                              const calendar = localCalendars.find((item) => item.id === event.calendarId);
-
-                              return (
-                                <div key={event.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <span className="size-2.5 rounded-full" style={{ backgroundColor: calendar?.color ?? LOCAL_CALENDAR_COLORS[0] }} />
-                                        <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                      </div>
-                                      <div className="mt-1 text-xs text-muted-foreground">
-                                        {event.allDay ? m.calendar_all_day() : `${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}
-                                      </div>
-                                      {event.location ? <div className="mt-1 text-xs text-muted-foreground">{event.location}</div> : null}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Tooltip>
-                                        <TooltipTrigger
-                                          render={<Button type="button" variant="ghost" size="icon-sm" onClick={() => openLocalEventDialog(selectedLocalDate, event)}>
-                                            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                                          </Button>}
-                                        />
-                                        <TooltipContent side="top">{m.calendar_edit_event()}</TooltipContent>
-                                      </Tooltip>
-                                      <Tooltip>
-                                        <TooltipTrigger
-                                          render={<Button type="button" variant="ghost" size="icon-sm" onClick={() => handleDeleteLocalEvent(event)}>
-                                            <HugeiconsIcon icon={Delete02Icon} className="size-4" />
-                                          </Button>}
-                                        />
-                                        <TooltipContent side="top">{m.calendar_delete_event()}</TooltipContent>
-                                      </Tooltip>
-                                    </div>
-                                  </div>
-                                  {event.description ? <p className="mt-3 text-sm text-muted-foreground">{event.description}</p> : null}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="rounded-2xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-                              {m.calendar_no_events_day()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-muted-foreground">{m.calendar_upcoming()}</div>
-                            <div className="mt-1 text-lg font-semibold text-foreground">{m.calendar_next_events()}</div>
-                          </div>
-                          <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteLocalCalendar(selectedLocalCalendar)}>
-                            <HugeiconsIcon icon={Delete02Icon} className="size-4" />
-                            {m.delete()}
-                          </Button>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                          {localEventsInScope.slice(0, 6).map((event) => (
+                          {renderableEvents.slice().sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()).slice(0, 8).map((event) => (
                             <button
                               key={event.id}
                               type="button"
                               onClick={() => {
-                                const dayKey = formatDayKey(new Date(event.startAt));
-                                setSelectedLocalDate(dayKey);
-                                setVisibleMonth(startOfMonth(new Date(event.startAt)));
+                                openEventDetail(String(event.id));
                               }}
-                              className="flex w-full items-start justify-between gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition-colors hover:bg-accent/40"
+                              className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition-colors hover:bg-accent/40"
                             >
-                              <div className="min-w-0">
+                              <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", event.source === "task" ? "bg-sky-500" : "bg-emerald-500")} />
+                              <div className="min-w-0 flex-1">
                                 <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
                                 <div className="mt-1 text-xs text-muted-foreground">
-                                  {formatLongDate(formatDayKey(new Date(event.startAt)))} · {event.allDay ? m.calendar_all_day() : formatTime(event.startAt)}
+                                  {formatLongDate(formatDayKey(new Date(event.startAt)))} · {event.source === "task" ? "Task" : "Event"}
                                 </div>
                               </div>
-                              <HugeiconsIcon icon={ArrowRight01Icon} className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                             </button>
                           ))}
-                          {localEventsInScope.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-                              {m.calendar_add_first_event()}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                ) : selectedLocalGroup ? (
-                  <section className="space-y-6">
-                    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-semibold text-foreground">{selectedLocalGroup.name}</h2>
-                            <div className="flex flex-wrap gap-1">
-                              {localCalendars.filter((c) => c.groupId === selectedLocalGroup.id).map((c) => (
-                                <span key={c.id} className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {m.calendar_n_calendars({ n: localCalendars.filter((c) => c.groupId === selectedLocalGroup.id).length })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={<Button type="button" variant="outline" size="sm" onClick={() => setVisibleMonth((m) => addMonths(m, -1))}>
-                                <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                              </Button>}
-                            />
-                            <TooltipContent side="top">{m.calendar_previous_month()}</TooltipContent>
-                          </Tooltip>
-                          <Button type="button" variant="outline" size="sm" onClick={() => setVisibleMonth(startOfMonth(new Date()))}>
-                            {m.today()}
-                          </Button>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={<Button type="button" variant="outline" size="sm" onClick={() => setVisibleMonth((m) => addMonths(m, 1))}>
-                                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                              </Button>}
-                            />
-                            <TooltipContent side="top">{m.calendar_next_month()}</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
-                      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="text-lg font-semibold text-foreground">
-                            {viewMode === "day"
-                              ? formatLongDate(selectedLocalDate)
-                              : viewMode === "week"
-                                ? formatWeekRange(parseDayKey(selectedLocalDate))
-                                : formatMonthLabel(visibleMonth)}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={<Button type="button" variant="outline" size="sm" onClick={() => {
-                                if (viewMode === "month") setVisibleMonth((c) => addMonths(c, -1));
-                                else if (viewMode === "week") setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), -7)));
-                                else setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), -1)));
-                              }}>
-                                <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                              </Button>}
-                            />
-                            <TooltipContent side="top">{m.previous()}</TooltipContent>
-                          </Tooltip>
-                          <Button type="button" variant="outline" size="sm" onClick={() => {
-                            const today = formatDayKey(new Date());
-                            setSelectedLocalDate(today);
-                            setVisibleMonth(startOfMonth(new Date()));
-                          }}>
-                            {m.today()}
-                          </Button>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={<Button type="button" variant="outline" size="sm" onClick={() => {
-                                if (viewMode === "month") setVisibleMonth((c) => addMonths(c, 1));
-                                else if (viewMode === "week") setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), 7)));
-                                else setSelectedLocalDate(formatDayKey(addDays(parseDayKey(selectedLocalDate), 1)));
-                              }}>
-                                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                              </Button>}
-                            />
-                            <TooltipContent side="top">{m.next()}</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-
-                      {viewMode === "day" ? (
-                        <div className="mt-4 space-y-3">
-                          {selectedDateEvents.length > 0 ? selectedDateEvents.map((event) => {
-                            const calendar = localCalendars.find((item) => item.id === event.calendarId);
-                            return (
-                              <div key={event.id} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-4">
-                                <div className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: calendar?.color ?? LOCAL_CALENDAR_COLORS[0] }} />
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-sm font-medium text-foreground">{event.title}</div>
-                                  <div className="mt-0.5 text-xs text-muted-foreground">
-                                    {event.allDay ? m.calendar_all_day() : `${formatTime(event.startAt)} – ${formatTime(event.endAt)}`}
-                                  </div>
-                                  {event.description ? <p className="mt-2 text-sm text-muted-foreground">{event.description}</p> : null}
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => openLocalEventDialog(selectedLocalDate, event)}
-                                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                  >
-                                    <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteLocalEvent(event)}
-                                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
-                                  >
-                                    <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          }) : (
-                            <div className="rounded-2xl border border-dashed border-border/60 px-4 py-12 text-center text-sm text-muted-foreground">
-                              {m.calendar_no_events_day()}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            {getWeekdayLabels().map((label) => (
-                              <div key={label} className="py-2">{label}</div>
-                            ))}
-                          </div>
-
-                          <div className={cn("grid gap-2", viewMode === "week" ? "grid-cols-7" : "grid-cols-7")}>
-                            {(viewMode === "week" ? buildWeekDays(parseDayKey(selectedLocalDate)) : monthDays).map((day) => {
-                              const dayKey = formatDayKey(day);
-                              const dayEvents = eventsByDay.get(dayKey) ?? [];
-                              const isCurrentMonth = viewMode === "month" ? day.getMonth() === visibleMonth.getMonth() : true;
-                              const isToday = dayKey === formatDayKey(new Date());
-                              const isSelected = dayKey === selectedLocalDate;
-
-                              return (
-                                <button
-                                  key={dayKey}
-                                  type="button"
-                                  onClick={() => setSelectedLocalDate(dayKey)}
-                                  className={cn(
-                                    viewMode === "week" ? "min-h-24 rounded-xl p-2" : "min-h-28 rounded-2xl p-3",
-                                    "border text-left shadow-sm transition-colors hover:bg-accent/40",
-                                    isSelected ? "border-primary/40 bg-primary/5" : "border-border/60 bg-background/80",
-                                    !isCurrentMonth && "opacity-55",
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span
-                                      className={cn(
-                                        "inline-flex items-center justify-center rounded-full text-sm font-medium tabular-nums",
-                                        viewMode === "week" ? "size-6 text-xs" : "size-7",
-                                        isToday && "bg-foreground text-background",
-                                      )}
-                                    >
-                                      {day.getDate()}
-                                    </span>
-                                    <span className="text-[11px] text-muted-foreground">{dayEvents.length}</span>
-                                  </div>
-                                  <div className={cn("space-y-1", viewMode === "week" ? "mt-2" : "mt-3")}>
-                                    {dayEvents.slice(0, viewMode === "week" ? 2 : 3).map((event) => {
-                                      const calendar = localCalendars.find((item) => item.id === event.calendarId);
-                                      return (
-                                        <div
-                                          key={event.id}
-                                          className="truncate rounded-lg px-1.5 py-0.5 text-xs font-medium"
-                                          style={{
-                                            backgroundColor: `${calendar?.color ?? LOCAL_CALENDAR_COLORS[0]}1A`,
-                                            color: calendar?.color ?? LOCAL_CALENDAR_COLORS[0],
-                                          }}
-                                        >
-                                          {event.title}
-                                        </div>
-                                      );
-                                    })}
-                                    {dayEvents.length > (viewMode === "week" ? 2 : 3) ? (
-                                      <div className="text-xs text-muted-foreground">+{dayEvents.length - (viewMode === "week" ? 2 : 3)} {m.calendar_n_more()}</div>
-                                    ) : null}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">{m.calendar_selected_day()}</div>
-                          <div className="mt-1 text-lg font-semibold text-foreground">{formatLongDate(selectedLocalDate)}</div>
-                        </div>
-                        <Button type="button" variant="outline" size="sm" onClick={() => openLocalEventDialog(selectedLocalDate)}>
-                          <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                          {m.add()}
-                        </Button>
-                      </div>
-                      <div className="mt-5 space-y-3">
-                        {selectedDateEvents.length > 0 ? (
-                          selectedDateEvents.map((event) => {
-                            const calendar = localCalendars.find((item) => item.id === event.calendarId);
-                            return (
-                              <div key={event.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="size-2.5 rounded-full" style={{ backgroundColor: calendar?.color ?? LOCAL_CALENDAR_COLORS[0] }} />
-                                      <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                    </div>
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                      {event.allDay ? m.calendar_all_day() : `${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}
-                                      {calendar ? <span> · {calendar.name}</span> : null}
-                                    </div>
-                                    {event.location ? <div className="mt-1 text-xs text-muted-foreground">{event.location}</div> : null}
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openLocalEventDialog(selectedLocalDate, event)}>
-                                      <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                                    </Button>
-                                    <Button type="button" variant="ghost" size="icon-sm" className="hover:text-destructive" onClick={() => handleDeleteLocalEvent(event)}>
-                                      <HugeiconsIcon icon={Delete02Icon} className="size-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                {event.description ? <p className="mt-3 text-sm text-muted-foreground">{event.description}</p> : null}
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="rounded-2xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-                            {m.calendar_no_events_day()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </section>
-                ) : (
-                  <section className="space-y-6">
-                    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">{m.calendar_overview()}</div>
-                          <h2 className="mt-1 text-balance text-2xl font-semibold text-foreground">{m.calendar_local_workspace()}</h2>
-                          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                            {m.calendar_local_workspace_desc()}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button type="button" variant="outline" onClick={() => openLocalGroupDialog()}>
-                            <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                            {m.calendar_new_group()}
-                          </Button>
-                          <Button type="button" onClick={() => openLocalCalendarDialog(localGroups[0]?.id)} disabled={localGroups.length === 0}>
-                            <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                            {m.calendar_new_calendar()}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 grid gap-4 md:grid-cols-3">
-                        <MetricCard label={m.calendar_groups()} value={localGroups.length} />
-                        <MetricCard label={m.calendar_calendars()} value={localCalendars.length} />
-                        <MetricCard label={m.calendar_events()} value={localEvents.length} />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-muted-foreground">{m.calendar_groups()}</div>
-                            <div className="mt-1 text-lg font-semibold text-foreground">{m.calendar_organize_by_context()}</div>
-                          </div>
-                          <Button type="button" variant="outline" size="sm" onClick={() => openLocalGroupDialog()}>
-                            <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                            {m.calendar_add_group()}
-                          </Button>
-                        </div>
-
-                        <div className="mt-5 space-y-4">
-                          {groupedLocalCalendars.map(({ group, calendars }) => (
-                            <div key={group.id} className="rounded-2xl border border-border/70 bg-background/80 p-4 shadow-sm">
-                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div className="min-w-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedSidebarItem(`local-group:${group.id}`)}
-                                    className="text-left text-base font-semibold text-foreground transition-colors hover:text-primary"
-                                  >
-                                    {group.name}
-                                  </button>
-                                  <div className="mt-1 text-sm text-muted-foreground">
-                                    {m.calendar_n_calendars({ n: calendars.length })}
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button type="button" variant="outline" size="sm" onClick={() => openLocalGroupDialog(group)}>
-                                    {m.edit()}
-                                  </Button>
-                                  <Button type="button" size="sm" onClick={() => openLocalCalendarDialog(group.id)}>
-                                    <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                                    {m.calendar_add_calendar()}
-                                  </Button>
-                                </div>
-                              </div>
-
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                {calendars.map((calendar) => (
-                                  <button
-                                    key={calendar.id}
-                                    type="button"
-                                    onClick={() => setSelectedSidebarItem(`local-calendar:${calendar.id}`)}
-                                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent/40"
-                                  >
-                                    <span className="size-2.5 rounded-full" style={{ backgroundColor: calendar.color }} />
-                                    {calendar.name}
-                                  </button>
-                                ))}
-                                {calendars.length === 0 ? <div className="text-sm text-muted-foreground">{m.calendar_no_calendars_yet()}</div> : null}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">{m.calendar_upcoming_local_events()}</div>
-                          <div className="mt-1 text-lg font-semibold text-foreground">{m.calendar_what_is_next()}</div>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                          {localEvents
-                            .slice()
-                            .sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime())
-                            .slice(0, 8)
-                            .map((event) => {
-                              const calendar = localCalendars.find((item) => item.id === event.calendarId);
-
-                              return (
-                                <button
-                                  key={event.id}
-                                  type="button"
-                                  onClick={() => {
-                                    if (calendar) {
-                                      setSelectedSidebarItem(`local-calendar:${calendar.id}`);
-                                    }
-                                    setSelectedLocalDate(formatDayKey(new Date(event.startAt)));
-                                    setVisibleMonth(startOfMonth(new Date(event.startAt)));
-                                  }}
-                                  className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition-colors hover:bg-accent/40"
-                                >
-                                  <span className="mt-1 size-2.5 shrink-0 rounded-full" style={{ backgroundColor: calendar?.color ?? LOCAL_CALENDAR_COLORS[0] }} />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                      {calendar?.name ?? m.calendar_unknown()} · {formatLongDate(formatDayKey(new Date(event.startAt)))}
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-
-                          {localEvents.length === 0 ? (
+                          {renderableEvents.length === 0 ? (
                             <div className="rounded-2xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
                               {m.calendar_events_will_show()}
                             </div>
@@ -1715,6 +1279,160 @@ function CalendarPage() {
               )}
             </div>
           </ScrollArea>
+
+          {selectedEventDetail ? (
+            <>
+              <button
+                type="button"
+                aria-label={m.close()}
+                className="absolute inset-0 z-20 bg-background/20 backdrop-blur-[1px]"
+                onClick={handleCloseEventDetail}
+              />
+              <aside className="absolute inset-y-3 right-3 z-30 flex w-[min(460px,calc(100%-24px))] flex-col rounded-[28px] border border-border/70 bg-card/96 shadow-[0_28px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-4 border-b border-border/60 px-6 py-5">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium",
+                          selectedEventDetail.event.source === "task"
+                            ? "bg-sky-500/10 text-sky-700 dark:text-sky-300"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                        )}
+                      >
+                        {selectedEventDetail.event.source === "task" ? "Task" : "Event"}
+                      </span>
+                      {selectedEventDetail.task ? (
+                        <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                          {formatBoardColumnLabel(selectedEventDetail.task.column)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 text-balance text-xl font-semibold text-foreground">
+                      {selectedEventDetail.event.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {formatEventDateTime(selectedEventDetail.event)}
+                    </p>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={handleCloseEventDetail}>
+                    <HugeiconsIcon icon={Delete02Icon} className="size-4 rotate-45" />
+                  </Button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                  <div className="space-y-6">
+                    {selectedEventDetail.calendar ? (
+                      <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                          Calendar
+                        </div>
+                        <div className="mt-3 flex items-center gap-3">
+                          <span className="size-3 rounded-full" style={{ backgroundColor: selectedEventDetail.calendar.color }} />
+                          <div>
+                            <div className="text-sm font-medium text-foreground">{selectedEventDetail.calendar.name}</div>
+                            <div className="text-xs text-muted-foreground">{selectedEventDetail.group?.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {selectedEventDetail.event.location ? (
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                          {m.calendar_location()}
+                        </div>
+                        <p className="mt-2 text-sm text-foreground">{selectedEventDetail.event.location}</p>
+                      </div>
+                    ) : null}
+
+                    {selectedEventDetail.event.description ? (
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                          {m.calendar_notes()}
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-foreground/85">
+                          {selectedEventDetail.event.description}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {selectedEventDetail.task ? (
+                      <div className="space-y-5">
+                        <div>
+                          <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                            Status
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(["planning", "in_progress", "review", "completed"] as BoardTaskColumnId[]).map((column) => (
+                              <Button
+                                key={column}
+                                type="button"
+                                size="sm"
+                                variant={selectedEventDetail.task?.column === column ? "default" : "outline"}
+                                onClick={() => handleSetSelectedTaskColumn(column)}
+                              >
+                                {formatBoardColumnLabel(column)}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                            Schedule
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleMoveSelectedTaskDate(-1)}>
+                              -1 day
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
+                              start: new Date(new Date(selectedEventDetail.event.startAt).getTime() - 30 * 60_000),
+                              end: new Date(new Date(selectedEventDetail.event.endAt).getTime() - 30 * 60_000),
+                            })}>
+                              -30m
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
+                              start: new Date(new Date(selectedEventDetail.event.startAt).getTime() + 30 * 60_000),
+                              end: new Date(new Date(selectedEventDetail.event.endAt).getTime() + 30 * 60_000),
+                            })}>
+                              +30m
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleMoveSelectedTaskDate(1)}>
+                              +1 day
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                                Priority
+                              </div>
+                              <div className="mt-2 text-sm font-medium text-foreground">
+                                {selectedEventDetail.task.priority}
+                              </div>
+                            </div>
+                            <div className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                              Board
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Button type="button" className="w-full" onClick={handleEditSelectedEvent}>
+                          <HugeiconsIcon icon={Edit02Icon} className="size-4" />
+                          {m.calendar_edit_event()}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </aside>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -1921,6 +1639,28 @@ function CalendarPage() {
                 placeholder={m.calendar_description_placeholder()}
               />
             </label>
+
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-foreground">{m.calendar_icon()}</span>
+              <div className="flex flex-wrap gap-2">
+                {LOCAL_CALENDAR_ICONS.map((iconEntry) => (
+                  <button
+                    key={iconEntry.name}
+                    type="button"
+                    onClick={() => setLocalCalendarForm((current) => ({ ...current, icon: iconEntry.name }))}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-lg border-2 transition-colors",
+                      localCalendarForm.icon === iconEntry.name
+                        ? "border-foreground bg-accent"
+                        : "border-border hover:border-foreground/40",
+                    )}
+                    aria-label={iconEntry.name}
+                  >
+                    <HugeiconsIcon icon={iconEntry.component} className="size-5" />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
@@ -2115,58 +1855,6 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function addMonths(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
-}
-
-function addDays(date: Date, amount: number) {
-  const result = new Date(date);
-  result.setDate(date.getDate() + amount);
-  return result;
-}
-
-function buildWeekDays(date: Date) {
-  const start = new Date(date);
-  start.setDate(date.getDate() - date.getDay());
-  return Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(start);
-    day.setDate(start.getDate() + i);
-    return day;
-  });
-}
-
-function getWeekdayLabels() {
-  return Array.from({ length: 7 }, (_, index) =>
-    new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(new Date(2024, 0, 7 + index)),
-  );
-}
-
-function formatWeekRange(date: Date) {
-  const weekStart = new Date(date);
-  weekStart.setDate(date.getDate() - date.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  const fmt = (d: Date) =>
-    new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(d);
-  return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
-}
-
-function buildMonthGrid(month: Date) {
-  const monthStart = startOfMonth(month);
-  const gridStart = new Date(monthStart);
-  gridStart.setDate(monthStart.getDate() - monthStart.getDay());
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate() + index);
-    return day;
-  });
-}
-
-function formatMonthLabel(date: Date) {
-  return new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(date);
-}
-
 function formatLongDate(dayKey: string) {
   return new Intl.DateTimeFormat(undefined, {
     weekday: "long",
@@ -2178,4 +1866,41 @@ function formatLongDate(dayKey: string) {
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
+function formatEventDateTime(event: CalendarRenderableEvent) {
+  const start = new Date(event.startAt);
+
+  if (event.allDay) {
+    return `${formatLongDate(formatDayKey(start))} · ${m.calendar_all_day()}`;
+  }
+
+  return `${formatLongDate(formatDayKey(start))} · ${formatTime(event.startAt)} - ${formatTime(event.endAt)}`;
+}
+
+function formatBoardColumnLabel(column: BoardTaskColumnId) {
+  if (column === "planning") return "Planning";
+  if (column === "in_progress") return "In Progress";
+  if (column === "review") return "Review";
+  return "Completed";
+}
+
+function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getState>["tasks"]) {
+  return tasks
+    .filter((task) => Boolean(task.dueDate))
+    .map((task) => {
+      const startAt = `${task.dueDate}T09:00`;
+      const endAt = `${task.dueDate}T10:00`;
+      return {
+        id: `task-${task.id}`,
+        calendarId: "board-tasks",
+        title: task.title,
+        description: task.description ?? "",
+        location: "",
+        startAt,
+        endAt,
+        allDay: false,
+        source: "task" as const,
+      };
+    });
 }

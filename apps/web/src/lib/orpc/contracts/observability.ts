@@ -3,21 +3,31 @@ import { z } from "zod";
 
 export const observabilityRangeSchema = z.enum(["24h", "7d", "30d"]);
 
+export const eventTypeCountSchema = z.object({
+  type: z.string(),
+  count: z.number(),
+});
+
 export const timeSeriesPointSchema = z.object({
   time: z.number(),
   label: z.string(),
-  operations: z.number(),
-  successes: z.number(),
+  events: z.number(),
+  issues: z.number(),
+});
+
+export const eventSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+  timestamp: z.string(),
 });
 
 export const observabilityMetricsSchema = z.object({
-  events: z.object({
-    total: z.number(),
-  }),
-  runtime: z.object({
-    avgLatencyMs: z.number(),
-    totalCostUsd: z.number(),
-  }),
+  totalEvents: z.number(),
+  openIssues: z.number(),
+  resolvedIssues: z.number(),
+  eventTypeCounts: z.array(eventTypeCountSchema),
+  recentEvents: z.array(eventSchema),
 });
 
 export const observabilityContract = {

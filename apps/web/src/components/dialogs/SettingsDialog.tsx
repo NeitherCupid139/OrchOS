@@ -4,13 +4,8 @@ import {
   Cancel01Icon,
   Settings02Icon,
   SlidersHorizontalIcon,
-  Robot02Icon,
   InformationCircleIcon,
   NotificationIcon,
-  Search01Icon,
-  CloudIcon,
-  Server,
-  AddCircleHalfDotIcon,
   VolumeHighIcon,
   UnfoldMoreIcon,
   Tick02Icon,
@@ -20,7 +15,7 @@ import {
   EyeIcon,
   ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
-import { cn, getRuntimeIcon } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { Spinner } from "@/components/ui/spinner";
 import { AppleSwitch } from "@/components/unlumen-ui/apple-switch";
@@ -43,7 +38,7 @@ import { playUiSound } from "@/lib/audio";
 import { m } from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
 import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
-import { api, type DetectRuntimesResponse, type RuntimeProfile } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -57,7 +52,7 @@ const defaultEventSounds: Record<string, string> = {
   social: "pong",
 };
 
-type SettingsTab = "general" | "notifications" | "runtimes" | "mail" | "about";
+type SettingsTab = "general" | "notifications" | "mail" | "about";
 
 type MailServerConfig = {
   host: string;
@@ -91,7 +86,6 @@ type SettingsMailIntegration = {
 const tabDefs: { id: SettingsTab; icon: IconSvgElement; labelKey: () => string }[] = [
   { id: "general", icon: SlidersHorizontalIcon, labelKey: m.general },
   { id: "notifications", icon: NotificationIcon, labelKey: m.notifications },
-  { id: "runtimes", icon: Robot02Icon, labelKey: m.runtimes },
   { id: "mail", icon: InboxIcon, labelKey: m.mail },
   { id: "about", icon: InformationCircleIcon, labelKey: m.about },
 ];
@@ -142,55 +136,7 @@ interface SettingsDialogProps {
   onClose: () => void;
   settings: ControlSettings | null;
   onSettingsChange: (settings: ControlSettings) => void;
-  onRuntimesRefresh: () => void;
-  registeredRuntimes: RuntimeProfile[];
   defaultTab?: SettingsTab;
-}
-
-function ModelBadge({ model, isLocalRuntime }: { model: string; isLocalRuntime?: boolean }) {
-  // Determine model provider type from the model string prefix
-  const modelProvider = model.startsWith("cloud/")
-    ? "cloud"
-    : model.startsWith("local/")
-      ? "local"
-      : model.startsWith("http")
-        ? "remote"
-        : "local";
-  // A locally installed CLI runtime that uses a cloud model is still a "local runtime"
-  const showAsLocal = isLocalRuntime || modelProvider === "local";
-  const label = showAsLocal ? m.model_local() : m.model_cloud();
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
-        showAsLocal
-          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-          : "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-      )}
-    >
-      {showAsLocal ? (
-        <HugeiconsIcon icon={Server} className="size-2.5" />
-      ) : (
-        <HugeiconsIcon icon={CloudIcon} className="size-2.5" />
-      )}
-      {label}
-    </span>
-  );
-}
-
-function getRuntimeRoleLabel(role: string) {
-  switch (role) {
-    case "Conversational AI assistant":
-      return m.runtime_role_conversational_ai_assistant();
-    case "Code generation & reasoning":
-      return m.runtime_role_code_generation_reasoning();
-    case "Code generation & editing":
-      return m.runtime_role_code_generation_editing();
-    case "Open-source code generation":
-      return m.runtime_role_open_source_code_generation();
-    default:
-      return role;
-  }
 }
 
 export function SettingsDialog({
@@ -198,8 +144,6 @@ export function SettingsDialog({
   onClose,
   settings,
   onSettingsChange,
-  onRuntimesRefresh,
-  registeredRuntimes,
   defaultTab,
 }: SettingsDialogProps) {
   const [localSettings, setLocalSettings] = useState<ControlSettings | null>(settings);
@@ -210,13 +154,6 @@ export function SettingsDialog({
       setActiveTab(defaultTab);
     }
   }, [open, defaultTab]);
-  const [detectResult, setDetectResult] = useState<DetectRuntimesResponse | null>(null);
-  const [detecting, setDetecting] = useState(false);
-  const [registering, setRegistering] = useState<string | null>(null);
-  const [registerMessage, setRegisterMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [mailIntegrations, setMailIntegrations] = useState<SettingsMailIntegration[]>([]);
   const [loadingMail, setLoadingMail] = useState(false);
   const [editingMailAccount, setEditingMailAccount] = useState<{ integrationId: string; account: MailIntegrationAccount } | null>(null);
@@ -342,25 +279,6 @@ export function SettingsDialog({
     }
   };
 
-  const handleDetect = useCallback(async () => {
-    setDetecting(true);
-    try {
-      const result = await api.detectRuntimes();
-      setDetectResult(result);
-    } catch (err) {
-      console.error("Detect failed:", err);
-    } finally {
-      setDetecting(false);
-    }
-  }, []);
-
-  // Auto-detect runtimes whenever the runtimes tab is activated
-  useEffect(() => {
-    if (open && activeTab === "runtimes" && !detecting) {
-      handleDetect();
-    }
-  }, [open, activeTab, handleDetect]);
-
   // Load mail integrations when the mail tab is activated
   useEffect(() => {
     if (open && activeTab === "mail" && !loadingMail) {
@@ -370,70 +288,6 @@ export function SettingsDialog({
       }).finally(() => setLoadingMail(false));
     }
   }, [open, activeTab]);
-
-  const handleRegisterAgent = useCallback(
-    async (runtimeId: string) => {
-      setRegistering(runtimeId);
-      setRegisterMessage(null);
-      try {
-        const result = await api.registerDetectedRuntimes({ runtimeIds: [runtimeId] });
-        onRuntimesRefresh();
-        const detectResult = await api.detectRuntimes();
-        setDetectResult(detectResult);
-
-        if (result.registered.length > 0) {
-          setRegisterMessage({
-            type: "success",
-            text: m.agent_registered({ name: result.registered[0].name }),
-          });
-        } else if (result.skipped.length > 0) {
-          setRegisterMessage({
-            type: "error",
-            text: m.agent_already_registered({ name: result.skipped[0].name }),
-          });
-        }
-
-        // Auto-clear message after 3s
-        setTimeout(() => setRegisterMessage(null), 3000);
-      } catch (err) {
-        console.error("Register failed:", err);
-        setRegisterMessage({ type: "error", text: m.agent_register_failed() });
-        setTimeout(() => setRegisterMessage(null), 3000);
-      } finally {
-        setRegistering(null);
-      }
-    },
-    [onRuntimesRefresh],
-  );
-
-  const handleRegisterAll = useCallback(async () => {
-    setRegistering("__all__");
-    setRegisterMessage(null);
-    try {
-      const result = await api.registerDetectedRuntimes({ registerAll: true });
-      onRuntimesRefresh();
-      const detectResult = await api.detectRuntimes();
-      setDetectResult(detectResult);
-
-      if (result.registered.length > 0) {
-        setRegisterMessage({
-          type: "success",
-          text: m.agents_registered({ count: result.registered.length }),
-        });
-      } else {
-        setRegisterMessage({ type: "error", text: m.agents_already_registered() });
-      }
-
-      // Auto-clear message after 3s
-      setTimeout(() => setRegisterMessage(null), 3000);
-    } catch (err) {
-      console.error("Register all failed:", err);
-      setRegisterMessage({ type: "error", text: m.agent_register_failed() });
-      setTimeout(() => setRegisterMessage(null), 3000);
-    } finally {
-      setRegistering(null);
-    }
-  }, [onRuntimesRefresh]);
 
   const handleEditMailAccount = useCallback((integrationId: string, account: MailIntegrationAccount) => {
     setEditMailForm({
@@ -730,205 +584,6 @@ export function SettingsDialog({
                     })}
                   </div>
                 </div>
-              </div>
-            )}
-
-            {activeTab === "runtimes" && (
-              <div className="space-y-4">
-                {/* Registration feedback */}
-                {registerMessage && (
-                  <div
-                    className={cn(
-                      "rounded-lg border px-3 py-2 text-xs",
-                      registerMessage.type === "success"
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                        : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
-                    )}
-                  >
-                    {registerMessage.text}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground max-w-[240px]">{m.runtimes_desc()}</p>
-                  <div className="flex items-center gap-1.5">
-                    {detectResult && detectResult.available.length > 0 && (
-                      <button
-                        onClick={handleRegisterAll}
-                        disabled={registering === "__all__"}
-                        className="rounded-md px-2.5 py-1.5 text-xs font-medium border border-border bg-card text-foreground hover:bg-accent disabled:opacity-50 transition-colors"
-                      >
-                        {registering === "__all__" ? (
-                          <span className="flex items-center gap-1">
-                            <Spinner size="sm" />
-                            {m.registering()}
-                          </span>
-                        ) : (
-                          m.register_all()
-                        )}
-                      </button>
-                    )}
-                    <button
-                      onClick={handleDetect}
-                      disabled={detecting}
-                      className="rounded-md px-2.5 py-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                    >
-                      {detecting ? (
-                        <span className="flex items-center gap-1">
-                          <Spinner size="sm" className="border-primary-foreground" />
-                          {m.scanning()}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <HugeiconsIcon icon={Search01Icon} className="size-3" />
-                          {m.detect_btn()}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Detected agents (available) */}
-                {detectResult && detectResult.available.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      <span className="size-1.5 rounded-full bg-emerald-500" />
-                      {m.available()} ({detectResult.available.length})
-                    </div>
-                    {detectResult.available.map((agent) => {
-                      const isRegistered = registeredRuntimes.some(
-                        (r) => r.name === agent.name || r.registryId === agent.id,
-                      );
-                      return (
-                        <div
-                          key={agent.id}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg border px-4 py-2.5",
-                            isRegistered
-                              ? "border-border/50 bg-muted/30"
-                              : "border-emerald-500/20 bg-emerald-500/5",
-                          )}
-                        >
-                          <div
-                             className={cn(
-                               "flex size-8 items-center justify-center rounded-md",
-                               isRegistered
-                                 ? "bg-muted/50 dark:bg-white/10"
-                                 : "bg-muted/50 dark:bg-white/10",
-                             )}
-                           >
-                             {(() => {
-                               const iconUrl = getRuntimeIcon(agent);
-                               return iconUrl ? (
-                                 <img src={iconUrl} alt={agent.name} className="size-5 object-contain" />
-                               ) : (
-                                 <span
-                                   className={cn(
-                                     "text-sm font-bold",
-                                     isRegistered
-                                       ? "text-muted-foreground"
-                                       : "text-emerald-600 dark:text-emerald-400",
-                                   )}
-                                 >
-                                   {agent.name.charAt(0).toUpperCase()}
-                                 </span>
-                               );
-                             })()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">
-                                {agent.name}
-                              </span>
-                              <ModelBadge model={agent.model} isLocalRuntime />
-                              {agent.version && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  v{agent.version}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{getRuntimeRoleLabel(agent.role)}</p>
-                          </div>
-                          {isRegistered ? (
-                            <span className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                              {m.connected()}
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleRegisterAgent(agent.id)}
-                              disabled={registering === agent.id}
-                              className="rounded-md px-2.5 py-1 text-xs font-medium border border-border bg-card text-foreground hover:bg-accent disabled:opacity-50 transition-colors"
-                            >
-                              {registering === agent.id ? (
-<Spinner size="sm" />
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <HugeiconsIcon icon={AddCircleHalfDotIcon} className="size-3" />
-                                  {m.register()}
-                                </span>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Detected agents (unavailable) */}
-                {detectResult && detectResult.unavailable.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <span className="size-1.5 rounded-full bg-muted-foreground" />
-                      {m.not_found()} ({detectResult.unavailable.length})
-                    </div>
-                    {detectResult.unavailable.map((agent) => (
-                      <div
-                        key={agent.id}
-                        className="flex items-center gap-3 rounded-lg border border-border/30 bg-muted/20 px-4 py-2.5 opacity-50"
-                      >
-                         <div className="flex size-8 items-center justify-center rounded-md bg-muted/50 dark:bg-white/10">
-                            {(() => {
-                               const iconUrl = getRuntimeIcon(agent);
-                              return iconUrl ? (
-                                <img src={iconUrl} alt={agent.name} className="size-5 object-contain opacity-50" />
-                              ) : (
-                                <span className="text-sm font-bold text-muted-foreground">
-                                  {agent.name.charAt(0).toUpperCase()}
-                                </span>
-                              );
-                            })()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-foreground">
-                              {agent.name}
-                            </span>
-                            <ModelBadge model={agent.model} isLocalRuntime />
-                          </div>
-                          <p className="text-xs text-muted-foreground">{getRuntimeRoleLabel(agent.role)}</p>
-                        </div>
-                        <span className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-muted text-muted-foreground">
-                          {m.not_installed()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* No scan yet hint */}
-                {!detectResult && !detecting && (
-                  <div className="rounded-lg border border-dashed border-border/50 py-6 text-center">
-                    <HugeiconsIcon
-                      icon={Search01Icon}
-                      className="mx-auto size-5 text-muted-foreground/30 mb-2"
-                    />
-                    <p className="text-sm text-muted-foreground">{m.detect_runtimes_hint()}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">
-                      {m.detect_runtimes_hint_desc()}
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 

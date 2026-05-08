@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft01Icon, ArrowRight01Icon, CancelCircleIcon, CheckmarkCircle02Icon, ComputerIcon, Copy01Icon, Delete02Icon, Edit02Icon, Tick01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { LocalDevicesView } from "@/components/panels/LocalDevicesView";
-import { api, type LocalAgentPairingToken, type CustomAgent } from "@/lib/api";
+import { api, type CustomAgent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,20 +19,14 @@ export const Route = createFileRoute("/dashboard/agents")({
 });
 
 function AgentsPage() {
-  const { localAgents, loading } = useDashboard();
-  const [pairing, setPairing] = useState<LocalAgentPairingToken | null>(null);
-  const [showPairingDialog, setShowPairingDialog] = useState(false);
-  const [tokenCopied, setTokenCopied] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const { loading } = useDashboard();
 
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const [defaultCustomAgentId, setDefaultCustomAgentId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<
     | { kind: "custom"; id: string }
-    | { kind: "local"; id: string }
     | null
   >(null);
-  const [connectStep, setConnectStep] = useState<"choose" | "cli" | "custom">("choose");
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [agentForm, setAgentForm] = useState({ name: "", url: "", apiKey: "", model: "" });
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
@@ -60,20 +54,11 @@ function AgentsPage() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const collapseTimerRef = useRef<number | null>(null);
 
-  const filteredAgents = useMemo(() => {
-    if (statusFilter === "all") return localAgents;
-    return localAgents.filter((agent) => agent.status === statusFilter);
-  }, [localAgents, statusFilter]);
-
   const selectedAgent = useMemo(() => {
     if (!selectedItem) return null;
-    if (selectedItem.kind === "custom") {
-      const agent = customAgents.find((item) => item.id === selectedItem.id);
-      return agent ? { kind: "custom" as const, agent } : null;
-    }
-    const agent = localAgents.find((item) => item.id === selectedItem.id);
-    return agent ? { kind: "local" as const, agent } : null;
-  }, [customAgents, localAgents, selectedItem]);
+    const agent = customAgents.find((item) => item.id === selectedItem.id);
+    return agent ? { kind: "custom" as const, agent } : null;
+  }, [customAgents, selectedItem]);
 
   useEffect(() => {
     return () => {
@@ -97,38 +82,11 @@ function AgentsPage() {
   }, [sidebarCollapsed]);
 
   function handleOpenConnect() {
-    setConnectStep("choose");
-    setIsConnectDialogOpen(true);
-  }
-
-  function handleSelectCli() {
-    setConnectStep("cli");
-  }
-
-  function handleSelectCustom(agent?: CustomAgent) {
-    if (agent) {
-      setEditingAgentId(agent.id);
-      setAgentForm({ name: agent.name, url: agent.url, apiKey: agent.apiKey, model: agent.model });
-    } else {
-      setEditingAgentId(null);
-      setAgentForm({ name: "", url: "", apiKey: "", model: "" });
-    }
+    setEditingAgentId(null);
+    setAgentForm({ name: "", url: "", apiKey: "", model: "" });
     setAvailableModels([]);
     setLoadingModels(false);
-    setConnectStep("custom");
-  }
-
-  async function handleCreatePairingToken() {
-    try {
-      const token = await api.createLocalAgentPairingToken();
-      setPairing(token);
-      setIsConnectDialogOpen(false);
-      setShowPairingDialog(true);
-      setTokenCopied(false);
-      toast.success(m.pairing_token_generated());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : m.failed_create_pairing_token());
-    }
+    setIsConnectDialogOpen(true);
   }
 
   async function handleSaveCustomAgent() {
@@ -151,16 +109,6 @@ function AgentsPage() {
       toast.success(editingAgentId ? m.custom_agent_updated() : m.custom_agent_created());
     } catch (error) {
       toast.error(error instanceof Error ? error.message : m.failed_save_custom_agent());
-    }
-  }
-
-  async function handleCopyToken(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setTokenCopied(true);
-      setTimeout(() => setTokenCopied(false), 2000);
-    } catch {
-      toast.error(m.failed_to_copy());
     }
   }
 
@@ -209,7 +157,7 @@ function AgentsPage() {
   }
 
   useEffect(() => {
-    if (connectStep !== "custom" || !isConnectDialogOpen) return;
+    if (!isConnectDialogOpen) return;
 
     const url = agentForm.url.trim();
     const apiKey = agentForm.apiKey.trim();
@@ -224,7 +172,7 @@ function AgentsPage() {
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [agentForm.apiKey, agentForm.url, connectStep, isConnectDialogOpen]);
+  }, [agentForm.apiKey, agentForm.url, isConnectDialogOpen]);
 
   const handleCollapseSidebar = useCallback(() => {
     if (collapseTimerRef.current !== null) {
@@ -297,7 +245,7 @@ function AgentsPage() {
         >
           <div className="flex h-10 items-center justify-between rounded-md px-2">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-foreground">{m.agents()} <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">{localAgents.length + customAgents.length}</span></div>
+              <div className="text-sm font-semibold text-foreground">{m.agents()} <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">{customAgents.length}</span></div>
             </div>
             <div className="flex items-center gap-1">
               <Tooltip>
@@ -361,7 +309,10 @@ function AgentsPage() {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleSelectCustom(agent);
+                          setEditingAgentId(agent.id);
+                          setAgentForm({ name: agent.name, url: agent.url, apiKey: agent.apiKey, model: agent.model });
+                          setAvailableModels([]);
+                          setLoadingModels(false);
                           setIsConnectDialogOpen(true);
                         }}
                         className="shrink-0 hover:text-foreground"
@@ -394,74 +345,13 @@ function AgentsPage() {
                   </div>
                 </div>
               ))}
-              {localAgents.length > 0 && (
-                <div className={cn("px-2.5 pt-1 pb-0.5 text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider", customAgents.length > 0 && "mt-2")}>{m.custom_agent_section_label()}</div>
-              )}
-              {filteredAgents.map((agent) => (
-                <div
-                  key={agent.id}
-                  onClick={() => setSelectedItem({ kind: "local", id: agent.id })}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedItem({ kind: "local", id: agent.id });
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  className={cn(
-                    "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
-                    selectedItem?.kind === "local" && selectedItem.id === agent.id
-                      ? "bg-accent text-foreground"
-                      : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
-                  )}
-                >
-                  <span className={cn("size-2 shrink-0 rounded-full", agent.status === "online" ? "bg-emerald-500" : "bg-muted-foreground/30")} />
-                  <HugeiconsIcon icon={ComputerIcon} className="size-3.5 shrink-0 opacity-40" />
-                  <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-xs leading-5">{agent.name}</div>
-                    <div className="text-[11px] leading-4 text-muted-foreground">
-                      {agent.status === "online" ? m.online() : m.offline()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {customAgents.length === 0 && filteredAgents.length === 0 && (
+              {customAgents.length === 0 && (
                 <div className="px-2.5 py-6 text-center text-xs text-muted-foreground">
-                  {m.no_devices_paired()}
+                  {m.no_agents_available()}
                 </div>
               )}
             </div>
           </ScrollArea>
-
-          <div className="border-t border-border p-2">
-            <div className="flex h-10 items-center justify-center gap-1 rounded-md px-2">
-              {[
-                { id: "all" as const, icon: ComputerIcon, iconClassName: "text-sky-500", label: m.all() },
-                { id: "online" as const, icon: CheckmarkCircle02Icon, iconClassName: "text-emerald-500", label: m.online() },
-                { id: "offline" as const, icon: CancelCircleIcon, iconClassName: "text-muted-foreground/50", label: m.offline() },
-              ].map((tab) => (
-                <Tooltip key={tab.id}>
-                  <TooltipTrigger
-                    render={<button
-                      type="button"
-                      onClick={() => setStatusFilter(tab.id)}
-                      className={cn(
-                        "inline-flex size-8 items-center justify-center rounded-md transition-colors",
-                        statusFilter === tab.id
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                      )}
-                    >
-                      <HugeiconsIcon icon={tab.icon} className={cn("size-3.5", statusFilter === tab.id ? tab.iconClassName : "text-muted-foreground/40")} />
-                    </button>}
-                  />
-                  <TooltipContent side="top">{tab.label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-
         </div>
 
         <div
@@ -524,191 +414,76 @@ function AgentsPage() {
         open={isConnectDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
-            setConnectStep("choose");
             setAvailableModels([]);
             setLoadingModels(false);
           }
           setIsConnectDialogOpen(open);
         }}
-        title={connectStep === "choose" ? m.connect_agent() : connectStep === "cli" ? m.connect_via_cli() : editingAgentId ? m.edit_agent() : m.custom_configuration()}
+        title={editingAgentId ? m.edit_agent() : m.custom_configuration()}
         size="sm"
-        bodyClassName={connectStep === "choose" ? "flex items-center" : undefined}
         footer={
-          connectStep === "choose" ? (
+          <>
             <Button type="button" variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
               {m.cancel()}
             </Button>
-          ) : connectStep === "cli" ? (
-            <>
-              <Button type="button" variant="outline" onClick={() => setConnectStep("choose")}>
-                {m.back()}
-              </Button>
-              <Button type="button" onClick={handleCreatePairingToken}>
-                {m.generate_pairing_token()}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button type="button" variant="outline" onClick={() => setConnectStep("choose")}>
-                {m.back()}
-              </Button>
-              <Button type="button" onClick={handleSaveCustomAgent}>
-                {m.save()}
-              </Button>
-            </>
-          )
-        }
-      >
-        {connectStep === "choose" ? (
-          <div className="grid w-full gap-3">
-            <button
-              type="button"
-              onClick={handleSelectCli}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <HugeiconsIcon icon={ComputerIcon} className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground">{m.connect_via_cli()}</div>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {m.connect_via_cli_desc()}
-                </div>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectCustom()}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <HugeiconsIcon icon={Settings01Icon} className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground">{m.custom_configuration()}</div>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {m.custom_configuration_desc()}
-                </div>
-              </div>
-            </button>
-          </div>
-        ) : connectStep === "cli" ? (
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {m.connect_cli_instructions()}
-            </p>
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/50 p-4 text-center">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <HugeiconsIcon icon={ComputerIcon} className="size-6" />
-              </div>
-              <div className="text-sm text-foreground">
-                {m.connect_cli_install_desc()}
-              </div>
-            </div>
-          </div>
-        ) : connectStep === "custom" ? (
-          <div className="space-y-4">
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.name()}</span>
-              <input
-                value={agentForm.name}
-                onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder={m.custom_agent_name_placeholder()}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.url()}</span>
-              <input
-                value={agentForm.url}
-                onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
-                placeholder={m.custom_agent_url_placeholder()}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.api_key()}</span>
-              <input
-                value={agentForm.apiKey}
-                onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
-                placeholder={m.api_key_placeholder()}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.model()}</span>
-              <Select
-                value={agentForm.model || undefined}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setAgentForm((prev) => ({ ...prev, model: value }));
-                }}
-                disabled={loadingModels || availableModels.length === 0}
-              >
-                <SelectTrigger className="h-10 w-full rounded-md bg-background px-3 text-sm">
-                  <SelectValue placeholder={loadingModels ? m.loading() : m.model_placeholder()} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {availableModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </label>
-          </div>
-        ) : null}
-      </AppDialog>
-
-      <AppDialog
-        open={showPairingDialog}
-        onOpenChange={setShowPairingDialog}
-        title={m.pairing_token_title()}
-        description={m.pairing_token_desc()}
-        size="lg"
-        footer={
-          <div className="flex w-full items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              {pairing ? m.token_expires_in({ minutes: String(Math.max(1, Math.round((new Date(pairing.expiresAt).getTime() - Date.now()) / 60000))) }) : ""}
-            </span>
-            <Button type="button" variant="default" onClick={() => setShowPairingDialog(false)}>
-              {m.done()}
+            <Button type="button" onClick={handleSaveCustomAgent}>
+              {m.save()}
             </Button>
-          </div>
+          </>
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{m.pairing_token_instructions()}</p>
-
-          <div className="relative">
-            <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted p-4 font-mono text-xs text-foreground">
-              ORCHOS_CLOUD_API_URL=&quot;$YOUR_APP_URL&quot; \
-              ORCHOS_CLOUD_PAIRING_TOKEN={pairing?.pairingToken ?? ""} \
-              bunx @orchos/cli
-            </pre>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-lg border border-border bg-muted px-3 py-2 font-mono text-xs text-foreground select-all">
-              {pairing?.pairingToken ?? ""}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (pairing?.pairingToken) {
-                  void handleCopyToken(pairing.pairingToken);
-                }
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{m.name()}</span>
+            <input
+              value={agentForm.name}
+              onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder={m.custom_agent_name_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{m.url()}</span>
+            <input
+              value={agentForm.url}
+              onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
+              placeholder={m.custom_agent_url_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{m.api_key()}</span>
+            <input
+              value={agentForm.apiKey}
+              onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
+              placeholder={m.api_key_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{m.model()}</span>
+            <Select
+              value={agentForm.model || undefined}
+              onValueChange={(value) => {
+                if (!value) return;
+                setAgentForm((prev) => ({ ...prev, model: value }));
               }}
+              disabled={loadingModels || availableModels.length === 0}
             >
-              <HugeiconsIcon icon={tokenCopied ? Tick01Icon : Copy01Icon} className="size-3.5" />
-              <span className="ml-1.5">{tokenCopied ? m.token_copied() : m.copy_token()}</span>
-            </Button>
-          </div>
+              <SelectTrigger className="h-10 w-full rounded-md bg-background px-3 text-sm">
+                <SelectValue placeholder={loadingModels ? m.loading() : m.model_placeholder()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {availableModels.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </label>
         </div>
       </AppDialog>
     </div>

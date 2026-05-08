@@ -133,12 +133,11 @@ function DashboardContent() {
   const [showAuthTransition, setShowAuthTransition] = useState(() => isAuthTransition());
   const [startDashboardReveal, setStartDashboardReveal] = useState(false);
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
-  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"general" | "notifications" | "runtimes" | "mail" | "about">("general");
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"general" | "notifications" | "mail" | "about">("general");
   const revealTriggeredRef = useRef(false);
   const createBoardTask = useBoardStore((state) => state.createTask);
 
   const {
-    runtimes,
     projects: dashboardProjects,
     organizations,
     problems,
@@ -317,8 +316,6 @@ function DashboardContent() {
             }}
             settings={settings}
             onSettingsChange={useUIStore.getState().setSettings}
-            onRuntimesRefresh={refreshAll}
-            registeredRuntimes={runtimes}
             defaultTab={settingsDefaultTab}
           />
         )}

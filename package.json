@@ -10,14 +10,10 @@
     "dev": "bun run --filter=web dev",
     "deploy:cf": "bun run --filter=web deploy",
     "cf-typegen": "bun run --filter=web cf-typegen",
-    "dev:cli": "bun run --filter=@orchos/cli dev",
-    "dev:all": "bun run --filter=web dev",
-    "build:cli": "bun run --filter=@orchos/cli build",
-    "build:cli:binary": "bun run --filter=@orchos/cli build:binary",
     "lint": "oxlint . --config .oxlintrc.json --ignore-path .gitignore",
     "lint:strict": "oxlint . --config .oxlintrc.json --ignore-path .gitignore --deny-warnings",
     "format": "oxfmt --write .",
-    "check-types": "bun run --filter=web check-types && bun run --filter=@orchos/cli check-types",
+    "check-types": "bun run --filter=web check-types",
     "test": "bun run --filter=web test",
     "prepare": "lefthook install"
   },
@@ -33,6 +29,7 @@
   },
   "packageManager": "bun@1.3.11",
   "dependencies": {
+    "date-fns": "^4.1.0",
     "remark-gfm": "^4.0.1",
     "unicode-animations": "^1.0.3"
   }

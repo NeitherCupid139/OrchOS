@@ -23,7 +23,7 @@ function InboxPage() {
   }, [activeConversationId, navigate, setActiveGoalId]);
 
   return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background text-sm text-muted-foreground">
         {m.redirecting_to_creation()}
       </div>
   );

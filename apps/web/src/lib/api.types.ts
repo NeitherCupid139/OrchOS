@@ -142,16 +142,24 @@ export interface IntegrationRepo {
   private: boolean;
 }
 
+export interface EventTypeCount {
+  type: string;
+  count: number;
+}
+
 export interface ObservabilityMetrics {
-  events: { total: number };
-  runtime: { avgLatencyMs: number; totalCostUsd: number };
+  totalEvents: number;
+  openIssues: number;
+  resolvedIssues: number;
+  eventTypeCounts: EventTypeCount[];
+  recentEvents: Event[];
 }
 
 export interface TimeSeriesPoint {
   time: number;
   label: string;
-  operations: number;
-  successes: number;
+  events: number;
+  issues: number;
 }
 
 export type ControlSettings = ControlSettingsType;

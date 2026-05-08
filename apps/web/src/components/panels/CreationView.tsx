@@ -552,7 +552,7 @@ export function CreationView({
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         {creationSidebarCollapsed ? (
           <Tooltip>
             <TooltipTrigger

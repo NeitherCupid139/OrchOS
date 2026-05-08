@@ -97,7 +97,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background px-4 py-4 md:px-6">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background px-4 py-4 md:px-6">
       <div className="mx-auto flex min-h-0 w-full max-w-full flex-1 flex-col gap-3 px-0 pb-2 md:px-6">
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row lg:items-stretch lg:overflow-x-auto">
           {boardColumns
