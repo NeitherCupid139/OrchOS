@@ -700,7 +700,7 @@ function ClerkAuthenticatedProfile({
             disableAnimation
             className="min-w-48 mb-1"
           >
-            <div className="flex items-center gap-2.5 px-2 py-2">
+            <div className="flex items-center gap-2.5 p-2">
               <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
                 U
               </div>
@@ -751,7 +751,7 @@ function ClerkAuthenticatedProfile({
           disableAnimation
           className="mb-1 min-w-(--anchor-width)"
         >
-          <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="flex items-center gap-2.5 p-2">
             <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
               U
             </div>
@@ -846,7 +846,7 @@ function ClerkAuthenticatedProfile({
         >
           {collapsed && (
             <>
-              <div className="flex items-center gap-2.5 px-2 py-2">
+              <div className="flex items-center gap-2.5 p-2">
                 {user.imageUrl ? (
                   <img
                     src={user.imageUrl}
@@ -1021,7 +1021,7 @@ function ProfileEditDialog({
                 })}
               </nav>
               <div className="flex h-24 items-center border-t border-border p-3">
-                <div className="flex w-full items-center gap-3 rounded-lg border border-border/50 bg-card px-3 py-3">
+                <div className="flex w-full items-center gap-3 rounded-lg border border-border/50 bg-card p-3">
                   {clerkUser?.imageUrl ? (
                     <img
                       src={clerkUser.imageUrl}

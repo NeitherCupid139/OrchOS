@@ -1,6 +1,6 @@
 import {
   createContext,
-  useContext,
+  use,
   useState,
   useCallback,
   useEffect,
@@ -115,7 +115,7 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | null>(null);
 
 export function useDashboard() {
-  const ctx = useContext(DashboardContext);
+  const ctx = use(DashboardContext);
   if (!ctx) throw new Error("useDashboard must be used within DashboardProvider");
   return ctx;
 }

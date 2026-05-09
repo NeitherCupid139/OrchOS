@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "motion/react";
+import { useState } from "react";
 import Header from "@/components/layout/Header";
 import { m } from "@/paraglide/messages";
 import { useLocale } from "@/lib/i18n-provider";
@@ -10,6 +12,7 @@ export const Route = createFileRoute("/")({ component: HomePage });
 
 function HomePageInner() {
   const { locale } = useLocale();
+  const [isHeroPreviewExpanded, setIsHeroPreviewExpanded] = useState(false);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -49,22 +52,57 @@ function HomePageInner() {
               </Button>
             </div>
 
-            <div className="group mt-auto h-[180px] w-full self-center overflow-hidden rounded-t-md border-x border-t border-white/10 bg-black/20 shadow-2xl transition-[height] duration-300 ease-out backdrop-blur-sm hover:h-[260px] sm:h-[220px] sm:hover:h-[320px] lg:h-[260px] lg:hover:h-[400px]">
-              <img
+            <motion.div
+              layout
+              onHoverStart={() => setIsHeroPreviewExpanded(true)}
+              onHoverEnd={() => setIsHeroPreviewExpanded(false)}
+              className={`group mt-auto w-full self-center overflow-hidden rounded-t-md border-x border-t border-white/10 bg-black/20 shadow-2xl backdrop-blur-sm ${
+                isHeroPreviewExpanded
+                  ? "h-[260px] sm:h-[320px] lg:h-[400px]"
+                  : "h-[180px] sm:h-[220px] lg:h-[260px]"
+              }`}
+              transition={{
+                layout: {
+                  type: "spring",
+                  stiffness: 170,
+                  damping: 24,
+                  mass: 0.95,
+                },
+              }}
+            >
+              <motion.img
                 src="/hero/hero.png"
                 alt="OrchOS Hero"
                 className="h-full w-full object-cover object-top dark:hidden"
                 loading="lazy"
                 decoding="async"
+                animate={{
+                  y: isHeroPreviewExpanded ? -10 : 0,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 22,
+                  mass: 1,
+                }}
               />
-              <img
+              <motion.img
                 src="/hero/hero-dark.png"
                 alt="OrchOS Hero"
                 className="hidden h-full w-full object-cover object-top dark:block"
                 loading="lazy"
                 decoding="async"
+                animate={{
+                  y: isHeroPreviewExpanded ? -10 : 0,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 22,
+                  mass: 1,
+                }}
               />
-            </div>
+            </motion.div>
           </div>
         </section>
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, createContext, useContext, type ReactNode } from "react";
+import { useState, useCallback, useEffect, createContext, use, type ReactNode } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useUIStore } from "@/lib/store";
 import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
@@ -68,5 +68,5 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLocale() {
-  return useContext(I18nContext);
+  return use(I18nContext);
 }

@@ -113,7 +113,7 @@ export default function TimeLine_01({
 
             return (
               <div
-                key={index}
+                key={`${entry.title}-${index}`}
                 className={
                   "relative flex gap-4 " +
                   (isSingleEntry

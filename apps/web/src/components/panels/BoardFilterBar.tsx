@@ -87,7 +87,7 @@ export function BoardFilterBar({
       </button>
 
       {conversationBoardColumns
-        .filter((col) => col.id !== "all")
+        .flatMap((col) => col.id !== "all" ? [col] : [])
         .map((column) => {
           return (
             <button

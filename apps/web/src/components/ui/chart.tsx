@@ -1,3 +1,4 @@
+import { use } from "react";
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 import type { TooltipValueType } from "recharts";
@@ -28,7 +29,7 @@ type ChartContextProps = {
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
 function useChart() {
-  const context = React.useContext(ChartContext);
+  const context = use(ChartContext);
 
   if (!context) {
     throw new Error("useChart must be used within a <ChartContainer />");
@@ -173,13 +174,13 @@ function ChartTooltipContent({
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
         {payload
-          .filter((item) => item.type !== "none")
-          .map((item, index) => {
+          .flatMap((item, index) => {
+            if (item.type === "none") return [];
             const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color ?? item.payload?.fill ?? item.color;
 
-            return (
+            return [(
               <div
                 key={index}
                 className={cn(
@@ -238,7 +239,7 @@ function ChartTooltipContent({
                   </>
                 )}
               </div>
-            );
+            )];
           })}
       </div>
     </div>
@@ -272,12 +273,12 @@ function ChartLegendContent({
       )}
     >
       {payload
-        .filter((item) => item.type !== "none")
-        .map((item, index) => {
+        .flatMap((item, index) => {
+          if (item.type === "none") return [];
           const key = `${nameKey ?? item.dataKey ?? "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
-          return (
+          return [(
             <div
               key={index}
               className={cn(
@@ -296,7 +297,7 @@ function ChartLegendContent({
               )}
               {itemConfig?.label}
             </div>
-          );
+          )];
         })}
     </div>
   );

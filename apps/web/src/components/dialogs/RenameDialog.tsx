@@ -26,7 +26,9 @@ export function RenameDialog({
   useEffect(() => {
     if (open) {
       setName(initialValue);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 50);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [open, initialValue]);
 

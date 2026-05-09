@@ -11,9 +11,10 @@ import { Check, Copy, FileCode, FileIcon, FolderIcon, FolderOpenIcon } from "luc
 import {
   createContext,
   useCallback,
-  useContext,
+  use,
   useEffect,
   useMemo,
+  useReducer,
   useState,
   type HTMLAttributes,
   type ReactNode,
@@ -143,7 +144,7 @@ function useIsDesktop() {
 }
 
 const useTree = () => {
-  const context = useContext(TreeContext);
+  const context = use(TreeContext);
 
   if (!context) {
     throw new Error("useTree must be used within a TreeProvider");
@@ -163,8 +164,19 @@ function ShikiViewer({
   showLineNumbers?: boolean;
   className?: string;
 }) {
-  const [html, setHtml] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [highlight, dispatch] = useReducer(
+    (state: { html: string; isLoading: boolean }, action: { type: "SET_LOADING" } | { type: "SET_DATA"; payload: string } | { type: "SET_ERROR"; payload: string }) => {
+      switch (action.type) {
+        case "SET_LOADING":
+          return { ...state, isLoading: true };
+        case "SET_DATA":
+          return { html: action.payload, isLoading: false };
+        case "SET_ERROR":
+          return { html: action.payload, isLoading: false };
+      }
+    },
+    { html: "", isLoading: true },
+  );
   const resolvedTheme = useResolvedTheme();
 
   useEffect(() => {
@@ -172,7 +184,7 @@ function ShikiViewer({
 
     async function highlight() {
       try {
-        setIsLoading(true);
+        dispatch({ type: "SET_LOADING" });
 
         const highlighter = await getHighlighter();
         const highlightedHtml = highlighter.codeToHtml(code, {
@@ -181,13 +193,11 @@ function ShikiViewer({
         });
 
         if (mounted) {
-          setHtml(highlightedHtml);
-          setIsLoading(false);
+          dispatch({ type: "SET_DATA", payload: highlightedHtml });
         }
       } catch {
         if (mounted) {
-          setHtml(`<pre><code>${escapeHtml(code)}</code></pre>`);
-          setIsLoading(false);
+          dispatch({ type: "SET_ERROR", payload: `<pre><code>${escapeHtml(code)}</code></pre>` });
         }
       }
     }
@@ -201,7 +211,7 @@ function ShikiViewer({
 
   const content = useMemo(() => {
     if (!showLineNumbers) {
-      return html;
+      return highlight.html;
     }
 
     const lineNumbers = code
@@ -209,11 +219,11 @@ function ShikiViewer({
       .map((_, index) => `<span>${index + 1}</span>`)
       .join("");
 
-    return html.replace(
+    return highlight.html.replace(
       /<pre[^>]*>([\s\S]*)<\/pre>/,
       `<pre class="line-numbers"><span class="line-numbers-rows">${lineNumbers}</span>$1</pre>`,
     );
-  }, [code, html, showLineNumbers]);
+  }, [code, highlight.html, showLineNumbers]);
 
   return (
     <>
@@ -261,7 +271,7 @@ function ShikiViewer({
         }
       `}</style>
       <div className={cn("shiki-viewer", className)}>
-        {isLoading ? (
+        {highlight.isLoading ? (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
             {m.loading_code()}
           </div>

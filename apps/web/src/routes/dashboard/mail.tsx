@@ -551,7 +551,6 @@ function MailPage() {
             role="separator"
             aria-orientation="vertical"
             aria-label={m.resize_mail_sidebar()}
-            onPointerDown={handleResizeStart}
             className={cn(
               "group absolute right-[-8px] top-0 z-20 h-full w-4",
               sidebarCollapsed && "hidden",
@@ -560,8 +559,9 @@ function MailPage() {
             )}
           >
             <div
+              onPointerDown={handleResizeStart}
               className={cn(
-                "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+                "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
                 isResizingSidebar && "border-border bg-muted shadow-md",
               )}
             >

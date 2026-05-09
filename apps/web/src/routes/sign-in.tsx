@@ -12,14 +12,13 @@ export const Route = createFileRoute("/sign-in")({
   component: SignInPage,
 });
 
-function AuthTransitionMarker() {
+function useAuthTransition() {
   const { isSignedIn } = useAuth();
   useEffect(() => {
     if (isSignedIn) {
       sessionStorage.setItem("orch_auth_transition", "true");
     }
   }, [isSignedIn]);
-  return null;
 }
 
 function SignInPage() {
@@ -34,6 +33,8 @@ function SignInPageInner() {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const hasRedirectedRef = useRef(false);
+
+  useAuthTransition();
 
   useEffect(() => {
     if (!isSignedIn || hasRedirectedRef.current) {
@@ -62,7 +63,6 @@ function SignInPageInner() {
 
   return (
     <>
-      <AuthTransitionMarker />
       <AuthPage mode="signIn">
         <SignInForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">

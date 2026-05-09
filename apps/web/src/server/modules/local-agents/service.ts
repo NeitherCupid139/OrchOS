@@ -38,8 +38,7 @@ export abstract class LocalAgentService {
   static async listForUser(db: AppDb, userId: string, organizationId?: string | null) {
     const rows = await db.select().from(localAgents).where(eq(localAgents.userId, userId)).orderBy(desc(localAgents.lastSeenAt)).all();
     return rows
-      .filter((row) => !organizationId || row.organizationId === organizationId)
-      .map((row) => LocalAgentService.mapRow(row));
+      .flatMap((row) => !organizationId || row.organizationId === organizationId ? [LocalAgentService.mapRow(row)] : []);
   }
 
   static async heartbeat(

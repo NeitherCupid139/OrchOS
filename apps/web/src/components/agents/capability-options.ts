@@ -39,15 +39,15 @@ export const CAPABILITY_COLORS: Record<string, { bg: string; text: string; borde
 export function getCapabilityOptions(skills: SkillProfile[]) {
   const seen = new Set<string>(BUILTIN_CAPABILITY_OPTIONS.map((cap) => cap.value));
   const marketOptions = skills
-    .filter((skill) => skill.enabled)
-    .map((skill) => skill.name.trim())
-    .filter((name) => name.length > 0)
-    .filter((name) => {
-      if (seen.has(name)) return false;
+    .reduce<{ value: string; label: string }[]>((acc, skill) => {
+      if (!skill.enabled) return acc;
+      const name = skill.name.trim();
+      if (name.length === 0) return acc;
+      if (seen.has(name)) return acc;
       seen.add(name);
-      return true;
-    })
-    .map((name) => ({ value: name, label: name }));
+      acc.push({ value: name, label: name });
+      return acc;
+    }, []);
 
   return {
     builtinOptions: BUILTIN_CAPABILITY_OPTIONS,

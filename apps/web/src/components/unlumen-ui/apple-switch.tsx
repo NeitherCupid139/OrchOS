@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { forwardRef, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const switchSizes = {
@@ -57,6 +57,7 @@ interface AppleSwitchProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     "onChange" | "role"
   > {
+  ref?: React.Ref<HTMLButtonElement>;
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -74,32 +75,31 @@ const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
-const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
-  (
-    {
-      checked,
-      onCheckedChange,
-      label,
-      description,
-      size = "md",
-      tone = "neutral",
-      labelSide = "right",
-      className,
-      style,
-      disabled,
-      defaultChecked,
-      id,
-      type = "button",
-      onClick,
-      onPointerCancel,
-      onPointerDown,
-      onPointerLeave,
-      onPointerMove,
-      onPointerUp,
-      ...props
-    },
+const AppleSwitch = (
+  {
+    checked,
     ref,
-  ) => {
+    onCheckedChange,
+    label,
+    description,
+    size = "md",
+    tone = "neutral",
+    labelSide = "right",
+    className,
+    style,
+    disabled,
+    defaultChecked,
+    id,
+    type = "button",
+    onClick,
+    onPointerCancel,
+    onPointerDown,
+    onPointerLeave,
+    onPointerMove,
+    onPointerUp,
+    ...props
+  }: AppleSwitchProps,
+) => {
     const generatedId = useId();
     const switchId = id ?? generatedId;
     const [uncontrolledChecked, setUncontrolledChecked] = useState(
@@ -386,9 +386,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         )}
       </label>
     );
-  },
-);
+  }
 
 AppleSwitch.displayName = "AppleSwitch";
-
 export { AppleSwitch, type AppleSwitchProps };

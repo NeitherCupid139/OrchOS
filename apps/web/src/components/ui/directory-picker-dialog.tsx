@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback, useReducer } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FolderIcon, ArrowLeft01Icon, Home01Icon } from "@hugeicons/core-free-icons";
@@ -27,25 +27,82 @@ export function DirectoryPickerDialog({
   onSelect,
   currentPath: initialPath,
 }: DirectoryPickerDialogProps) {
-  const [path, setPath] = useState(initialPath || "~");
-  const [directories, setDirectories] = useState<DirEntry[]>([]);
-  const [parentPath, setParentPath] = useState<string | undefined>();
-  const [loading, setLoading] = useState(false);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  type DirectoryPickerState = {
+    path: string;
+    directories: DirEntry[];
+    parentPath?: string;
+    loading: boolean;
+    selectedPath: string | null;
+  };
+
+  type DirectoryPickerAction =
+    | { type: "load-start" }
+    | {
+        type: "load-success";
+        payload: {
+          path: string;
+          directories: DirEntry[];
+          parentPath?: string;
+        };
+      }
+    | { type: "load-error" }
+    | { type: "select-path"; payload: string };
+
+  const [state, dispatch] = useReducer(
+    (currentState: DirectoryPickerState, action: DirectoryPickerAction): DirectoryPickerState => {
+      switch (action.type) {
+        case "load-start":
+          return {
+            ...currentState,
+            loading: true,
+          };
+        case "load-success":
+          return {
+            path: action.payload.path,
+            directories: action.payload.directories,
+            parentPath: action.payload.parentPath,
+            loading: false,
+            selectedPath: null,
+          };
+        case "load-error":
+          return {
+            ...currentState,
+            directories: [],
+            loading: false,
+          };
+        case "select-path":
+          return {
+            ...currentState,
+            selectedPath: action.payload,
+          };
+      }
+    },
+    {
+      path: initialPath || "~",
+      directories: [],
+      parentPath: undefined,
+      loading: false,
+      selectedPath: null,
+    },
+  );
+
+  const { path, directories, parentPath, loading, selectedPath } = state;
 
   const loadDirectory = useCallback(async (dirPath: string) => {
-    setLoading(true);
+    dispatch({ type: "load-start" });
     try {
       const result = await api.browseDirectory(dirPath);
-      setPath(result.currentPath);
-      setParentPath(result.parentPath);
-      setDirectories(result.directories);
-      setSelectedPath(null);
+      dispatch({
+        type: "load-success",
+        payload: {
+          path: result.currentPath,
+          parentPath: result.parentPath,
+          directories: result.directories,
+        },
+      });
     } catch (err) {
       console.error("Failed to browse directory:", err);
-      setDirectories([]);
-    } finally {
-      setLoading(false);
+      dispatch({ type: "load-error" });
     }
   }, []);
 
@@ -147,7 +204,7 @@ export function DirectoryPickerDialog({
                           ? "bg-primary/10 text-primary"
                           : "text-foreground hover:bg-muted",
                       )}
-                      onClick={() => setSelectedPath(dir.path)}
+                      onClick={() => dispatch({ type: "select-path", payload: dir.path })}
                       onDoubleClick={() => handleNavigate(dir.path)}
                     >
                       <HugeiconsIcon

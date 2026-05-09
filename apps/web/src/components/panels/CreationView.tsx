@@ -73,6 +73,19 @@ export function CreationView({
   runtimes,
   settings,
 }: CreationViewProps) {
+  const handleConversationListItemKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+    conversationId: string,
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    setActiveConversationId(conversationId);
+    setShowBookmarks(false);
+  };
+
   const creationFilterButtons = [
     { value: "all", label: m.all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
     { value: "active", label: m.creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
@@ -443,6 +456,9 @@ export function CreationView({
                   return (
                     <div
                       key={conversation.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isActive}
                       className={cn(
                         "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
                         isActive
@@ -453,6 +469,7 @@ export function CreationView({
                         setActiveConversationId(conversation.id);
                         setShowBookmarks(false);
                       }}
+                      onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
                     >
                       <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
                       <button type="button" className="flex-1 text-left">
@@ -529,7 +546,6 @@ export function CreationView({
           role="separator"
           aria-orientation="vertical"
           aria-label={m.resize_creation_sidebar()}
-          onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4",
             creationSidebarCollapsed && "hidden",
@@ -537,8 +553,9 @@ export function CreationView({
           )}
         >
           <div
+            onPointerDown={handleResizeStart}
             className={cn(
-              "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >
@@ -763,13 +780,13 @@ function ChatArea({
     })[e.id],
   }));
   const pinnedGroups = useMemo(
-    () => bookmarks
-      .map((category) => ({
-        name: category.name,
-        id: category.id,
-        bookmarks: category.bookmarks.filter((b) => b.pinned),
-      }))
-      .filter((group) => group.bookmarks.length > 0),
+    () => bookmarks.reduce<{ name: string; id: string; bookmarks: typeof bookmarks[number]["bookmarks"] }[]>((acc, category) => {
+      const pinned = category.bookmarks.filter((b) => b.pinned);
+      if (pinned.length > 0) {
+        acc.push({ name: category.name, id: category.id, bookmarks: pinned });
+      }
+      return acc;
+    }, []),
     [bookmarks],
   );
 
@@ -1021,7 +1038,7 @@ function ChatArea({
               <div className="flex flex-wrap gap-1.5">
                 {attachedFiles.map((file, index) => (
                   <div
-                    key={index}
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
                     className="relative group overflow-hidden rounded-md border border-border bg-muted"
                   >
                     <img

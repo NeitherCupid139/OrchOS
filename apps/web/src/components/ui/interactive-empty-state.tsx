@@ -1,5 +1,6 @@
-import { type ReactNode, memo, useId, forwardRef } from "react";
-import { motion, LazyMotion, domAnimation } from "motion/react";
+import type { ReactNode, Ref } from "react";
+import { memo, useId } from "react";
+import { motion, LazyMotion, domAnimation, useReducedMotion } from "motion/react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -126,9 +127,10 @@ export type EmptyStateProps = {
   size?: EmptyStateSize;
   isIconAnimated?: boolean;
   className?: string;
+  ref?: Ref<HTMLElement>;
 };
 
-export const EmptyState = forwardRef<HTMLElement, EmptyStateProps>(function EmptyState(
+export function EmptyState(
   {
     title,
     description,
@@ -138,11 +140,12 @@ export const EmptyState = forwardRef<HTMLElement, EmptyStateProps>(function Empt
     size = "default",
     isIconAnimated = true,
     className = "",
-  },
-  ref,
+    ref,
+  }: EmptyStateProps
 ) {
   const titleId = useId();
   const descriptionId = useId();
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <LazyMotion features={domAnimation}>
@@ -152,14 +155,14 @@ export const EmptyState = forwardRef<HTMLElement, EmptyStateProps>(function Empt
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          "group transition-all duration-300 rounded-xl relative overflow-hidden text-center flex flex-col items-center justify-center",
+          "group relative flex flex-col items-center justify-center overflow-hidden rounded-xl text-center transition-all duration-300 motion-reduce:transition-none",
           sizeClasses[size],
           emptyStateVariantClasses[variant],
           className,
         )}
-        initial="initial"
-        animate="animate"
-        whileHover={isIconAnimated ? "hover" : "animate"}
+        initial={shouldReduceMotion ? false : "initial"}
+        animate={shouldReduceMotion ? undefined : "animate"}
+        whileHover={shouldReduceMotion || !isIconAnimated ? undefined : "hover"}
       >
         <Background />
         <div className="relative z-10 flex flex-col items-center">
@@ -188,8 +191,8 @@ export const EmptyState = forwardRef<HTMLElement, EmptyStateProps>(function Empt
               <Button type="button" onClick={action.onClick} disabled={action.disabled}>
                 {action.icon ? (
                   <motion.span
-                    className="transition-transform group-hover/button:rotate-90"
-                    whileHover={{ rotate: 90 }}
+                    className="transition-transform group-hover/button:rotate-90 motion-reduce:transition-none"
+                    whileHover={shouldReduceMotion ? undefined : { rotate: 90 }}
                   >
                     {action.icon}
                   </motion.span>
@@ -204,4 +207,4 @@ export const EmptyState = forwardRef<HTMLElement, EmptyStateProps>(function Empt
       </motion.section>
     </LazyMotion>
   );
-});
+}

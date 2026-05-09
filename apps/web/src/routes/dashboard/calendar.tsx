@@ -147,7 +147,7 @@ function CalendarPage() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [localStoreLoaded, setLocalStoreLoaded] = useState(false);
+  const localStoreLoadedRef = useRef(false);
   const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
   const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(new Date()));
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
@@ -195,8 +195,7 @@ function CalendarPage() {
 
   const activeLocalCalendarIds = useMemo(() => {
     return localCalendars
-      .filter((calendar) => !hiddenCalendarIds.includes(calendar.id))
-      .map((calendar) => calendar.id);
+      .flatMap((calendar) => !hiddenCalendarIds.includes(calendar.id) ? [calendar.id] : []);
   }, [hiddenCalendarIds, localCalendars]);
 
   const localEventsInScope = useMemo(() => {
@@ -223,6 +222,11 @@ function CalendarPage() {
   const renderableEvents = useMemo<CalendarRenderableEvent[]>(
     () => [...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })), ...boardTasksToCalendarEvents(boardTasks)],
     [boardTasks, localEventsInScope],
+  );
+
+  const upcomingEvents = useMemo(
+    () => renderableEvents.slice().sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()).slice(0, 8),
+    [renderableEvents],
   );
 
   const fullScreenCalendarData = useMemo<FullScreenCalendarDay[]>(
@@ -289,7 +293,7 @@ function CalendarPage() {
     try {
       setLocalStore(loadLocalCalendarStore());
     } finally {
-      setLocalStoreLoaded(true);
+      localStoreLoadedRef.current = true;
     }
   }, []);
 
@@ -327,12 +331,12 @@ function CalendarPage() {
   }, [accounts, activeAccountId]);
 
   useEffect(() => {
-    if (!localStoreLoaded) {
+    if (!localStoreLoadedRef.current) {
       return;
     }
 
     window.localStorage.setItem(LOCAL_CALENDAR_STORAGE_KEY, JSON.stringify(localStore));
-  }, [localStore, localStoreLoaded]);
+  }, [localStore]);
 
   useEffect(() => {
     const selectedDay = eventsByDay.get(selectedLocalDate);
@@ -698,7 +702,7 @@ function CalendarPage() {
   }
 
   function handleDeleteLocalGroup(group: LocalCalendarGroup) {
-    const relatedCalendarIds = localCalendars.filter((calendar) => calendar.groupId === group.id).map((calendar) => calendar.id);
+    const relatedCalendarIds = localCalendars.flatMap((calendar) => calendar.groupId === group.id ? [calendar.id] : []);
     if (!window.confirm(m.calendar_delete_group_confirm({ name: group.name }))) {
       return;
     }
@@ -739,8 +743,7 @@ function CalendarPage() {
     const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
 
     setIsResizingSidebar(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    document.body.style.cssText += ";cursor:col-resize;user-select:none;";
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
@@ -1133,7 +1136,7 @@ function CalendarPage() {
                         </div>
 
                         <div className="mt-5 space-y-3">
-                          {renderableEvents.slice().sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()).slice(0, 8).map((event) => (
+                          {upcomingEvents.map((event) => (
                             <button
                               key={event.id}
                               type="button"
@@ -1145,7 +1148,7 @@ function CalendarPage() {
                               <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", event.source === "task" ? "bg-sky-500" : "bg-emerald-500")} />
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                <div className="mt-1 text-xs text-muted-foreground">
+                                <div className="mt-1 text-xs text-muted-foreground" suppressHydrationWarning>
                                   {formatLongDate(formatDayKey(new Date(event.startAt)))} · {event.source === "task" ? "Task" : "Event"}
                                 </div>
                               </div>
@@ -1453,7 +1456,7 @@ function CalendarPage() {
           <button
             type="button"
             onClick={openGoogleCalendarDialog}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
+            className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
               <HugeiconsIcon icon={GoogleIcon} className="size-5" />
@@ -1469,7 +1472,7 @@ function CalendarPage() {
           <button
             type="button"
             onClick={() => openLocalGroupDialog()}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
+            className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
               <HugeiconsIcon icon={SquareArrowDataTransferHorizontalIcon} className="size-5" />
@@ -1887,11 +1890,11 @@ function formatBoardColumnLabel(column: BoardTaskColumnId) {
 
 function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getState>["tasks"]) {
   return tasks
-    .filter((task) => Boolean(task.dueDate))
-    .map((task) => {
+    .flatMap((task) => {
+      if (!task.dueDate) return [];
       const startAt = `${task.dueDate}T09:00`;
       const endAt = `${task.dueDate}T10:00`;
-      return {
+      return [{
         id: `task-${task.id}`,
         calendarId: "board-tasks",
         title: task.title,
@@ -1901,6 +1904,6 @@ function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getSt
         endAt,
         allDay: false,
         source: "task" as const,
-      };
+      }];
     });
 }

@@ -33,11 +33,12 @@ export abstract class FilesystemService {
     try {
       const items = readdirSync(resolvedPath, { withFileTypes: true });
       entries = items
-        .filter((item) => item.isDirectory() && !item.name.startsWith("."))
-        .map((item) => ({
-          name: item.name,
-          path: join(resolvedPath, item.name),
-        }))
+        .reduce<{ name: string; path: string }[]>((acc, item) => {
+          if (item.isDirectory() && !item.name.startsWith(".")) {
+            acc.push({ name: item.name, path: join(resolvedPath, item.name) });
+          }
+          return acc;
+        }, [])
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch {
       // Permission denied or other error

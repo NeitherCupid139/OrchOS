@@ -31,8 +31,10 @@ function readTextPart(message: unknown) {
 
   if (Array.isArray(candidate.parts)) {
     return candidate.parts
-      .filter((part) => part?.type === "text" && typeof part.text === "string")
-      .map((part) => part.text)
+      .reduce((acc, part) => {
+        if (part?.type === "text" && typeof part.text === "string") acc.push(part.text);
+        return acc;
+      }, [] as string[])
       .join("");
   }
 

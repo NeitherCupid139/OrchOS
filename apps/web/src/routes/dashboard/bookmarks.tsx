@@ -187,21 +187,20 @@ function parseBookmarkHtml(text: string) {
   const doc = parser.parseFromString(text, "text/html");
 
   const looseLinks = Array.from(doc.querySelectorAll("a[href]"));
-  const bookmarks = looseLinks
-    .map((link, index) => {
+  const bookmarks: ImportedBookmark[] = looseLinks
+    .flatMap((link, index) => {
       const url = link.getAttribute("href")?.trim() ?? "";
       if (!url) {
-        return null;
+        return [];
       }
 
-        return {
+        return [{
           id: createImportId("bookmark", "imported", String(index), link.textContent || "bookmark"),
           title: link.textContent?.trim() || url,
           url,
           pinned: false,
-        } as ImportedBookmark;
-    })
-    .filter((item): item is ImportedBookmark => item !== null);
+        }];
+    });
 
   return bookmarks.length > 0 ? [normalizeCategory("Imported", bookmarks, used)] : [];
 }
@@ -211,26 +210,25 @@ function parseBookmarkJson(text: string) {
   const used = new Set<string>();
 
   if (Array.isArray(data)) {
-    const bookmarks = data
-      .map((item, index) => {
+    const bookmarks: ImportedBookmark[] = data
+      .flatMap((item, index) => {
         if (!item || typeof item !== "object") {
-          return null;
+          return [];
         }
 
         const record = item as Record<string, unknown>;
         const url = typeof record.url === "string" ? record.url.trim() : "";
         if (!url) {
-          return null;
+          return [];
         }
 
-        return {
+        return [{
           id: createImportId("bookmark", "imported", String(index), String(record.title || record.name || url)),
           title: typeof record.title === "string" ? record.title : typeof record.name === "string" ? record.name : url,
           url,
           pinned: false,
-        } as ImportedBookmark;
-      })
-      .filter((item): item is ImportedBookmark => item !== null);
+        }];
+      });
 
     return bookmarks.length > 0 ? [normalizeCategory("Imported", bookmarks, used)] : [];
   }
@@ -246,26 +244,25 @@ function parseBookmarkJson(text: string) {
       continue;
     }
 
-    const bookmarks = value
-      .map((item, index) => {
+    const bookmarks: ImportedBookmark[] = value
+      .flatMap((item, index) => {
         if (!item || typeof item !== "object") {
-          return null;
+          return [];
         }
 
         const record = item as Record<string, unknown>;
         const url = typeof record.url === "string" ? record.url.trim() : "";
         if (!url) {
-          return null;
+          return [];
         }
 
-        return {
+        return [{
           id: createImportId("bookmark", name, String(index), String(record.title || record.name || url)),
           title: typeof record.title === "string" ? record.title : typeof record.name === "string" ? record.name : url,
           url,
           pinned: false,
-        } as ImportedBookmark;
-      })
-      .filter((item): item is ImportedBookmark => item !== null);
+        }];
+      });
 
     if (bookmarks.length > 0) {
       categories.push(normalizeCategory(name, bookmarks, used));
@@ -1301,7 +1298,7 @@ function BookmarksPage() {
             <button
               type="button"
               onClick={handleSelectCategoryCreate}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
+              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <HugeiconsIcon icon={Folder01Icon} className="size-5" />
@@ -1316,7 +1313,7 @@ function BookmarksPage() {
             <button
               type="button"
               onClick={handleSelectImport}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-accent/40"
+              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <HugeiconsIcon icon={Upload01Icon} className="size-5" />

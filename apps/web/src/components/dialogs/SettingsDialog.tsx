@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useReducer } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Cancel01Icon,
@@ -154,8 +154,19 @@ export function SettingsDialog({
       setActiveTab(defaultTab);
     }
   }, [open, defaultTab]);
-  const [mailIntegrations, setMailIntegrations] = useState<SettingsMailIntegration[]>([]);
-  const [loadingMail, setLoadingMail] = useState(false);
+  const [mailState, dispatchMail] = useReducer(
+    (state: { mailIntegrations: SettingsMailIntegration[]; loadingMail: boolean }, action: { type: "SET_LOADING" } | { type: "SET_INTEGRATIONS"; payload: SettingsMailIntegration[] } | { type: "LOAD_ERROR" }) => {
+      switch (action.type) {
+        case "SET_LOADING":
+          return { ...state, loadingMail: true };
+        case "SET_INTEGRATIONS":
+          return { mailIntegrations: action.payload, loadingMail: false };
+        case "LOAD_ERROR":
+          return { ...state, loadingMail: false };
+      }
+    },
+    { mailIntegrations: [], loadingMail: false },
+  );
   const [editingMailAccount, setEditingMailAccount] = useState<{ integrationId: string; account: MailIntegrationAccount } | null>(null);
   const [editMailForm, setEditMailForm] = useState<{
     label: string;
@@ -281,11 +292,13 @@ export function SettingsDialog({
 
   // Load mail integrations when the mail tab is activated
   useEffect(() => {
-    if (open && activeTab === "mail" && !loadingMail) {
-      setLoadingMail(true);
+    if (open && activeTab === "mail" && !mailState.loadingMail) {
+      dispatchMail({ type: "SET_LOADING" });
       api.listIntegrations().then((result) => {
-        setMailIntegrations(result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[]);
-      }).finally(() => setLoadingMail(false));
+        dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
+      }).catch(() => {
+        dispatchMail({ type: "LOAD_ERROR" });
+      });
     }
   }, [open, activeTab]);
 
@@ -324,7 +337,7 @@ export function SettingsDialog({
           imap: { host: editMailForm.imapHost, port: isNaN(imapPort) ? 993 : imapPort, secure: editMailForm.imapSecure },
         },
       });
-      setMailIntegrations((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      dispatchMail({ type: "SET_INTEGRATIONS", payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)) });
       setEditingMailAccount(null);
     } catch (err) {
       console.error("Failed to update mail account:", err);
@@ -334,7 +347,7 @@ export function SettingsDialog({
   const handleDeleteMailAccount = useCallback(async (integrationId: string, accountId: string) => {
     try {
       const updated = await api.deleteIntegrationAccount(integrationId, accountId);
-      setMailIntegrations((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      dispatchMail({ type: "SET_INTEGRATIONS", payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)) });
     } catch (err) {
       console.error("Failed to delete mail account:", err);
     }
@@ -596,11 +609,11 @@ export function SettingsDialog({
                   </div>
                 </div>
 
-                {loadingMail ? (
+                {mailState.loadingMail ? (
                   <div className="flex items-center justify-center py-8">
                     <Spinner size="sm" />
                   </div>
-                ) : mailIntegrations.length === 0 ? (
+                ) : mailState.mailIntegrations.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-border/50 py-6 text-center">
                     <HugeiconsIcon icon={InboxIcon} className="mx-auto size-5 text-muted-foreground/30 mb-2" />
                     <p className="text-sm text-muted-foreground">{m.no_mail_accounts_configured()}</p>
@@ -610,7 +623,7 @@ export function SettingsDialog({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {mailIntegrations.map((integration) => (
+                    {mailState.mailIntegrations.map((integration) => (
                       <div key={integration.id} className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                           <HugeiconsIcon icon={integration.id === "google-mail" ? GoogleIcon : InboxIcon} className="size-4" />

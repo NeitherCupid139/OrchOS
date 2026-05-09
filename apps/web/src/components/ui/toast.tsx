@@ -134,7 +134,7 @@ const ToastContainer = () => {
   }, []);
 
   useEffect(() => {
-    const unseen = toasts.filter(t => !shownIds.includes(t.id)).map(t => t.id);
+    const unseen = toasts.reduce<number[]>((acc, t) => { if (!shownIds.includes(t.id)) acc.push(t.id); return acc; }, []);
     if (unseen.length > 0) {
       requestAnimationFrame(() => {
         setShownIds(prev => [...prev, ...unseen]);

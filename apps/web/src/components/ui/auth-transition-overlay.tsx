@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Player } from "@remotion/player";
-import type { PlayerRef } from "@remotion/player";
 import { GridPixelateWipe } from "@/components/ui/grid-pixelate-wipe";
 
 interface AuthTransitionOverlayProps {
@@ -8,6 +7,8 @@ interface AuthTransitionOverlayProps {
   reveal: boolean;
   onComplete?: () => void;
 }
+
+type TransitionPhase = "hidden" | "holding" | "playing";
 
 const TRANSITION_DURATION_FRAMES = 44;
 const TRANSITION_FPS = 30;
@@ -48,16 +49,15 @@ function AuthScene({ reveal }: { reveal: boolean }) {
 }
 
 export function AuthTransitionOverlay({ active, reveal, onComplete }: AuthTransitionOverlayProps) {
-  const [shouldPlay, setShouldPlay] = useState(false);
+  const [phase, setPhase] = useState<TransitionPhase>(active ? "holding" : "hidden");
   const completedRef = useRef(false);
-  const playerRef = useRef<PlayerRef>(null);
 
   useEffect(() => {
     completedRef.current = false;
   }, [active]);
 
   useEffect(() => {
-    if (!shouldPlay || !playerRef.current) {
+    if (phase !== "playing") {
       return;
     }
 
@@ -71,31 +71,33 @@ export function AuthTransitionOverlay({ active, reveal, onComplete }: AuthTransi
     }, (TRANSITION_DURATION_FRAMES / TRANSITION_FPS) * 1000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [onComplete, shouldPlay]);
+  }, [onComplete, phase]);
 
   useEffect(() => {
     if (!active) {
-      setShouldPlay(false);
+      setPhase("hidden");
       return;
     }
 
     if (!reveal) {
-      setShouldPlay(false);
+      setPhase("holding");
       return;
     }
 
+    setPhase("holding");
+
     const timeoutId = window.setTimeout(() => {
-      setShouldPlay(true);
+      setPhase("playing");
     }, HOLD_BEFORE_WIPE_MS);
 
     return () => window.clearTimeout(timeoutId);
   }, [active, reveal]);
 
-  if (!active) {
+  if (phase === "hidden") {
     return null;
   }
 
-  if (!shouldPlay) {
+  if (phase !== "playing") {
     return (
       <div className="pointer-events-none fixed inset-0 z-[120] overflow-hidden" aria-hidden="true">
         <div
@@ -110,7 +112,6 @@ export function AuthTransitionOverlay({ active, reveal, onComplete }: AuthTransi
   return (
     <div className="pointer-events-none fixed inset-0 z-[120] overflow-hidden" aria-hidden="true">
       <Player
-        ref={playerRef}
         component={AuthScene}
         inputProps={{ reveal }}
         durationInFrames={TRANSITION_DURATION_FRAMES}

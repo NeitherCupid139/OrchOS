@@ -174,7 +174,7 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                       <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {problem.priority}
                       </span>
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-[10px]" suppressHydrationWarning>
                         {new Date(problem.createdAt).toLocaleDateString()}
                       </Badge>
                     </div>
@@ -230,8 +230,8 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                       strokeWidth={2}
                       stroke="var(--background)"
                     >
-                      {priorityData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      {priorityData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
                       ))}
                     </Pie>
                   </PieChart>

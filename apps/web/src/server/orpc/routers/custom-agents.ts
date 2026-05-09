@@ -43,9 +43,11 @@ export const customAgentsRouter = {
       data?: Array<{ id?: string | null }>;
     };
 
-    const models = (data.data ?? [])
-      .map((item) => item.id?.trim())
-      .filter((model): model is string => Boolean(model));
+    const models: string[] = [];
+    for (const item of data.data ?? []) {
+      const id = item.id?.trim();
+      if (id) models.push(id);
+    }
 
     return { models };
   }),

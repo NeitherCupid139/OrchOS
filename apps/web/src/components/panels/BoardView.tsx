@@ -101,7 +101,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
       <div className="mx-auto flex min-h-0 w-full max-w-full flex-1 flex-col gap-3 px-0 pb-2 md:px-6">
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row lg:items-stretch lg:overflow-x-auto">
           {boardColumns
-            .filter((column) => boardFilter === "all" || column.id === boardFilter)
+            .flatMap((column) => boardFilter === "all" || column.id === boardFilter ? [column] : [])
             .map((column) => {
               const columnCards = boardCards.filter((card) => card.column === column.id);
 

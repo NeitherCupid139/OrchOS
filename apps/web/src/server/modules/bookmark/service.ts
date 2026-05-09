@@ -31,13 +31,12 @@ export abstract class BookmarkService {
       name: category.name,
       icon: category.icon,
       bookmarks: bookmarkRows
-        .filter((bookmark) => bookmark.categoryId === category.id)
-        .map((bookmark) => ({
+        .flatMap((bookmark) => bookmark.categoryId === category.id ? [{
           id: bookmark.id,
           title: bookmark.title,
           url: bookmark.url,
           pinned: bookmark.pinned === "true",
-        })),
+        }] : []),
     }));
   }
 

@@ -273,7 +273,7 @@ export function GoalPreviewCard() {
                 </p>
                 <div className="space-y-1">
                   {activeGoal.successCriteria.map((c, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-foreground">
+                    <div key={`${c}-${i}`} className="flex items-center gap-1.5 text-xs text-foreground">
                       <div
                         className={cn(
                           "size-3.5 shrink-0 rounded flex items-center justify-center",
@@ -298,7 +298,7 @@ export function GoalPreviewCard() {
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {activeGoal.constraints.map((c, i) => (
-                      <Badge key={i} variant="outline" className="text-[8px] px-1.5 py-0 h-4">
+                      <Badge key={`${c}-${i}`} variant="outline" className="text-[8px] px-1.5 py-0 h-4">
                         {c}
                       </Badge>
                     ))}

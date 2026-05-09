@@ -178,7 +178,7 @@ export function FullScreenCalendar({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col antialiased">
-      <div className="flex flex-col gap-4 border-b border-border/70 px-4 py-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border/70 p-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-auto">
           <div className="flex items-center gap-4">
             <div className="hidden w-20 flex-col items-center justify-center rounded-xl border border-border/70 bg-muted/40 p-1 md:flex">
@@ -320,6 +320,7 @@ function DayTimelineView({
 
             {showNowLine ? (
               <div
+                suppressHydrationWarning
                 className="pointer-events-none absolute inset-x-0 z-10 border-t border-rose-500/90"
                 style={{ top: `${getCurrentTimeOffset(now)}px` }}
               >
@@ -328,7 +329,7 @@ function DayTimelineView({
             ) : null}
 
             {onCreateSlot ? (
-              <div className="absolute inset-0">
+              <div className="absolute inset-0" suppressHydrationWarning>
                 {HOURS.flatMap((hour) =>
                   [0, 30].map((minute) => {
                     const slotStart = new Date(day);
@@ -497,6 +498,7 @@ function WeekTimelineView({
               ))}
               {isSameDay(day, now) ? (
                 <div
+                  suppressHydrationWarning
                   className="pointer-events-none absolute inset-x-0 z-10 border-t border-rose-500/90"
                   style={{ top: `${getCurrentTimeOffset(now)}px` }}
                 >
@@ -504,7 +506,7 @@ function WeekTimelineView({
                 </div>
               ) : null}
               {onCreateSlot ? (
-                <div className="absolute inset-0">
+                <div className="absolute inset-0" suppressHydrationWarning>
                   {HOURS.flatMap((hour) =>
                     [0, 30].map((minute) => {
                       const slotStart = new Date(day);

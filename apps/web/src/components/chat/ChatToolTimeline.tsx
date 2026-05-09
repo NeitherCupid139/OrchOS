@@ -213,7 +213,7 @@ function MatchedRulesCard({ output }: { output: unknown }) {
           const pathPatterns = Array.isArray(rule.pathPatterns) ? rule.pathPatterns.map(String) : [];
 
           return (
-            <div key={`${name}-${index}`} className="rounded-lg border border-border/40 bg-background/60 px-3 py-2">
+            <div key={name} className="rounded-lg border border-border/40 bg-background/60 px-3 py-2">
               <div className="flex items-center gap-2 text-[11px]">
                 <span className={cn("size-2 rounded-full", matched ? "bg-emerald-500" : "bg-amber-500")} />
                 <span className="font-medium text-foreground/80">{name}</span>

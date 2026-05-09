@@ -35,7 +35,7 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
         <div className="pointer-events-none absolute left-4 top-0 z-20 flex h-full flex-col items-center justify-around py-24">
           {[...Array(3)].map((_, i) => (
             <div
-              key={i}
+              key={`hole-${i}`}
               className="rounded-full"
               style={{
                 width: "20px",
@@ -99,7 +99,7 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
             <div>
               {cueItems.map((item, i) => (
                 <div
-                  key={i}
+                  key={`cue-${i}`}
                   style={{
                     minHeight: `${LINE_GAP * 2}px`,
                     marginBottom: `${LINE_GAP}px`,

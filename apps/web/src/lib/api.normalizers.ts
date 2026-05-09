@@ -4,34 +4,31 @@ import { isRecord, readString } from "./api.shared";
 export function normalizeTrace(trace: unknown): ConversationMessage["trace"] {
   if (!Array.isArray(trace)) return undefined;
 
-  return trace
-    .filter((item) => isRecord(item) && typeof item.kind === "string")
-    .map((item) => {
-      if (item.kind === "message" || item.kind === "thought") {
-        return {
-          kind: item.kind,
-          text: readString(item.text) ?? "",
-        };
-      }
+  const result: NonNullable<ConversationMessage["trace"]> = [];
+  for (const item of trace) {
+    if (!isRecord(item) || typeof item.kind !== "string") continue;
 
-      if (item.kind === "tool") {
-        return {
-          kind: "tool" as const,
-          toolName: readString(item.toolName),
-          toolCallId: readString(item.toolCallId),
-          state: readString(item.state),
-          input: item.input,
-          output: item.output,
-          errorText: readString(item.errorText),
-        };
-      }
+    if (item.kind === "message" || item.kind === "thought") {
+      result.push({
+        kind: item.kind,
+        text: readString(item.text) ?? "",
+      });
+      continue;
+    }
 
-      return null;
-    })
-    .filter(
-      (item): item is NonNullable<ConversationMessage["trace"]>[number] =>
-        item !== null,
-    );
+    if (item.kind === "tool") {
+      result.push({
+        kind: "tool" as const,
+        toolName: readString(item.toolName),
+        toolCallId: readString(item.toolCallId),
+        state: readString(item.state),
+        input: item.input,
+        output: item.output,
+        errorText: readString(item.errorText),
+      });
+    }
+  }
+  return result.length > 0 ? result : undefined;
 }
 
 export function normalizeConversationMessage(

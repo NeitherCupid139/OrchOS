@@ -349,7 +349,7 @@ export function FeaturesBento() {
                 }}
                 className="border-t border-border px-5 py-4"
               >
-                <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-3">
+                <div className="flex items-end gap-2 rounded-xl border border-border bg-background p-3">
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

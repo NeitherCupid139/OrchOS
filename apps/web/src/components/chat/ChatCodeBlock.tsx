@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { createHighlighter } from "shiki";
 import { Check, Copy } from "lucide-react";
 
@@ -81,9 +81,26 @@ function useResolvedTheme() {
   return theme;
 }
 
+type HighlightState = { html: string; loading: boolean };
+
+type HighlightAction =
+  | { type: "SET_LOADING" }
+  | { type: "SET_DATA"; payload: string }
+  | { type: "SET_ERROR"; payload: string };
+
+function highlightReducer(state: HighlightState, action: HighlightAction): HighlightState {
+  switch (action.type) {
+    case "SET_LOADING":
+      return { ...state, loading: true };
+    case "SET_DATA":
+      return { html: action.payload, loading: false };
+    case "SET_ERROR":
+      return { html: action.payload, loading: false };
+  }
+}
+
 export function ChatCodeBlock({ code, language }: { code: string; language?: string }) {
-  const [html, setHtml] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [highlight, dispatch] = useReducer(highlightReducer, { html: "", loading: true });
   const [copied, setCopied] = useState(false);
   const resolvedTheme = useResolvedTheme();
 
@@ -92,7 +109,7 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
 
     async function highlight() {
       try {
-        setLoading(true);
+        dispatch({ type: "SET_LOADING" });
         const highlighter = await getChatHighlighter();
         const highlightedHtml = highlighter.codeToHtml(code, {
           lang: normalizeCodeLanguage(language || "text"),
@@ -100,13 +117,11 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
         });
 
         if (mounted) {
-          setHtml(highlightedHtml);
-          setLoading(false);
+          dispatch({ type: "SET_DATA", payload: highlightedHtml });
         }
       } catch {
         if (mounted) {
-          setHtml(`<pre><code>${escapeHtml(code)}</code></pre>`);
-          setLoading(false);
+          dispatch({ type: "SET_ERROR", payload: `<pre><code>${escapeHtml(code)}</code></pre>` });
         }
       }
     }
@@ -147,12 +162,12 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
         </Tooltip>
       </div>
       <div className="overflow-x-auto">
-        {loading ? (
+        {highlight.loading ? (
           <div className="px-3 py-4 text-[11px] text-muted-foreground/50 font-mono">{m.loading()}</div>
         ) : (
           <div
             className="text-[0.8125rem] leading-[1.55] [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:!p-3 [&_pre]:!text-[0.8125rem] [&_pre]:!leading-[1.55] [&_code]:!bg-transparent [&_code]:!p-0 [&_code]:!font-mono [&_code]:!text-[0.8125rem]"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: highlight.html }}
           />
         )}
       </div>

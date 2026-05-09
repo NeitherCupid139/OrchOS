@@ -3,7 +3,7 @@ import {
   useRef,
   useEffect,
   createContext,
-  useContext,
+  use,
   useMemo,
   useCallback,
 } from "react";
@@ -226,7 +226,7 @@ function InfoCard({
 }
 
 const InfoCardFooter = ({ children, className }: InfoCardFooterProps) => {
-  const { isHovered } = useContext(InfoCardContext);
+  const { isHovered } = use(InfoCardContext);
 
   return (
     <motion.div
@@ -250,7 +250,7 @@ const InfoCardFooter = ({ children, className }: InfoCardFooterProps) => {
 
 const InfoCardDismiss = React.memo(
   ({ children, className, onDismiss, ...props }: InfoCardDismissProps) => {
-    const { onDismiss: contextDismiss } = useContext(InfoCardContext);
+    const { onDismiss: contextDismiss } = use(InfoCardContext);
 
     const handleClick = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -291,8 +291,8 @@ const InfoCardMedia = ({
   shrinkHeight = 75,
   expandHeight = 150,
 }: InfoCardMediaProps) => {
-  const { isHovered } = useContext(InfoCardContext);
-  const { setAllImagesLoaded } = useContext(InfoCardImageContext);
+  const { isHovered } = use(InfoCardContext);
+  const { setAllImagesLoaded } = use(InfoCardImageContext);
   const [isOverflowVisible, setIsOverflowVisible] = useState(false);
   const loadedMedia = useRef(new Set());
 

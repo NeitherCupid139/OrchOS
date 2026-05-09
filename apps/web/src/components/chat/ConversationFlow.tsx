@@ -7,13 +7,15 @@ import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
 import { ChatToolTimeline } from "@/components/chat/ChatToolTimeline";
 
-type ConversationUiPart =
+type ConversationUiPart = (
   | { type: "text"; text: string }
   | { type: "reasoning"; text: string }
   | { type: "clarification"; summary?: string; questions: string[] }
-  | ToolConversationUiPart;
+  | ToolConversationUiPart
+) & { id: string };
 
 type ToolConversationUiPart = Record<string, unknown> & {
+  id: string;
   type: `tool-${string}`;
   state?: string;
   input?: unknown;
@@ -32,11 +34,14 @@ function buildMessageParts(message: ConversationMessage): ConversationUiPart[] {
   let reasoningBuffer = "";
   const toolPartsByCallId = new Map<string, ToolConversationUiPart>();
   const clarificationQuestions = message.clarificationQuestions ?? [];
+  let partCounter = 0;
+
+  const nextId = () => `${message.id}-p${partCounter++}`;
 
   const flushReasoning = () => {
     const text = reasoningBuffer.trim();
     if (!text) return;
-    parts.push({ type: "reasoning", text });
+    parts.push({ id: nextId(), type: "reasoning", text });
     reasoningBuffer = "";
   };
 
@@ -80,6 +85,7 @@ function buildMessageParts(message: ConversationMessage): ConversationUiPart[] {
 
   if (clarificationQuestions.length > 0) {
     parts.push({
+      id: nextId(),
       type: "clarification",
       summary: message.content,
       questions: clarificationQuestions,
@@ -87,7 +93,7 @@ function buildMessageParts(message: ConversationMessage): ConversationUiPart[] {
   }
 
   if (message.content && clarificationQuestions.length === 0) {
-    parts.push({ type: "text", text: message.content });
+    parts.push({ id: nextId(), type: "text", text: message.content });
   }
 
   return parts;
@@ -152,23 +158,23 @@ export function MessageBubble({ msg, userImageUrl }: { msg: UIMessage; userImage
           <span className="font-medium text-foreground/60">{isUser ? m.user() : m.assistant()}</span>
           {metadata.responseTime != null && <span className="opacity-50">{formatDuration(metadata.responseTime)}</span>}
         </div>
-        {parts.map((part, index) => {
+        {parts.map((part) => {
           if (part.type === "text") {
             return (
-              <div key={`${msg.id}-${index}`} className="text-sm leading-7 text-foreground/90">
+              <div key={part.id} className="text-sm leading-7 text-foreground/90">
                 <ChatMarkdown content={part.text} />
               </div>
             );
           }
 
           if (part.type === "reasoning") {
-            return <ChatReasoningDrawer key={`${msg.id}-${index}`} text={part.text} metadata={metadata} />;
+            return <ChatReasoningDrawer key={part.id} text={part.text} metadata={metadata} />;
           }
 
           if (part.type === "clarification") {
             return (
               <ChatClarificationCard
-                key={`${msg.id}-${index}`}
+                key={part.id}
                 summary={part.summary}
                 questions={part.questions}
               />
@@ -178,7 +184,7 @@ export function MessageBubble({ msg, userImageUrl }: { msg: UIMessage; userImage
           if (part.type.startsWith("tool-")) {
             return (
               <ChatToolTimeline
-                key={`${msg.id}-${index}`}
+                key={part.id}
                 part={part as Record<string, unknown> & { type: string }}
               />
             );

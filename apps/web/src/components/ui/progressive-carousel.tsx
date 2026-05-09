@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, use, useState, useEffect, useRef } from "react";
 import type { FC, ReactElement, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ interface SliderBtnProps {
 const ProgressSliderContext = createContext<ProgressSliderContextType | undefined>(undefined);
 
 export const useProgressSliderContext = (): ProgressSliderContextType => {
-  const context = useContext(ProgressSliderContext);
+  const context = use(ProgressSliderContext);
   if (!context) {
     throw new Error("useProgressSliderContext must be used within a ProgressSlider");
   }

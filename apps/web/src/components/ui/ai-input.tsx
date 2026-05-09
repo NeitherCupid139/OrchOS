@@ -5,7 +5,7 @@ import {
   useMemo,
   useRef,
   createContext,
-  useContext,
+  use,
 } from "react";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -47,7 +47,7 @@ interface ContextShape {
 const FormContext = createContext({} as ContextShape);
 
 function useFormContext() {
-  return useContext(FormContext);
+  return use(FormContext);
 }
 
 interface ChatMessage {
