@@ -25,7 +25,7 @@ function ScenePanel({
       }}
     >
       <div style={{ display: "grid", gap: 18, textAlign: "center" }}>
-        <span style={{ fontSize: 18, letterSpacing: "0.4em", opacity: 0.72 }}>{subtitle}</span>
+        <span style={{ fontSize: 18, letterSpacing: "0.05em", opacity: 0.72 }}>{subtitle}</span>
         <span style={{ fontSize: 96, fontWeight: 700, letterSpacing: "-0.06em" }}>{label}</span>
       </div>
     </div>
@@ -61,7 +61,7 @@ function GridPixelateWipeScene() {
 
 export default function GridPixelateWipeDemo() {
   return (
-    <div className="min-h-screen w-full overflow-hidden bg-gray-950">
+    <div className="min-h-screen w-full overflow-hidden bg-zinc-950">
       <Player
         component={GridPixelateWipeScene}
         durationInFrames={90}

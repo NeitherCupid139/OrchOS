@@ -46,6 +46,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const publicRuntimeConfig = getPublicRuntimeConfig();
+  const serializedPublicRuntimeConfig = `window.__ORCHOS_PUBLIC_CONFIG__=${JSON.stringify(publicRuntimeConfig)};`;
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -56,14 +57,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang={getLocale()} suppressHydrationWarning>
       <head suppressHydrationWarning>
-        {/* eslint-disable-next-line react--no-danger */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        {/* eslint-disable-next-line react--no-danger */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.__ORCHOS_PUBLIC_CONFIG__=${JSON.stringify(publicRuntimeConfig)};`,
-          }}
-        />
+        <script>{THEME_INIT_SCRIPT}</script>
+        <script>{serializedPublicRuntimeConfig}</script>
         <HeadContent />
       </head>
       <body

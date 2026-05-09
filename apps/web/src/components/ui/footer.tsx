@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { m } from "@/paraglide/messages";
 
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 function FooterLink({ to, label }: { to: string; label: string }) {
   const isExternal = to.startsWith("http");
 
@@ -69,7 +71,7 @@ export default function Footer() {
     },
   ];
 
-  const copyright = `©${new Date().getFullYear()} ${m.about_orchos()}. ${m.footer_rights()}`;
+  const copyright = `©${COPYRIGHT_YEAR} ${m.about_orchos()}. ${m.footer_rights()}`;
 
   return (
     <footer className="bg-card py-10 md:py-16 px-4 md:px-12">

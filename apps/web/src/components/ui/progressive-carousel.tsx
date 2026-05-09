@@ -1,6 +1,6 @@
 import React, { createContext, use, useState, useEffect, useMemo, useRef } from "react";
 import type { FC, ReactElement, ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
 import { cn } from "@/lib/utils";
 
 // Define the type for the context value
@@ -157,19 +157,21 @@ export const SliderWrapper: FC<SliderWrapperProps> = ({ children, value, classNa
   const { active } = useProgressSliderContext();
 
   return (
-    <AnimatePresence mode="popLayout">
-      {active === value && (
-        <motion.div
-          key={value}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className={cn("", className)}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence mode="popLayout">
+        {active === value && (
+          <m.div
+            key={value}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={cn("", className)}
+          >
+            {children}
+          </m.div>
+        )}
+      </AnimatePresence>
+    </LazyMotion>
   );
 };
 

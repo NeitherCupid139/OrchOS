@@ -129,6 +129,16 @@ const LOCAL_CALENDAR_ICONS: { name: string; component: typeof Calendar03Icon }[]
   { name: "Calendars", component: CalendarsIcon },
 ];
 
+const TODAY = new Date();
+
+function offsetDateTime(value: string, offsetMinutes: number) {
+  return new Date(new Date(value).getTime() + offsetMinutes * 60_000);
+}
+
+function getCalendarEventDayLabel(value: string) {
+  return formatLongDate(formatDayKey(new Date(value)));
+}
+
 export const Route = createFileRoute("/dashboard/calendar")({ component: CalendarPage });
 
 function CalendarPage() {
@@ -149,8 +159,8 @@ function CalendarPage() {
   const [submitting, setSubmitting] = useState(false);
   const localStoreLoadedRef = useRef(false);
   const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
-  const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(new Date()));
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(TODAY));
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(TODAY));
   const calendarViewMode = useUIStore((s) => s.calendarViewMode);
   const boardTasks = useBoardStore((state) => state.tasks);
   const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "events" | "tasks">("all");
@@ -344,8 +354,8 @@ function CalendarPage() {
       return;
     }
 
-    const nextAvailableDay = Math.min(...eventsByDay.keys());
-    if (nextAvailableDay) {
+    const nextAvailableDay = Array.from(eventsByDay.keys()).sort()[0];
+    if (nextAvailableDay !== undefined) {
       setSelectedLocalDate(nextAvailableDay);
     }
   }, [eventsByDay, selectedLocalDate]);
@@ -1147,9 +1157,9 @@ function CalendarPage() {
                               <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", event.source === "task" ? "bg-sky-500" : "bg-emerald-500")} />
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                <div className="mt-1 text-xs text-muted-foreground" suppressHydrationWarning>
-                                  {formatLongDate(formatDayKey(new Date(event.startAt)))} · {event.source === "task" ? "Task" : "Event"}
-                                </div>
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                   {getCalendarEventDayLabel(event.startAt)} · {event.source === "task" ? "Task" : "Event"}
+                                  </div>
                               </div>
                             </button>
                           ))}
@@ -1389,14 +1399,14 @@ function CalendarPage() {
                               -1 day
                             </Button>
                             <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
-                              start: new Date(new Date(selectedEventDetail.event.startAt).getTime() - 30 * 60_000),
-                              end: new Date(new Date(selectedEventDetail.event.endAt).getTime() - 30 * 60_000),
+                              start: offsetDateTime(selectedEventDetail.event.startAt, -30),
+                              end: offsetDateTime(selectedEventDetail.event.endAt, -30),
                             })}>
                               -30m
                             </Button>
                             <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
-                              start: new Date(new Date(selectedEventDetail.event.startAt).getTime() + 30 * 60_000),
-                              end: new Date(new Date(selectedEventDetail.event.endAt).getTime() + 30 * 60_000),
+                              start: offsetDateTime(selectedEventDetail.event.startAt, 30),
+                              end: offsetDateTime(selectedEventDetail.event.endAt, 30),
                             })}>
                               +30m
                             </Button>

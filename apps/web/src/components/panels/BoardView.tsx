@@ -94,7 +94,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
   ];
 
   const boardCards = useMemo(
-    () => tasks.toSorted((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
+    () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
     [tasks],
   );
 

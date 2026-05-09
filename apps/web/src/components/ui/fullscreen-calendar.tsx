@@ -64,6 +64,15 @@ interface FullScreenCalendarProps {
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const weekdayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
+function createTimeSlotRange(day: Date, hour: number, minute: 0 | 30) {
+  const slotStart = new Date(day);
+  slotStart.setHours(hour, minute, 0, 0);
+  return {
+    slotStart,
+    slotEnd: add(slotStart, { minutes: 30 }),
+  };
+}
+
 export function FullScreenCalendar({
   data,
   currentMonth,
@@ -101,7 +110,7 @@ export function FullScreenCalendar({
       [...data]
         .map((group) => ({
           ...group,
-          events: group.events.toSorted((left, right) => {
+          events: [...group.events].sort((left, right) => {
             return new Date(left.datetime).getTime() - new Date(right.datetime).getTime();
           }),
         }))
@@ -286,7 +295,7 @@ function DayTimelineView({
   onCycleTaskStatus?: (eventId: string) => void;
   onOpenEvent?: (event: FullScreenCalendarEvent) => void;
 }) {
-  const now = new Date();
+  const now = React.useMemo(() => new Date(), []);
   const showNowLine = isSameDay(day, now);
 
   return (
@@ -329,9 +338,7 @@ function DayTimelineView({
               <div className="absolute inset-0" suppressHydrationWarning>
                 {HOURS.flatMap((hour) =>
                   [0, 30].map((minute) => {
-                    const slotStart = new Date(day);
-                    slotStart.setHours(hour, minute, 0, 0);
-                    const slotEnd = add(slotStart, { minutes: 30 });
+                    const { slotStart, slotEnd } = createTimeSlotRange(day, hour, minute as 0 | 30);
                     return (
                       <button
                         key={`${hour}-${minute}`}
@@ -449,7 +456,7 @@ function WeekTimelineView({
   onCycleTaskStatus?: (eventId: string) => void;
   onOpenEvent?: (event: FullScreenCalendarEvent) => void;
 }) {
-  const now = new Date();
+  const now = React.useMemo(() => new Date(), []);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -506,9 +513,7 @@ function WeekTimelineView({
                 <div className="absolute inset-0" suppressHydrationWarning>
                   {HOURS.flatMap((hour) =>
                     [0, 30].map((minute) => {
-                      const slotStart = new Date(day);
-                      slotStart.setHours(hour, minute, 0, 0);
-                      const slotEnd = add(slotStart, { minutes: 30 });
+                      const { slotStart, slotEnd } = createTimeSlotRange(day, hour, minute as 0 | 30);
                       return (
                         <button
                           key={`${day.toISOString()}-${hour}-${minute}`}

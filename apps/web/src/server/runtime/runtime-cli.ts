@@ -129,8 +129,9 @@ export async function detectRuntimeCLIs() {
 
   if (versionPromises.length > 0) {
     const versionResults = await Promise.all(versionPromises);
+    const availableById = new Map(available.map((item) => [item.id, item]));
     for (const v of versionResults) {
-      const entry = available.find((a) => a.id === v.agent.id);
+      const entry = availableById.get(v.agent.id);
       if (entry) entry.version = v.version;
     }
   }

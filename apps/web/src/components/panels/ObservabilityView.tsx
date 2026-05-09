@@ -73,6 +73,10 @@ function formatTimestamp(ts: string): string {
   return d.toLocaleString();
 }
 
+function formatDateLabel(ts: string): string {
+  return new Date(ts).toLocaleDateString();
+}
+
 export function ObservabilityView({ problems }: ObservabilityViewProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("24h");
   const [throughputData, setThroughputData] = useState<TimeSeriesPoint[]>([]);
@@ -174,9 +178,9 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                       <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {problem.priority}
                       </span>
-                      <Badge variant="outline" className="text-[10px]" suppressHydrationWarning>
-                        {new Date(problem.createdAt).toLocaleDateString()}
-                      </Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {formatDateLabel(problem.createdAt)}
+                        </Badge>
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm text-foreground">{problem.title}</p>
                   </div>

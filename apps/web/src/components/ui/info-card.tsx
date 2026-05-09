@@ -15,6 +15,8 @@ import { m } from "@/paraglide/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import React from "react";
 
+const EMPTY_MEDIA: MediaItem[] = [];
+
 interface InfoCardTitleProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
@@ -295,7 +297,7 @@ const InfoCardAction = React.memo(({ children, className, ...props }: InfoCardAc
 InfoCardAction.displayName = "InfoCardAction";
 
 const InfoCardMedia = ({
-  media = [],
+  media = EMPTY_MEDIA,
   className,
   loading = undefined,
   shrinkHeight = 75,

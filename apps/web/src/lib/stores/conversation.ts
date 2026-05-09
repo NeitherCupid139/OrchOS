@@ -14,7 +14,7 @@ const loadMessagesPromises = new Map<string, Promise<void>>();
 let activeMessageLoads = 0;
 
 function sortConversationsByUpdatedAt(conversations: Conversation[]) {
-  return conversations.toSorted((a, b) => {
+  return [...conversations].sort((a, b) => {
     const aTime =
       typeof a.updatedAt === "string" ? Date.parse(a.updatedAt) : Number.NaN;
     const bTime =

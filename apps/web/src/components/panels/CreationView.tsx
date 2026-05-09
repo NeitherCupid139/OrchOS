@@ -1040,7 +1040,7 @@ function ChatArea({
                     <img
                       src={URL.createObjectURL(file)}
                       alt={file.name}
-                      className="h-12 w-12 object-cover"
+                      className="size-12 object-cover"
                     />
                     <button
                       type="button"

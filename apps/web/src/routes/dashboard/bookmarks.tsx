@@ -313,7 +313,7 @@ function parseBookmarkCsv(text: string) {
 }
 
 function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
-  const [failed, setFailed] = useState(false);
+  const failedRef = useRef(false);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
@@ -335,7 +335,7 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
     return () => observer.disconnect();
   }, []);
 
-  if (failed || !domain) {
+  if (failedRef.current || !domain) {
     return (
       <div ref={ref} className={cn(
         "relative flex size-10 shrink-0 items-center justify-center rounded-xl",
@@ -358,7 +358,10 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
           src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
           alt=""
           className="size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-          onError={() => setFailed(true)}
+          onError={() => {
+            failedRef.current = true;
+            setVisible(false);
+          }}
         />
       ) : (
         <div className="size-full" />

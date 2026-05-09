@@ -124,11 +124,13 @@ async function ensureDependencies(sandbox: ReturnType<typeof getSandbox>, rootPa
     ),
   );
 
+  const successfulResult = results.find((result) => result.success);
+  if (successfulResult) {
+    await sandbox.writeFile(`${rootPath}/${PREPARED_MARKER}`, new Date().toISOString());
+    return;
+  }
+
   for (const result of results) {
-    if (result.success) {
-      await sandbox.writeFile(`${rootPath}/${PREPARED_MARKER}`, new Date().toISOString());
-      return;
-    }
     lastError = result.stderr || result.stdout || lastError;
   }
 

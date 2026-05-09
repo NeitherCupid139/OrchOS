@@ -16,7 +16,7 @@ const FLAP_H = 130;
 function EnvelopeLetter({ children }: EnvelopeLetterProps) {
   const [phase, setPhase] = useState<Phase>("closed");
 
-  const handleClick = useCallback(() => {
+  const openEnvelope = useCallback(() => {
     if (phase === "closed") setPhase("opening");
   }, [phase]);
 
@@ -83,7 +83,7 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
               transition={{ duration: 0.5, ease: "easeInOut" }}
               className="relative z-10"
               style={{ width: ENVELOPE_W, height: ENVELOPE_H }}
-              onClick={handleClick}
+              onClick={openEnvelope}
             >
               {/* Envelope body */}
               <div
@@ -98,7 +98,7 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
               />
 
               {/* Inner paper edge visible at top */}
-              <div
+              <m.div
                 className="absolute left-6 right-6"
                 style={{
                   top: 0,

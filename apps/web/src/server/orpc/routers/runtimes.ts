@@ -28,12 +28,25 @@ export const runtimesRouter = {
       ),
     );
 
-    for (const { runtime, existing } of existingResults) {
-      if (existing) {
-        skipped.push(runtime);
-      } else {
-        const profile = await RuntimeService.registerFromDetection(db, runtime);
-        if (profile) registered.push(profile);
+    const registrationResults = await Promise.all(
+      existingResults.map(async ({ runtime, existing }) => {
+        if (existing) {
+          return { runtime, profile: null, skipped: true };
+        }
+
+        return {
+          runtime,
+          profile: await RuntimeService.registerFromDetection(db, runtime),
+          skipped: false,
+        };
+      }),
+    );
+
+    for (const result of registrationResults) {
+      if (result.skipped) {
+        skipped.push(result.runtime);
+      } else if (result.profile) {
+        registered.push(result.profile);
       }
     }
 

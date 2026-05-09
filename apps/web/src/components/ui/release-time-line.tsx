@@ -134,7 +134,7 @@ export default function TimeLine_01({
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      <entry.icon className="h-4 w-4" />
+                      <entry.icon className="size-4" />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{entry.title}</span>
@@ -213,7 +213,7 @@ export default function TimeLine_01({
                                     key={itemIndex}
                                     className="flex items-start gap-2 text-sm text-muted-foreground"
                                   >
-                                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/60 flex-shrink-0" />
+                                    <div className="mt-1.5 size-1.5 rounded-full bg-primary/60 flex-shrink-0" />
                                     <span className="leading-relaxed">{item}</span>
                                   </li>
                                 ))}
@@ -231,7 +231,7 @@ export default function TimeLine_01({
                               >
                                 <a href={entry.button.url} target="_blank" rel="noreferrer">
                                   {entry.button.text}
-                                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                  <ArrowUpRight className="ml-1.5 size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                                 </a>
                               </Button>
                             </div>

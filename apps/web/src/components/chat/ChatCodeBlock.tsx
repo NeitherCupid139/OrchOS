@@ -166,6 +166,7 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
         {highlight.loading ? (
           <div className="px-3 py-4 text-[11px] text-muted-foreground/50 font-mono">{m.loading()}</div>
         ) : (
+          /* react-doctor-disable-next-line react/no-danger */
           <div
             className="text-[0.8125rem] leading-[1.55] [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:!p-3 [&_pre]:!text-[0.8125rem] [&_pre]:!leading-[1.55] [&_code]:!bg-transparent [&_code]:!p-0 [&_code]:!font-mono [&_code]:!text-[0.8125rem]"
             dangerouslySetInnerHTML={{ __html: highlight.html }}

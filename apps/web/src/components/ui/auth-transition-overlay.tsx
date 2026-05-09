@@ -51,6 +51,12 @@ function AuthScene({ reveal }: { reveal: boolean }) {
 export function AuthTransitionOverlay({ active, reveal, onComplete }: AuthTransitionOverlayProps) {
   const [phase, setPhase] = useState<TransitionPhase>(active ? "holding" : "hidden");
   const completedRef = useRef(false);
+  const phaseRef = useRef<TransitionPhase>(active ? "holding" : "hidden");
+
+  const updatePhase = (nextPhase: TransitionPhase) => {
+    phaseRef.current = nextPhase;
+    setPhase(nextPhase);
+  };
 
   useEffect(() => {
     completedRef.current = false;
@@ -75,19 +81,19 @@ export function AuthTransitionOverlay({ active, reveal, onComplete }: AuthTransi
 
   useEffect(() => {
     if (!active) {
-      setPhase("hidden");
+      updatePhase("hidden");
       return;
     }
 
     if (!reveal) {
-      setPhase("holding");
+      updatePhase("holding");
       return;
     }
 
-    setPhase("holding");
+    updatePhase("holding");
 
     const timeoutId = window.setTimeout(() => {
-      setPhase("playing");
+      updatePhase("playing");
     }, HOLD_BEFORE_WIPE_MS);
 
     return () => window.clearTimeout(timeoutId);

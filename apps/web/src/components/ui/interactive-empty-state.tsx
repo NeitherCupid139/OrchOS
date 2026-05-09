@@ -47,11 +47,11 @@ const IconContainer = memo(function IconContainer({
     <m.div
       variants={ICON_VARIANTS[variant]}
       className={cn(
-        "w-12 h-12 rounded-xl flex items-center justify-center relative shadow-lg transition-all duration-300 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 group-hover:shadow-xl group-hover:border-gray-300 dark:group-hover:border-neutral-600",
+        "size-12 rounded-xl flex items-center justify-center relative shadow-lg transition-all duration-300 bg-white dark:bg-neutral-800 border border-zinc-200 dark:border-neutral-700 group-hover:shadow-xl group-hover:border-zinc-300 dark:group-hover:border-neutral-600",
         className,
       )}
     >
-      <div className="text-sm transition-colors duration-300 text-gray-500 dark:text-neutral-400 group-hover:text-gray-700 dark:group-hover:text-neutral-200">
+      <div className="text-sm transition-colors duration-300 text-zinc-500 dark:text-neutral-400 group-hover:text-zinc-700 dark:group-hover:text-neutral-200">
         {children}
       </div>
     </m.div>

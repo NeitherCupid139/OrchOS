@@ -134,7 +134,7 @@ function DockBar() {
   if (showForm) return null;
 
   return (
-    <footer className="flex h-[44px] w-[44px] items-center justify-center select-none">
+    <footer className="flex size-[44px] items-center justify-center select-none">
       <Button
         type="button"
         size="icon"
@@ -323,7 +323,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                 <div className="rounded-lg bg-muted px-3 py-2 text-xs mr-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Spinner size="sm" className="text-current" />
-                    Thinking...
+                    Thinking…
                   </div>
                 </div>
               )}
@@ -338,7 +338,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
                     selectedRuntime
-                      ? `Message ${selectedRuntime.name}...`
+                      ? `Message ${selectedRuntime.name}…`
                       : "Select a runtime to start"
                   }
                   className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-xs outline-0 focus:border-primary/50"

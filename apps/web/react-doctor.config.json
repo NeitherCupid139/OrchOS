@@ -1,0 +1,40 @@
+{
+  "ignore": {
+    "rules": [
+      "react-doctor/no-giant-component",
+      "react-doctor/prefer-useReducer",
+      "react-doctor/no-cascading-set-state",
+      "react-doctor/no-polymorphic-children",
+      "react-doctor/rerender-state-only-in-handlers",
+      "react-doctor/async-parallel"
+    ],
+    "overrides": [
+      {
+        "files": ["src/components/ui/header-1.tsx"],
+        "rules": ["react-doctor/no-fetch-in-effect"]
+      },
+      {
+        "files": ["src/components/ui/chart.tsx", "src/components/panels/ObservabilityView.tsx"],
+        "rules": ["react-doctor/prefer-dynamic-import"]
+      },
+      {
+        "files": [
+          "src/components/ui/ai-input.tsx",
+          "src/components/ui/info-card.tsx",
+          "src/components/panels/CreationView.tsx",
+          "src/components/unlumen-ui/apple-switch.tsx"
+        ],
+        "rules": ["react-doctor/use-lazy-motion"]
+      },
+      {
+        "files": [
+          "src/components/ui/grid-pixelate-wipe.demo.tsx",
+          "src/components/ui/letter-paper.tsx",
+          "src/components/ui/grid-pixelate-wipe.tsx",
+          "src/components/unlumen-ui/apple-switch.tsx"
+        ],
+        "rules": ["react-doctor/no-inline-exhaustive-style"]
+      }
+    ]
+  }
+}

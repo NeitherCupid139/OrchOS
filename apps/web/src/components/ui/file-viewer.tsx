@@ -277,6 +277,7 @@ function ShikiViewer({
             {m.loading_code()}
           </div>
         ) : (
+          /* react-doctor-disable-next-line react/no-danger */
           <div dangerouslySetInnerHTML={{ __html: content }} />
         )}
       </div>

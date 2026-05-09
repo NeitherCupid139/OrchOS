@@ -330,8 +330,8 @@ const AppleSwitch = (
             opacity: liquidOpacity,
             scale: liquidScale,
             filter: "blur(9px)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
           }}
         />
 
@@ -344,8 +344,8 @@ const AppleSwitch = (
             marginLeft: metrics.padding,
             backgroundColor: colors.thumb,
             opacity: thumbOpacity,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
             boxShadow:
               "0 3px 11px rgba(0,0,0,0.24), 0 1px 1px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.78), inset 0 -1px 1px rgba(0,0,0,0.05)",
           }}

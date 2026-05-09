@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,7 +165,7 @@ export function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const verifyingRef = useRef(false);
   const [code, setCode] = useState("");
 
   if (!isLoaded) return null;
@@ -202,7 +202,7 @@ export function SignUpForm() {
         await signUp.prepareEmailAddressVerification({
           strategy: "email_code",
         });
-        setVerifying(true);
+        verifyingRef.current = true;
       } else if (result.status === "complete" && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
       } else {
@@ -239,7 +239,7 @@ export function SignUpForm() {
     }
   };
 
-  if (verifying) {
+  if (verifyingRef.current) {
     return (
       <form onSubmit={handleVerify} className="w-full space-y-4">
         <p className="text-sm text-muted-foreground">
