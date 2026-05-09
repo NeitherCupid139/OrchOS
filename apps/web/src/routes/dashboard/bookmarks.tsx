@@ -275,8 +275,7 @@ function parseBookmarkJson(text: string) {
 function parseBookmarkCsv(text: string) {
   const lines = text
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+    .flatMap((line) => { const trimmed = line.trim(); return trimmed ? [trimmed] : []; });
 
   if (lines.length === 0) {
     return [];
@@ -449,8 +448,7 @@ function BookmarksPage() {
     const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
 
     setIsResizingSidebar(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    document.body.style.cssText += ";cursor:col-resize;user-select:none;";
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
@@ -459,8 +457,7 @@ function BookmarksPage() {
 
     const handlePointerUp = () => {
       setIsResizingSidebar(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.body.style.cssText += ";cursor:;user-select:";
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
@@ -1340,7 +1337,7 @@ function BookmarksPage() {
                   handleCreateCategorySubmit();
                 }
               }}
-              autoFocus
+
             />
           </label>
         ) : (

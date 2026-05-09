@@ -105,7 +105,7 @@ function DropdownMenuItem({
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
-  const handleClick: NonNullable<MenuPrimitive.Item.Props["onClick"]> = (event) => {
+  const playItemClickSound: NonNullable<MenuPrimitive.Item.Props["onClick"]> = (event) => {
     onClick?.(event);
     if (!event.defaultPrevented) {
       playInteractionSound("button");
@@ -121,7 +121,7 @@ function DropdownMenuItem({
         "group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**focus:**text-accent-foreground data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
         className,
       )}
-      onClick={handleClick}
+      onClick={playItemClickSound}
       {...props}
     />
   );
@@ -192,7 +192,7 @@ function DropdownMenuCheckboxItem({
 }: MenuPrimitive.CheckboxItem.Props & {
   inset?: boolean;
 }) {
-  const handleClick: NonNullable<MenuPrimitive.CheckboxItem.Props["onClick"]> = (event) => {
+  const playCheckboxToggleSound: NonNullable<MenuPrimitive.CheckboxItem.Props["onClick"]> = (event) => {
     onClick?.(event);
     if (!event.defaultPrevented) {
       playInteractionSound("toggle");
@@ -208,7 +208,7 @@ function DropdownMenuCheckboxItem({
         className,
       )}
       checked={checked}
-      onClick={handleClick}
+      onClick={playCheckboxToggleSound}
       {...props}
     >
       <span
@@ -237,7 +237,7 @@ function DropdownMenuRadioItem({
 }: MenuPrimitive.RadioItem.Props & {
   inset?: boolean;
 }) {
-  const handleClick: NonNullable<MenuPrimitive.RadioItem.Props["onClick"]> = (event) => {
+  const playRadioToggleSound: NonNullable<MenuPrimitive.RadioItem.Props["onClick"]> = (event) => {
     onClick?.(event);
     if (!event.defaultPrevented) {
       playInteractionSound("toggle");
@@ -252,7 +252,7 @@ function DropdownMenuRadioItem({
         "relative flex cursor-default items-center gap-1.5 rounded-md py-1 pe-8 ps-1.5 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground focus:**focus:**text-accent-foreground data-inset:ps-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
-      onClick={handleClick}
+      onClick={playRadioToggleSound}
       {...props}
     >
       <span

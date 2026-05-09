@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { m } from "@/paraglide/messages";
 import { formatDuration } from "@/lib/utils";
-import { useLocale } from "@/lib/i18n-provider";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowUp01Icon,
@@ -59,7 +58,6 @@ interface AskMessage {
 }
 
 export function FeaturesBento() {
-  const { locale } = useLocale();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<AskMessage[]>([]);
   const defaultInput = m.home_bento_mock_input();
@@ -68,14 +66,7 @@ export function FeaturesBento() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const selectedRuntime: RuntimeProfile | null = MOCK_RUNTIME.enabled ? MOCK_RUNTIME : null;
 
-  useEffect(() => {
-    setMessages([]);
-    setInput(defaultInput);
-  }, [defaultInput, locale]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, sending]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -266,11 +257,17 @@ export function FeaturesBento() {
       {open ? (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[12vh] backdrop-blur-sm"
+          role="button"
+          tabIndex={0}
           onClick={() => setOpen(false)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(false); } }}
         >
           <div
             className="w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+            role="button"
+            tabIndex={0}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-2">
@@ -343,10 +340,7 @@ export function FeaturesBento() {
               </div>
 
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void handleSend();
-                }}
+                action={() => { void handleSend(); }}
                 className="border-t border-border px-5 py-4"
               >
                 <div className="flex items-end gap-2 rounded-xl border border-border bg-background p-3">

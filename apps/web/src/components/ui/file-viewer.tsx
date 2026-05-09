@@ -164,6 +164,7 @@ function ShikiViewer({
   showLineNumbers?: boolean;
   className?: string;
 }) {
+  /* eslint-disable react--no-danger */
   const [highlight, dispatch] = useReducer(
     (state: { html: string; isLoading: boolean }, action: { type: "SET_LOADING" } | { type: "SET_DATA"; payload: string } | { type: "SET_ERROR"; payload: string }) => {
       switch (action.type) {
@@ -281,6 +282,7 @@ function ShikiViewer({
       </div>
     </>
   );
+  /* eslint-enable react--no-danger */
 }
 
 function MarkdownPreview({ content, className }: { content: string; className?: string }) {
@@ -474,45 +476,32 @@ function File({
 }
 
 function Tree({
-  initialSelectedId,
-  initialExpandedItems,
+  selectedId,
+  expandedItems,
   children,
   className,
   indicator = true,
   openIcon,
   closeIcon,
   dir = "ltr",
+  onSelectItem,
+  onExpand,
 }: {
-  initialSelectedId?: string;
-  initialExpandedItems?: string[];
+  selectedId?: string;
+  expandedItems?: string[];
   children: ReactNode;
   className?: string;
   indicator?: boolean;
   openIcon?: ReactNode;
   closeIcon?: ReactNode;
   dir?: "rtl" | "ltr";
+  onSelectItem?: (id: string) => void;
+  onExpand?: (id: string) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | undefined>(initialSelectedId);
-  const [expandedItems, setExpandedItems] = useState<string[] | undefined>(initialExpandedItems);
-
-  useEffect(() => {
-    setSelectedId(initialSelectedId);
-  }, [initialSelectedId]);
-
-  useEffect(() => {
-    setExpandedItems(initialExpandedItems);
-  }, [initialExpandedItems]);
-
-  const selectItem = useCallback((id: string) => setSelectedId(id), []);
+  const selectItem = useCallback((id: string) => onSelectItem?.(id), [onSelectItem]);
   const handleExpand = useCallback((id: string) => {
-    setExpandedItems((prev) => {
-      if (prev?.includes(id)) {
-        return prev.filter((item) => item !== id);
-      }
-
-      return [...(prev ?? []), id];
-    });
-  }, []);
+    onExpand?.(id);
+  }, [onExpand]);
 
   return (
     <TreeContext.Provider
@@ -585,13 +574,11 @@ function FileTree({
   selectedFile,
   onFileSelect,
   component,
-  isDesktop,
 }: {
   tree: TreeViewElement[];
   selectedFile?: string;
   onFileSelect: (file: string) => void;
   component: ApiComponent;
-  isDesktop: boolean;
 }) {
   const allExpandableItems = useMemo(() => {
     const expandableItems: string[] = [];
@@ -609,8 +596,22 @@ function FileTree({
     return expandableItems;
   }, [tree]);
 
+  const [localExpandedItems, setLocalExpandedItems] = useState<string[] | null>(null);
+  const expandedItems = localExpandedItems ?? allExpandableItems;
+
+  const handleExpand = useCallback((id: string) => {
+    setLocalExpandedItems((prev) => {
+      const currentItems = prev ?? allExpandableItems;
+
+      if (currentItems.includes(id)) {
+        return currentItems.filter((item) => item !== id);
+      }
+      return [...currentItems, id];
+    });
+  }, [allExpandableItems]);
+
   return (
-    <div className={cn("flex h-full w-full flex-col", !isDesktop && "border-b border-border")}>
+    <div className="flex h-full flex-col">
       <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
         <div className="flex min-w-0 items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -628,9 +629,11 @@ function FileTree({
       <ScrollArea className="flex-1">
         <div className="px-3 py-2">
           <Tree
-            initialExpandedItems={allExpandableItems}
-            initialSelectedId={selectedFile}
+            expandedItems={expandedItems}
+            selectedId={selectedFile}
             indicator
+            onSelectItem={onFileSelect}
+            onExpand={handleExpand}
           >
             {tree.map((item) => (
               <TreeItem
@@ -650,7 +653,7 @@ function FileTree({
 export default function ComponentFileViewer({ component }: { component: ApiComponent }) {
   const [selectedFile, setSelectedFile] = useState<string | undefined>();
   const [copied, setCopied] = useState(false);
-  const [isPreview, setIsPreview] = useState(false);
+  const [previewOverride, setPreviewOverride] = useState<boolean | null>(null);
   const isDesktop = useIsDesktop();
 
   const files = useMemo(() => component.files.filter((file) => file.content), [component.files]);
@@ -712,18 +715,15 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
     return toArray(root);
   }, [files]);
 
-  const selected = files.find((file) => file.path === selectedFile) ?? files[0];
+  const selectedPath = selectedFile ?? files[0]?.path;
+  const selected = files.find((file) => file.path === selectedPath) ?? files[0];
   const canPreview = selected ? isMarkdownFile(selected.path) : false;
+  const isPreview = previewOverride ?? canPreview;
 
-  useEffect(() => {
-    if (!selectedFile && files.length > 0) {
-      setSelectedFile(files[0].path);
-    }
-  }, [files, selectedFile]);
-
-  useEffect(() => {
-    setIsPreview(canPreview);
-  }, [canPreview, selectedFile]);
+  const selectFile = useCallback((file: string) => {
+    setSelectedFile(file);
+    setPreviewOverride(isMarkdownFile(file));
+  }, []);
 
   const handleCopy = useCallback(() => {
     if (!selected?.content) {
@@ -745,10 +745,9 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
       <ResizablePanel defaultSize={isDesktop ? "28%" : "36%"} minSize="20%" maxSize="40%">
         <FileTree
           tree={tree}
-          selectedFile={selectedFile}
-          onFileSelect={setSelectedFile}
+          selectedFile={selectedPath}
+          onFileSelect={selectFile}
           component={component}
-          isDesktop={isDesktop}
         />
       </ResizablePanel>
       <ResizableHandle withHandle />
@@ -761,7 +760,7 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
               copied={copied}
               canPreview={canPreview}
               isPreview={isPreview}
-              onTogglePreview={() => setIsPreview((prev) => !prev)}
+              onTogglePreview={() => setPreviewOverride((prev) => !(prev ?? canPreview))}
             />
             <div className="flex-1 overflow-hidden bg-background/30 p-3">
               <ScrollArea className="h-full w-full">

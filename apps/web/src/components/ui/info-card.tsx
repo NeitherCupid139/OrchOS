@@ -265,7 +265,17 @@ const InfoCardDismiss = React.memo(
           "cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground",
           className,
         )}
+        role="button"
+        tabIndex={0}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onDismiss?.();
+            contextDismiss();
+          }
+        }}
         {...props}
       >
         {children}

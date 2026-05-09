@@ -24,12 +24,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const [locale, setLocaleState] = useState(() => getInitialLocale());
 
-  // Sync Paraglide to our locale
-  useEffect(() => {
-    if (locale) {
-      syncRuntimeLocale(locale);
-    }
-  }, [locale]);
+  syncRuntimeLocale(locale);
 
   // Apply any persisted client locale after hydration.
   useEffect(() => {

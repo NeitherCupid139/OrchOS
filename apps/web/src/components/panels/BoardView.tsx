@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Calendar03Icon,
@@ -26,18 +26,20 @@ interface BoardViewProps {
   boardFilter: BoardTaskFilter;
 }
 
+const boardTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  month: "numeric",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 function formatBoardTime(value?: string) {
   if (!value) return "";
 
   const timestamp = Date.parse(value);
   if (Number.isNaN(timestamp)) return "";
 
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(timestamp));
+  return boardTimeFormatter.format(new Date(timestamp));
 }
 
 function priorityTone(priority: BoardTaskPriority) {
@@ -92,7 +94,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
   ];
 
   const boardCards = useMemo(
-    () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
+    () => tasks.toSorted((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
     [tasks],
   );
 
@@ -100,44 +102,43 @@ export function BoardView({ boardFilter }: BoardViewProps) {
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background px-4 py-4 md:px-6">
       <div className="mx-auto flex min-h-0 w-full max-w-full flex-1 flex-col gap-3 px-0 pb-2 md:px-6">
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row lg:items-stretch lg:overflow-x-auto">
-          {boardColumns
-            .flatMap((column) => boardFilter === "all" || column.id === boardFilter ? [column] : [])
-            .map((column) => {
-              const columnCards = boardCards.filter((card) => card.column === column.id);
+          {boardColumns.reduce((acc: React.ReactNode[], column) => {
+            if (boardFilter !== "all" && column.id !== boardFilter) return acc;
+            const columnCards = boardCards.filter((card) => card.column === column.id);
 
-              return (
-                <div
-                  key={column.id}
-                  className={cn(
-                    "flex min-h-[14rem] min-w-0 flex-col rounded-xl border border-border/30 bg-muted/10 lg:min-h-0 lg:flex-1 lg:basis-0",
-                    column.bgAccent,
-                  )}
-                >
-                  <div className="flex items-center gap-2.5 border-b border-border/20 px-4 py-3">
-                    <HugeiconsIcon icon={column.icon} className={cn("size-3.5", column.tone, "opacity-70")} />
-                    <span className="text-xs font-semibold tracking-wide text-foreground/50">{column.label}</span>
-                    <span
-                      className={cn(
-                        "ml-auto inline-flex size-5 items-center justify-center rounded-full text-[10px] font-bold tabular-nums",
-                        columnCards.length > 0 ? cn(column.tone, "bg-foreground/5") : "bg-foreground/3 text-muted-foreground/50",
-                      )}
-                    >
-                      {columnCards.length}
-                    </span>
-                  </div>
-
-                  <div
+            acc.push(
+              <div
+                key={column.id}
+                className={cn(
+                  "flex min-h-[14rem] min-w-0 flex-col rounded-xl border border-border/30 bg-muted/10 lg:min-h-0 lg:flex-1 lg:basis-0",
+                  column.bgAccent,
+                )}
+              >
+                <div className="flex items-center gap-2.5 border-b border-border/20 px-4 py-3">
+                  <HugeiconsIcon icon={column.icon} className={cn("size-3.5", column.tone, "opacity-70")} />
+                  <span className="text-xs font-semibold tracking-wide text-foreground/50">{column.label}</span>
+                  <span
                     className={cn(
-                      "min-h-0 flex-1 p-3",
-                      columnCards.length === 0
-                        ? "flex items-center justify-center"
-                        : cn(
-                            "grid content-start auto-rows-max gap-3 overflow-y-auto",
-                            boardFilter === "all" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5",
-                          ),
+                      "ml-auto inline-flex size-5 items-center justify-center rounded-full text-[10px] font-bold tabular-nums",
+                      columnCards.length > 0 ? cn(column.tone, "bg-foreground/5") : "bg-foreground/3 text-muted-foreground/50",
                     )}
                   >
-                    {columnCards.map((card) => {
+                    {columnCards.length}
+                  </span>
+                </div>
+
+                <div
+                  className={cn(
+                    "min-h-0 flex-1 p-3",
+                    columnCards.length === 0
+                      ? "flex items-center justify-center"
+                      : cn(
+                          "grid content-start auto-rows-max gap-3 overflow-y-auto",
+                          boardFilter === "all" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5",
+                        ),
+                  )}
+                >
+                  {columnCards.map((card) => {
                       const linkedProject = projects?.find((project) => project.id === card.projectId);
 
                       return (
@@ -263,8 +264,9 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                     ) : null}
                   </div>
                 </div>
-              );
-            })}
+            );
+            return acc;
+          }, [])}
         </div>
       </div>
 

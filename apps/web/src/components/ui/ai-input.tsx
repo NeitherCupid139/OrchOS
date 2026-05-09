@@ -6,6 +6,7 @@ import {
   useRef,
   createContext,
   use,
+  useEffectEvent,
 } from "react";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -75,6 +76,8 @@ export function MorphPanel({ runtimes }: MorphPanelProps) {
     setShowForm(true);
   }, []);
 
+  const onTriggerClose = useEffectEvent(() => triggerClose());
+
   useEffect(() => {
     function clickOutsideHandler(e: MouseEvent) {
       const target = e.target as HTMLElement | null;
@@ -83,12 +86,12 @@ export function MorphPanel({ runtimes }: MorphPanelProps) {
       }
 
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node) && showForm) {
-        triggerClose();
+        onTriggerClose();
       }
     }
     document.addEventListener("mousedown", clickOutsideHandler);
     return () => document.removeEventListener("mousedown", clickOutsideHandler);
-  }, [showForm, triggerClose]);
+  }, [showForm]);
 
   const ctx = useMemo(
     () => ({ showForm, triggerOpen, triggerClose }),
@@ -217,10 +220,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleSend();
-      }}
+      action={() => { handleSend(); }}
       className="absolute bottom-0"
       style={{ width: FORM_WIDTH, height: FORM_HEIGHT, pointerEvents: showForm ? "all" : "none" }}
     >

@@ -94,22 +94,44 @@ export async function detectRuntimeCLIs() {
 
   const available: DetectedRuntime[] = [];
   const unavailable: DetectedRuntime[] = [];
-  for (const agent of AGENT_CLI_REGISTRY) {
-    const whichResult = await runRuntimeCommand(`which ${agent.command}`);
+
+  const whichResults = await Promise.all(
+    AGENT_CLI_REGISTRY.map((agent) =>
+      runRuntimeCommand(`which ${agent.command}`).then((result) => ({ agent, result })),
+    ),
+  );
+
+  const versionPromises: Promise<{ agent: (typeof AGENT_CLI_REGISTRY)[number]; version: string | undefined }>[] = [];
+
+  for (const { agent, result } of whichResults) {
     const base = { id: agent.id, name: agent.name, command: agent.command, role: agent.role, capabilities: [...agent.capabilities], model: agent.model, transport: "stdio" as const };
-    if (whichResult.success) {
-      let version: string | undefined;
+    if (result.success) {
       if (agent.versionFlag) {
-        const versionResult = await runRuntimeCommand(`${agent.command} ${agent.versionFlag}`);
-        if (versionResult.success) {
-          const versionOutput = versionResult.output.trim().split("\n")[0]?.trim() ?? "";
-          const versionMatch = versionOutput.match(/v?\d+(\.\d+)+/);
-          version = versionMatch ? versionMatch[0] : versionOutput;
-        }
+        versionPromises.push(
+          runRuntimeCommand(`${agent.command} ${agent.versionFlag}`).then((versionResult) => {
+            let version: string | undefined;
+            if (versionResult.success) {
+              const versionOutput = versionResult.output.trim().split("\n")[0]?.trim() ?? "";
+              const versionMatch = versionOutput.match(/v?\d+(\.\d+)+/);
+              version = versionMatch ? versionMatch[0] : versionOutput;
+            }
+            return { agent, version };
+          }),
+        );
+        available.push({ ...base, path: result.output.trim(), version: undefined });
+      } else {
+        available.push({ ...base, path: result.output.trim(), version: undefined });
       }
-      available.push({ ...base, path: whichResult.output.trim(), version });
     } else {
       unavailable.push({ ...base, error: `${agent.command} not found in PATH` });
+    }
+  }
+
+  if (versionPromises.length > 0) {
+    const versionResults = await Promise.all(versionPromises);
+    for (const v of versionResults) {
+      const entry = available.find((a) => a.id === v.agent.id);
+      if (entry) entry.version = v.version;
     }
   }
   return { available, unavailable };

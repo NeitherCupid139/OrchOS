@@ -56,7 +56,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang={getLocale()} suppressHydrationWarning>
       <head suppressHydrationWarning>
+        {/* eslint-disable-next-line react--no-danger */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* eslint-disable-next-line react--no-danger */}
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__ORCHOS_PUBLIC_CONFIG__=${JSON.stringify(publicRuntimeConfig)};`,

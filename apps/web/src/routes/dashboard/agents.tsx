@@ -202,8 +202,7 @@ function AgentsPage() {
     const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
 
     setIsResizingSidebar(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    document.body.style.cssText += ";cursor:col-resize;user-select:none;";
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
@@ -212,8 +211,7 @@ function AgentsPage() {
 
     const handlePointerUp = () => {
       setIsResizingSidebar(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.body.style.cssText += ";cursor:;user-select:";
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };

@@ -23,8 +23,10 @@ function generateId(prefix: string) {
 
 export abstract class BookmarkService {
   static async list(db: AppDb): Promise<BookmarkCategoryRecord[]> {
-    const categoryRows = await db.select().from(bookmarkCategories).orderBy(asc(bookmarkCategories.sortOrder)).all();
-    const bookmarkRows = await db.select().from(bookmarks).orderBy(asc(bookmarks.sortOrder)).all();
+    const [categoryRows, bookmarkRows] = await Promise.all([
+      db.select().from(bookmarkCategories).orderBy(asc(bookmarkCategories.sortOrder)).all(),
+      db.select().from(bookmarks).orderBy(asc(bookmarks.sortOrder)).all(),
+    ]);
 
     return categoryRows.map((category) => ({
       id: category.id,
@@ -48,29 +50,35 @@ export abstract class BookmarkService {
       await db.delete(bookmarkCategories).where(inArray(bookmarkCategories.id, existingCategories.map((category) => category.id))).run();
     }
 
+    const insertPromises: Promise<unknown>[] = [];
     for (const [categoryIndex, category] of categories.entries()) {
-        await db.insert(bookmarkCategories).values({
+      insertPromises.push(
+        db.insert(bookmarkCategories).values({
           id: category.id,
           name: category.name,
           icon: category.icon,
           sortOrder: String(categoryIndex),
           createdAt: now,
           updatedAt: now,
-      }).run();
+        }).run(),
+      );
 
       for (const [bookmarkIndex, bookmark] of category.bookmarks.entries()) {
-        await db.insert(bookmarks).values({
-          id: bookmark.id,
-          categoryId: category.id,
-          title: bookmark.title,
-          url: bookmark.url,
-          pinned: bookmark.pinned ? "true" : "false",
-          sortOrder: String(bookmarkIndex),
-          createdAt: now,
-          updatedAt: now,
-        }).run();
+        insertPromises.push(
+          db.insert(bookmarks).values({
+            id: bookmark.id,
+            categoryId: category.id,
+            title: bookmark.title,
+            url: bookmark.url,
+            pinned: bookmark.pinned ? "true" : "false",
+            sortOrder: String(bookmarkIndex),
+            createdAt: now,
+            updatedAt: now,
+          }).run(),
+        );
       }
     }
+    await Promise.all(insertPromises);
 
     return BookmarkService.list(db);
   }

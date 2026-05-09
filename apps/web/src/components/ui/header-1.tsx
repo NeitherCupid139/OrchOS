@@ -11,42 +11,31 @@ import { m } from "@/paraglide/messages";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
 
+const starCountFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 export function Header() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
   const [starCount, setStarCount] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadStarCount() {
-      try {
-        const response = await fetch("/api/github-stars", {
-          signal: controller.signal,
-        });
-        if (!response.ok) return;
-
-        const data = (await response.json()) as { stargazers_count?: number };
-        if (typeof data.stargazers_count === "number") {
-          setStarCount(data.stargazers_count);
+    fetch("/api/github-stars")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (typeof (data as { stargazers_count?: number }).stargazers_count === "number") {
+          setStarCount((data as { stargazers_count: number }).stargazers_count);
         }
-      } catch {
-        // Leave the button usable even if the GitHub API is unavailable.
-      }
-    }
-
-    void loadStarCount();
-
-    return () => controller.abort();
+      })
+      .catch(() => {});
   }, []);
 
   const formattedStarCount =
     starCount === null
       ? null
-      : new Intl.NumberFormat("en", {
-          notation: "compact",
-          maximumFractionDigits: 1,
-        }).format(starCount);
+      : starCountFormatter.format(starCount);
 
   const links = [
     {

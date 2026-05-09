@@ -344,7 +344,7 @@ function CalendarPage() {
       return;
     }
 
-    const nextAvailableDay = [...eventsByDay.keys()].sort()[0];
+    const nextAvailableDay = Math.min(...eventsByDay.keys());
     if (nextAvailableDay) {
       setSelectedLocalDate(nextAvailableDay);
     }
@@ -752,8 +752,7 @@ function CalendarPage() {
 
     const handlePointerUp = () => {
       setIsResizingSidebar(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.body.style.cssText += ";cursor:;user-select:";
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
@@ -1858,17 +1857,21 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
+const longDateFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
 function formatLongDate(dayKey: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(parseDayKey(dayKey));
+  return longDateFormatter.format(parseDayKey(dayKey));
 }
 
+const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  return timeFormatter.format(new Date(value));
 }
 
 function formatEventDateTime(event: CalendarRenderableEvent) {

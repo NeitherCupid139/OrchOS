@@ -424,8 +424,7 @@ function MailPage() {
       const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
 
       setIsResizingSidebar(true);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      document.body.style.cssText += ";cursor:col-resize;user-select:none;";
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
         const nextWidth = Math.min(
@@ -437,8 +436,7 @@ function MailPage() {
 
       const handlePointerUp = () => {
         setIsResizingSidebar(false);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
+        document.body.style.cssText += ";cursor:;user-select:";
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
       };

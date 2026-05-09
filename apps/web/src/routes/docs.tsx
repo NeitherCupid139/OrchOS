@@ -218,9 +218,9 @@ function PlaygroundPreview() {
           </div>
 
           <div className="flex items-end gap-2">
-            {[0.35, 0.65, 0.95, 0.6, 0.25, 0.1].map((height, index) => (
+            {[0.35, 0.65, 0.95, 0.6, 0.25, 0.1].map((height) => (
               <div
-                key={`bar-${index}`}
+                key={`bar-${height}`}
                 className="w-full rounded-full bg-primary/80 transition-all duration-300"
                 style={{
                   height: `${(active ? height : 0.12) * 120}px`,

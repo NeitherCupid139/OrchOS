@@ -1,3 +1,4 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 import type { BoardTaskFilter } from "./BoardView";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -86,30 +87,30 @@ export function BoardFilterBar({
         )}
       </button>
 
-      {conversationBoardColumns
-        .flatMap((col) => col.id !== "all" ? [col] : [])
-        .map((column) => {
-          return (
-            <button
-              key={column.id}
-              type="button"
-              onClick={() => onBoardFilterChange(column.id as BoardTaskFilter)}
-              aria-pressed={boardFilter === column.id}
-               className={cn(
-                 "inline-flex h-7 cursor-pointer items-center gap-2 rounded-full border px-3 text-[11px] font-medium transition-colors",
-                 boardFilter === column.id
-                   ? cn("border-transparent", column.bgAccent, column.tone)
-                   : "border-border/50 bg-background text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <HugeiconsIcon
-                icon={column.icon}
-                className={cn("size-3.5", boardFilter === column.id ? column.tone : "")}
-              />
-              {column.label}
-            </button>
-          );
-        })}
+      {conversationBoardColumns.reduce((acc: React.ReactNode[], col) => {
+        if (col.id === "all") return acc;
+        acc.push(
+          <button
+            key={col.id}
+            type="button"
+            onClick={() => onBoardFilterChange(col.id as BoardTaskFilter)}
+            aria-pressed={boardFilter === col.id}
+             className={cn(
+               "inline-flex h-7 cursor-pointer items-center gap-2 rounded-full border px-3 text-[11px] font-medium transition-colors",
+               boardFilter === col.id
+                 ? cn("border-transparent", col.bgAccent, col.tone)
+                 : "border-border/50 bg-background text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <HugeiconsIcon
+              icon={col.icon}
+              className={cn("size-3.5", boardFilter === col.id ? col.tone : "")}
+            />
+            {col.label}
+          </button>
+        );
+        return acc;
+      }, [])}
     </div>
   );
 }

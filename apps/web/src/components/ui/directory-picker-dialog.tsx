@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useReducer } from "react";
+import { useCallback, useReducer } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FolderIcon, ArrowLeft01Icon, Home01Icon } from "@hugeicons/core-free-icons";
@@ -106,12 +106,6 @@ export function DirectoryPickerDialog({
     }
   }, []);
 
-  useEffect(() => {
-    if (open) {
-      loadDirectory(initialPath || "~");
-    }
-  }, [open, initialPath, loadDirectory]);
-
   const handleNavigate = (dirPath: string) => {
     loadDirectory(dirPath);
   };
@@ -143,7 +137,12 @@ export function DirectoryPickerDialog({
   };
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => {
+      if (nextOpen && !open) {
+        loadDirectory(initialPath || "~");
+      }
+      onOpenChange(nextOpen);
+    }}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 z-[60] bg-black/15 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

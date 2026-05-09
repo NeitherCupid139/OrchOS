@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { m } from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
@@ -20,23 +20,14 @@ export function RenameDialog({
   onClose,
   onSubmit,
 }: RenameDialogProps) {
-  const [name, setName] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setName(initialValue);
-      const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 50);
-
-      return () => window.clearTimeout(timeoutId);
-    }
-  }, [open, initialValue]);
 
   if (!open) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) onSubmit(name.trim());
+    const name = inputRef.current?.value.trim();
+    if (name) onSubmit(name);
   };
 
   return (
@@ -53,7 +44,7 @@ export function RenameDialog({
           <Button size="sm" type="button" variant="outline" onClick={onClose}>
             {m.cancel()}
           </Button>
-          <Button size="sm" type="submit" form="rename-dialog-form" disabled={!name.trim()}>
+          <Button size="sm" type="submit" form="rename-dialog-form">
             {m.save()}
           </Button>
         </>
@@ -63,9 +54,9 @@ export function RenameDialog({
         <input
           ref={inputRef}
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          defaultValue={initialValue}
           placeholder={placeholder}
+          autoFocus
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </form>

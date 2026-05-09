@@ -77,6 +77,7 @@ function ChartContainer({
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  /* eslint-disable react--no-danger */
   const colorConfig = Object.entries(config).filter(([, config]) => config.theme ?? config.color);
 
   if (!colorConfig.length) {

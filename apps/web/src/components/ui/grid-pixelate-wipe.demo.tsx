@@ -61,7 +61,7 @@ function GridPixelateWipeScene() {
 
 export default function GridPixelateWipeDemo() {
   return (
-    <div className="min-h-screen w-full overflow-hidden bg-black">
+    <div className="min-h-screen w-full overflow-hidden bg-gray-950">
       <Player
         component={GridPixelateWipeScene}
         durationInFrames={90}

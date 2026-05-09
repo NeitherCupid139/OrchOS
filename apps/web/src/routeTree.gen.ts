@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SsoCallbackRouteImport } from './routes/sso-callback'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChangelogRouteImport } from './routes/changelog'
@@ -30,6 +32,11 @@ import { Route as ApiGithubStarsRouteImport } from './routes/api.github-stars'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SsoCallbackRoute = SsoCallbackRouteImport.update({
   id: '/sso-callback',
   path: '/sso-callback',
@@ -43,6 +50,11 @@ const SignUpRoute = SignUpRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -137,9 +149,11 @@ export interface FileRoutesByFullPath {
   '/changelog': typeof ChangelogRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/docs': typeof DocsRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/sso-callback': typeof SsoCallbackRoute
+  '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
@@ -158,9 +172,11 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/changelog': typeof ChangelogRoute
   '/docs': typeof DocsRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/sso-callback': typeof SsoCallbackRoute
+  '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
@@ -181,9 +197,11 @@ export interface FileRoutesById {
   '/changelog': typeof ChangelogRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/docs': typeof DocsRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/sso-callback': typeof SsoCallbackRoute
+  '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
@@ -205,9 +223,11 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/dashboard'
     | '/docs'
+    | '/privacy'
     | '/sign-in'
     | '/sign-up'
     | '/sso-callback'
+    | '/terms'
     | '/api/chat'
     | '/api/github-stars'
     | '/dashboard/agents'
@@ -226,9 +246,11 @@ export interface FileRouteTypes {
     | '/about'
     | '/changelog'
     | '/docs'
+    | '/privacy'
     | '/sign-in'
     | '/sign-up'
     | '/sso-callback'
+    | '/terms'
     | '/api/chat'
     | '/api/github-stars'
     | '/dashboard/agents'
@@ -248,9 +270,11 @@ export interface FileRouteTypes {
     | '/changelog'
     | '/dashboard'
     | '/docs'
+    | '/privacy'
     | '/sign-in'
     | '/sign-up'
     | '/sso-callback'
+    | '/terms'
     | '/api/chat'
     | '/api/github-stars'
     | '/dashboard/agents'
@@ -271,9 +295,11 @@ export interface RootRouteChildren {
   ChangelogRoute: typeof ChangelogRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DocsRoute: typeof DocsRoute
+  PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   SsoCallbackRoute: typeof SsoCallbackRoute
+  TermsRoute: typeof TermsRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiGithubStarsRoute: typeof ApiGithubStarsRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -281,6 +307,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sso-callback': {
       id: '/sso-callback'
       path: '/sso-callback'
@@ -300,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -458,9 +498,11 @@ const rootRouteChildren: RootRouteChildren = {
   ChangelogRoute: ChangelogRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DocsRoute: DocsRoute,
+  PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   SsoCallbackRoute: SsoCallbackRoute,
+  TermsRoute: TermsRoute,
   ApiChatRoute: ApiChatRoute,
   ApiGithubStarsRoute: ApiGithubStarsRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,

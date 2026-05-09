@@ -58,7 +58,7 @@ function Button({
   ...props
 }: ButtonProps) {
   const resolvedClassName = cn(buttonVariants({ variant, size, className }));
-  const handleClick = (event: Parameters<NonNullable<ButtonPrimitive.Props["onClick"]>>[0]) => {
+  const playButtonClickSound = (event: Parameters<NonNullable<ButtonPrimitive.Props["onClick"]>>[0]) => {
     onClick?.(event);
 
     if (!event.defaultPrevented) {
@@ -81,7 +81,7 @@ function Button({
         className={resolvedClassName}
         nativeButton={nativeButton ?? isNativeButton}
         render={child}
-        onClick={handleClick}
+        onClick={playButtonClickSound}
         {...props}
       />
     );
@@ -92,7 +92,7 @@ function Button({
       data-slot="button"
       className={resolvedClassName}
       nativeButton={nativeButton}
-      onClick={handleClick}
+      onClick={playButtonClickSound}
       {...props}
     >
       {children}

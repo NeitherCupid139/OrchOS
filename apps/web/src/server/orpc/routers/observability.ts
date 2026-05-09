@@ -65,8 +65,10 @@ export const observabilityRouter = {
   }),
   metrics: os.observability.metrics.handler(async () => {
     const db = await getLocalDb();
-    const allEvents = await db.select().from(events).all();
-    const allProblems = await db.select().from(problems).all();
+    const [allEvents, allProblems] = await Promise.all([
+      db.select().from(events).all(),
+      db.select().from(problems).all(),
+    ]);
 
     const eventTypeMap = new Map<string, number>();
     for (const event of allEvents) {

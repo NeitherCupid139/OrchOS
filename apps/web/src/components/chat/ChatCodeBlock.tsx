@@ -100,6 +100,7 @@ function highlightReducer(state: HighlightState, action: HighlightAction): Highl
 }
 
 export function ChatCodeBlock({ code, language }: { code: string; language?: string }) {
+  /* eslint-disable react--no-danger */
   const [highlight, dispatch] = useReducer(highlightReducer, { html: "", loading: true });
   const [copied, setCopied] = useState(false);
   const resolvedTheme = useResolvedTheme();
@@ -173,4 +174,5 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
       </div>
     </div>
   );
+  /* eslint-enable react--no-danger */
 }

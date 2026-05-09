@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ArrowUpRight, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { m } from "@/paraglide/messages";
@@ -92,11 +92,6 @@ export default function TimeLine_01({
     return () => cancelAnimationFrame(frame);
   }, [activeIndex]);
 
-  // Optional: ensure the first card is active on mount
-  useEffect(() => {
-    setActiveIndex(0);
-  }, []);
-
   const isSingleEntry = entries.length === 1;
 
   return (
@@ -113,7 +108,7 @@ export default function TimeLine_01({
 
             return (
               <div
-                key={`${entry.title}-${index}`}
+                key={entry.title}
                 className={
                   "relative flex gap-4 " +
                   (isSingleEntry
@@ -163,8 +158,8 @@ export default function TimeLine_01({
                   className={
                     "w-full flex flex-col rounded-2xl border p-3 transition-all duration-300 " +
                     (isActive
-                      ? "border-gray-50 dark:border-gray-800 bg-gray-50 dark:bg-black shadow-lg"
-                      : "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black")
+                      ? "border-gray-50 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shadow-lg"
+                      : "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950")
                   }
                 >
                   {entry.image && (
@@ -211,7 +206,7 @@ export default function TimeLine_01({
                       <div className="overflow-hidden">
                         <div className="space-y-4 pt-2">
                           {entry.items && entry.items.length > 0 && (
-                            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black p-4">
+                            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-4">
                               <ul className="space-y-2">
                                 {entry.items.map((item, itemIndex) => (
                                   <li

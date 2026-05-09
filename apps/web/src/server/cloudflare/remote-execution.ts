@@ -118,8 +118,13 @@ async function ensureDependencies(sandbox: ReturnType<typeof getSandbox>, rootPa
 
   let lastError = "Failed to install dependencies";
 
-  for (const command of installCommands) {
-    const result = await sandbox.exec(command, { cwd: rootPath, timeout: 300000 });
+  const results = await Promise.all(
+    installCommands.map((command) =>
+      sandbox.exec(command, { cwd: rootPath, timeout: 300000 }),
+    ),
+  );
+
+  for (const result of results) {
     if (result.success) {
       await sandbox.writeFile(`${rootPath}/${PREPARED_MARKER}`, new Date().toISOString());
       return;
@@ -151,9 +156,11 @@ async function prepareProjectWorkspace(
     await sandbox.mkdir(rootPath, { recursive: true });
   }
 
-  await ensureGitIdentity(sandbox, rootPath);
-  await ensureDependencies(sandbox, rootPath);
-  await sandbox.mkdir(workingPath, { recursive: true });
+  await Promise.all([
+    ensureGitIdentity(sandbox, rootPath),
+    ensureDependencies(sandbox, rootPath),
+    sandbox.mkdir(workingPath, { recursive: true }),
+  ]);
 
   return {
     sandboxId: getSandboxId(project),

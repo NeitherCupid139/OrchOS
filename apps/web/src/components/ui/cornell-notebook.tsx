@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 const LINE_HEIGHT = 28; // px - matches ruled line spacing
 const LINE_GAP = 32; // px - total line step (28px text + 4px gap = 32px ruled spacing)
 
+const HOLE_KEYS = ["top", "middle", "bottom"] as const;
+
 interface CornellNotebookProps {
   title: string;
   subtitle?: string;
@@ -33,9 +35,9 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
 
         {/* Three-hole punches - left edge */}
         <div className="pointer-events-none absolute left-4 top-0 z-20 flex h-full flex-col items-center justify-around py-24">
-          {[...Array(3)].map((_, i) => (
+          {HOLE_KEYS.map((holeKey) => (
             <div
-              key={`hole-${i}`}
+              key={holeKey}
               className="rounded-full"
               style={{
                 width: "20px",
@@ -97,9 +99,9 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
             }}
           >
             <div>
-              {cueItems.map((item, i) => (
+              {cueItems.map((item) => (
                 <div
-                  key={`cue-${i}`}
+                  key={item.keyword}
                   style={{
                     minHeight: `${LINE_GAP * 2}px`,
                     marginBottom: `${LINE_GAP}px`,
@@ -121,7 +123,7 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
                       style={{
                         color: "#888",
                         fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         lineHeight: `${LINE_GAP}px`,
                       }}
                     >
@@ -162,7 +164,7 @@ function CornellNotebook({ title, subtitle, cueItems, children, summary }: Corne
             style={{
               color: "rgba(220, 80, 80, 0.7)",
               fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               letterSpacing: "0.1em",
               textTransform: "uppercase",

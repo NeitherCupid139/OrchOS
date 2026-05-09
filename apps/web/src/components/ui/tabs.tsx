@@ -66,7 +66,7 @@ function TabsList({
 }
 
 function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
-  const handleClick: TabsPrimitive.Tab.Props["onClick"] = (event) => {
+  const playTabClickSound: TabsPrimitive.Tab.Props["onClick"] = (event) => {
     props.onClick?.(event);
 
     if (!event.defaultPrevented && !props.disabled) {
@@ -82,7 +82,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         "data-active:text-foreground",
         className,
       )}
-      onClick={handleClick}
+      onClick={playTabClickSound}
       {...props}
     />
   );

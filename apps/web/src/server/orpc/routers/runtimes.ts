@@ -10,20 +10,30 @@ export const runtimesRouter = {
     return RuntimeService.detect();
   }),
   registerDetected: os.runtimes.registerDetected.handler(async ({ input }) => {
-    const db = await getLocalDb();
-    const detected = await RuntimeService.detect();
+    const [db, detected] = await Promise.all([
+      getLocalDb(),
+      RuntimeService.detect(),
+    ]);
     const registered = [];
     const skipped = [];
 
-    for (const runtime of detected.available) {
-      if ((input.runtimeIds && input.runtimeIds.includes(runtime.id)) || input.registerAll) {
-        const existing = await RuntimeService.getByName(db, runtime.name);
-        if (existing) {
-          skipped.push(runtime);
-        } else {
-          const profile = await RuntimeService.registerFromDetection(db, runtime);
-          if (profile) registered.push(profile);
-        }
+    const runtimeIdSet = input.runtimeIds ? new Set(input.runtimeIds) : null;
+    const candidates = detected.available.filter(
+      (r) => input.registerAll || (runtimeIdSet && runtimeIdSet.has(r.id)),
+    );
+
+    const existingResults = await Promise.all(
+      candidates.map((r) =>
+        RuntimeService.getByName(db, r.name).then((existing) => ({ runtime: r, existing })),
+      ),
+    );
+
+    for (const { runtime, existing } of existingResults) {
+      if (existing) {
+        skipped.push(runtime);
+      } else {
+        const profile = await RuntimeService.registerFromDetection(db, runtime);
+        if (profile) registered.push(profile);
       }
     }
 

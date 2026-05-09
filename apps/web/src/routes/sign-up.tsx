@@ -12,16 +12,6 @@ export const Route = createFileRoute("/sign-up")({
   component: SignUpPage,
 });
 
-function AuthTransitionMarker() {
-  const { isSignedIn } = useAuth();
-  useEffect(() => {
-    if (isSignedIn) {
-      sessionStorage.setItem("orch_auth_transition", "true");
-    }
-  }, [isSignedIn]);
-  return null;
-}
-
 function SignUpPage() {
   return (
     <AuthProvider>
@@ -41,6 +31,7 @@ function SignUpPageInner() {
     }
 
     hasRedirectedRef.current = true;
+    sessionStorage.setItem("orch_auth_transition", "true");
     void navigate({ to: "/dashboard/creation", replace: true });
   }, [isSignedIn, navigate]);
 
@@ -62,7 +53,6 @@ function SignUpPageInner() {
 
   return (
     <>
-      <AuthTransitionMarker />
       <AuthPage mode="signUp">
         <SignUpForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">

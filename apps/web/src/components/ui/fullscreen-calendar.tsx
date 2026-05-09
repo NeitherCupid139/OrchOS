@@ -62,6 +62,7 @@ interface FullScreenCalendarProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+const weekdayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
 export function FullScreenCalendar({
   data,
@@ -100,7 +101,7 @@ export function FullScreenCalendar({
       [...data]
         .map((group) => ({
           ...group,
-          events: [...group.events].sort((left, right) => {
+          events: group.events.toSorted((left, right) => {
             return new Date(left.datetime).getTime() - new Date(right.datetime).getTime();
           }),
         }))
@@ -145,10 +146,6 @@ export function FullScreenCalendar({
     onSelectDay(today);
   }
 
-  const weekdayFormatter = React.useMemo(
-    () => new Intl.DateTimeFormat(undefined, { weekday: "short" }),
-    [],
-  );
   const weekdayLabels = React.useMemo(
     () => Array.from({ length: 7 }, (_, index) => weekdayFormatter.format(new Date(2024, 0, 7 + index))),
     [weekdayFormatter],

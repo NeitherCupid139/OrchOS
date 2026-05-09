@@ -73,19 +73,6 @@ export function CreationView({
   runtimes,
   settings,
 }: CreationViewProps) {
-  const handleConversationListItemKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-    conversationId: string,
-  ) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-
-    event.preventDefault();
-    setActiveConversationId(conversationId);
-    setShowBookmarks(false);
-  };
-
   const creationFilterButtons = [
     { value: "all", label: m.all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
     { value: "active", label: m.creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
@@ -135,6 +122,20 @@ export function CreationView({
     setPendingUserMessage,
   } = useConversationStore();
 
+  const handleConversationListItemKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+    conversationId: string,
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    setActiveConversationId(conversationId);
+    setShowBookmarks(false);
+    loadMessages(conversationId);
+  };
+
   const messages = activeConversationId
     ? (messagesByConversationId[activeConversationId] ??
       EMPTY_CONVERSATION_MESSAGES)
@@ -180,12 +181,6 @@ export function CreationView({
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
-
-  useEffect(() => {
-    if (activeConversationId) {
-      loadMessages(activeConversationId);
-    }
-  }, [activeConversationId, loadMessages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -252,6 +247,7 @@ export function CreationView({
       messages.length === 0
     ) {
       setActiveConversationId(activeConversation.id);
+      loadMessages(activeConversation.id);
       return;
     }
 
@@ -282,6 +278,7 @@ export function CreationView({
 
     if (availableConversations.length > 0) {
       setActiveConversationId(availableConversations[0].id);
+      loadMessages(availableConversations[0].id);
       return;
     }
 
@@ -324,8 +321,7 @@ export function CreationView({
       const sidebarEl = event.currentTarget.parentElement;
       const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
       setIsResizingSidebar(true);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      document.body.style.cssText += ";cursor:col-resize;user-select:none;";
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
         const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
@@ -334,8 +330,7 @@ export function CreationView({
 
       const handlePointerUp = () => {
         setIsResizingSidebar(false);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
+        document.body.style.cssText += ";cursor:;user-select:";
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
       };
@@ -468,6 +463,7 @@ export function CreationView({
                       onClick={() => {
                         setActiveConversationId(conversation.id);
                         setShowBookmarks(false);
+                        loadMessages(conversation.id);
                       }}
                       onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
                     >
@@ -863,8 +859,7 @@ function ChatArea({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    textarea.style.cssText = textarea.style.cssText.replace(/height:[^;]*;?/g, '') + `height:${Math.min(textarea.scrollHeight, 120)}px`;
   }, []);
 
   const handleRemoveFile = useCallback((index: number) => {

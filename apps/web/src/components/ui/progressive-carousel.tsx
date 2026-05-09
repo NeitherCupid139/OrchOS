@@ -86,6 +86,14 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
   }, [children]);
 
   useEffect(() => {
+    setActive(activeSlider);
+    setProgress(0);
+    setIsFastForward(false);
+    targetValue.current = null;
+    firstFrameTime.current = performance.now();
+  }, [activeSlider]);
+
+  useEffect(() => {
     if (sliderValues.length > 0) {
       firstFrameTime.current = performance.now();
       frame.current = requestAnimationFrame(animate);

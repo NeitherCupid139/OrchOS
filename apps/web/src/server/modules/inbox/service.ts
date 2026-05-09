@@ -211,18 +211,19 @@ export const InboxService = {
 
     if (!problem?.goalId) return [];
 
-    const goal = await db
-      .select()
-      .from(goals)
-      .where(eq(goals.id, problem.goalId))
-      .get();
-
-    const activityRows = await db
-      .select()
-      .from(activities)
-      .where(eq(activities.goalId, problem.goalId))
-      .orderBy(desc(activities.timestamp))
-      .all();
+    const [goal, activityRows] = await Promise.all([
+      db
+        .select()
+        .from(goals)
+        .where(eq(goals.id, problem.goalId!))
+        .get(),
+      db
+        .select()
+        .from(activities)
+        .where(eq(activities.goalId, problem.goalId!))
+        .orderBy(desc(activities.timestamp))
+        .all(),
+    ]);
 
     const messages: InboxMessage[] = activityRows.map((a) => ({
       id: a.id,

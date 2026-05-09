@@ -146,12 +146,19 @@ export function SettingsDialog({
   onSettingsChange,
   defaultTab,
 }: SettingsDialogProps) {
-  const [localSettings, setLocalSettings] = useState<ControlSettings | null>(settings);
-  const [activeTab, setActiveTab] = useState<SettingsTab>(defaultTab || "general");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   useEffect(() => {
     if (open && defaultTab) {
       setActiveTab(defaultTab);
+      if (defaultTab === "mail" && !mailState.loadingMail) {
+        dispatchMail({ type: "SET_LOADING" });
+        api.listIntegrations().then((result) => {
+          dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
+        }).catch(() => {
+          dispatchMail({ type: "LOAD_ERROR" });
+        });
+      }
     }
   }, [open, defaultTab]);
   const [mailState, dispatchMail] = useReducer(
@@ -184,11 +191,7 @@ export function SettingsDialog({
   const [showPassword, setShowPassword] = useState(false);
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
 
-  useEffect(() => {
-    setLocalSettings(settings);
-  }, [settings]);
-
-  const currentSettings = localSettings ?? settings;
+  const currentSettings = settings;
 
   const getSoundLabel = useCallback((soundId: SoundId) => {
     const sound = AVAILABLE_SOUNDS.find((item) => item.id === soundId);
@@ -203,7 +206,6 @@ export function SettingsDialog({
     try {
       const updated = await api.updateSettings({ [key]: !currentSettings[key] });
       const merged = { ...currentSettings, ...updated };
-      setLocalSettings(merged);
       onSettingsChange(merged);
     } catch (err) {
       console.error("Failed to update settings:", err);
@@ -216,7 +218,6 @@ export function SettingsDialog({
     try {
       setLocaleWithSync(value);
       const merged = { ...currentSettings, locale: value };
-      setLocalSettings(merged);
       onSettingsChange(merged);
     } catch (err) {
       console.error("Failed to update locale:", err);
@@ -232,7 +233,6 @@ export function SettingsDialog({
         [key]: !currentSettings.notifications[key],
       },
     };
-    setLocalSettings(updated);
     onSettingsChange(updated);
     try {
       await api.updateSettings({ notifications: updated.notifications });
@@ -253,7 +253,6 @@ export function SettingsDialog({
         },
       },
     };
-    setLocalSettings(updated);
     onSettingsChange(updated);
     try {
       await api.updateSettings({ notifications: updated.notifications });
@@ -274,7 +273,6 @@ export function SettingsDialog({
         },
       },
     };
-    setLocalSettings(updated);
     onSettingsChange(updated);
     try {
       await api.updateSettings({ notifications: updated.notifications });
@@ -289,18 +287,6 @@ export function SettingsDialog({
       void playUiSound(sound.id, sound.file || undefined);
     }
   };
-
-  // Load mail integrations when the mail tab is activated
-  useEffect(() => {
-    if (open && activeTab === "mail" && !mailState.loadingMail) {
-      dispatchMail({ type: "SET_LOADING" });
-      api.listIntegrations().then((result) => {
-        dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
-      }).catch(() => {
-        dispatchMail({ type: "LOAD_ERROR" });
-      });
-    }
-  }, [open, activeTab]);
 
   const handleEditMailAccount = useCallback((integrationId: string, account: MailIntegrationAccount) => {
     setEditMailForm({
@@ -380,9 +366,19 @@ export function SettingsDialog({
             {tabDefs.map((tab) => {
               const Icon = tab.icon;
               return (
-                 <button
-                   key={tab.id}
-                   onClick={() => setActiveTab(tab.id)}
+                   <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      if (tab.id === "mail" && !mailState.loadingMail) {
+                        dispatchMail({ type: "SET_LOADING" });
+                        api.listIntegrations().then((result) => {
+                          dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
+                        }).catch(() => {
+                          dispatchMail({ type: "LOAD_ERROR" });
+                        });
+                      }
+                    }}
                    className={cn(
                      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
                      activeTab === tab.id
@@ -562,9 +558,18 @@ export function SettingsDialog({
                                         ? "bg-accent text-accent-foreground"
                                         : "hover:bg-accent/50 cursor-pointer",
                                     )}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={(e) => {
                                       if ((e.target as HTMLElement).closest(".play-btn")) return;
                                       handleEventSoundFileChange(event.id, sound.id);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        if ((e.target as HTMLElement).closest(".play-btn")) return;
+                                        handleEventSoundFileChange(event.id, sound.id);
+                                      }
                                     }}
                                   >
                                     <button

@@ -14,17 +14,15 @@ function SSOCallbackPage() {
   const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
-    if (isSignedIn) {
-      sessionStorage.setItem("orch_auth_transition", "true");
-    }
-  }, [isSignedIn]);
-
-  useEffect(() => {
     if (!isLoaded || hasRedirectedRef.current) {
       return;
     }
 
     hasRedirectedRef.current = true;
+    if (isSignedIn) {
+      sessionStorage.setItem("orch_auth_transition", "true");
+    }
+
     void navigate({
       to: isSignedIn ? "/dashboard/creation" : "/sign-in",
       replace: true,
