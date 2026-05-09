@@ -252,7 +252,7 @@ const InfoCardDismiss = React.memo(
   ({ children, className, onDismiss, ...props }: InfoCardDismissProps) => {
     const { onDismiss: contextDismiss } = use(InfoCardContext);
 
-    const handleClick = (e: React.MouseEvent) => {
+    const dismissCard = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       onDismiss?.();
@@ -267,7 +267,7 @@ const InfoCardDismiss = React.memo(
         )}
         role="button"
         tabIndex={0}
-        onClick={handleClick}
+        onClick={dismissCard}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();

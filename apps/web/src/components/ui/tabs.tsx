@@ -57,7 +57,7 @@ function TabsList({
           width: "var(--active-tab-width)",
           top: "var(--active-tab-top)",
           height: "var(--active-tab-height)",
-          transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
           transitionDuration: "400ms",
         }}
       />

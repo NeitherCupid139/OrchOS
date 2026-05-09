@@ -290,7 +290,7 @@ export function InboxPreviewCard() {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-bold text-foreground truncate">{activeItem.title}</h3>
+                  <h3 className="text-sm font-semibold text-foreground truncate">{activeItem.title}</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Badge
                       variant="outline"

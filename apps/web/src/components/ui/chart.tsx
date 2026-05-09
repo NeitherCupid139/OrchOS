@@ -183,7 +183,7 @@ function ChartTooltipContent({
 
             return [(
               <div
-                key={index}
+                key={`${key}-${String(item.value ?? item.name ?? item.color ?? "value")}`}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center",
@@ -274,14 +274,18 @@ function ChartLegendContent({
       )}
     >
       {payload
-        .flatMap((item, index) => {
+        .flatMap((item) => {
           if (item.type === "none") return [];
           const key = `${nameKey ?? item.dataKey ?? "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
+          const payloadFill =
+            item.payload && typeof item.payload === "object" && "fill" in item.payload
+              ? item.payload.fill
+              : undefined;
 
           return [(
             <div
-              key={index}
+              key={`${key}-${String(item.value ?? item.color ?? payloadFill ?? "value")}`}
               className={cn(
                 "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
               )}

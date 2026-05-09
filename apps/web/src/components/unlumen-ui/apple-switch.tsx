@@ -229,9 +229,9 @@ const AppleSwitch = (
       targetX.set(currentChecked ? thumbTravel : 0);
     };
 
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onClick?.(event);
-      if (event.defaultPrevented || disabled) return;
+      const toggleCheckedState = (event: React.MouseEvent<HTMLButtonElement>) => {
+        onClick?.(event);
+        if (event.defaultPrevented || disabled) return;
 
       if (suppressNextClick.current) {
         suppressNextClick.current = false;
@@ -239,8 +239,8 @@ const AppleSwitch = (
         return;
       }
 
-      setChecked(!currentChecked);
-    };
+        setChecked(!currentChecked);
+      };
 
     useEffect(() => {
       const stopFromWindow = () => {
@@ -273,7 +273,7 @@ const AppleSwitch = (
         role="switch"
         aria-checked={currentChecked}
         disabled={disabled}
-        onClick={handleClick}
+        onClick={toggleCheckedState}
         onPointerCancel={handlePointerCancel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

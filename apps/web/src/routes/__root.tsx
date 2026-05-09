@@ -36,7 +36,7 @@ export const Route = createRootRoute({
   notFoundComponent: () => (
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">404</h1>
+        <h1 className="text-2xl font-semibold">404</h1>
         <p className="text-sm text-muted-foreground mt-1">{m.page_not_found()}</p>
       </div>
     </div>

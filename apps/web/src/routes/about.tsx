@@ -13,7 +13,7 @@ function About() {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <h1 className="mb-2 text-4xl font-bold text-foreground">
+          <h1 className="mb-2 text-4xl font-semibold text-foreground">
             {m.about_orchos()}
           </h1>
           <p className="mb-12 text-lg text-muted-foreground">

@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import { memo, useId } from "react";
-import { motion, LazyMotion, domAnimation, useReducedMotion } from "motion/react";
+import { m, LazyMotion, domAnimation, useReducedMotion } from "motion/react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ const IconContainer = memo(function IconContainer({
   className?: string;
 }) {
   return (
-    <motion.div
+    <m.div
       variants={ICON_VARIANTS[variant]}
       className={cn(
         "w-12 h-12 rounded-xl flex items-center justify-center relative shadow-lg transition-all duration-300 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 group-hover:shadow-xl group-hover:border-gray-300 dark:group-hover:border-neutral-600",
@@ -54,7 +54,7 @@ const IconContainer = memo(function IconContainer({
       <div className="text-sm transition-colors duration-300 text-gray-500 dark:text-neutral-400 group-hover:text-gray-700 dark:group-hover:text-neutral-200">
         {children}
       </div>
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -149,7 +149,7 @@ export function EmptyState(
 
   return (
     <LazyMotion features={domAnimation}>
-      <motion.section
+      <m.section
         ref={ref}
         role="region"
         aria-labelledby={titleId}
@@ -172,39 +172,39 @@ export function EmptyState(
             </div>
           )}
 
-          <motion.div variants={CONTENT_VARIANTS} className="space-y-2 mb-6">
-            <h2 id={titleId} className={cn("font-semibold transition-colors duration-200 text-gray-900 dark:text-neutral-100", titleSizeClasses[size])}>
+          <m.div variants={CONTENT_VARIANTS} className="space-y-2 mb-6">
+            <h2 id={titleId} className={cn("font-semibold transition-colors duration-200 text-zinc-900 dark:text-neutral-100", titleSizeClasses[size])}>
               {title}
             </h2>
             {description && (
               <p
                 id={descriptionId}
-                className={cn("max-w-md leading-relaxed transition-colors duration-200 text-gray-600 dark:text-neutral-400", descriptionSizeClasses[size])}
+                className={cn("max-w-md leading-relaxed transition-colors duration-200 text-zinc-600 dark:text-neutral-400", descriptionSizeClasses[size])}
               >
                 {description}
               </p>
             )}
-          </motion.div>
+          </m.div>
 
           {action && (
-            <motion.div variants={BUTTON_VARIANTS}>
+            <m.div variants={BUTTON_VARIANTS}>
               <Button type="button" onClick={action.onClick} disabled={action.disabled}>
                 {action.icon ? (
-                  <motion.span
+                  <m.span
                     className="transition-transform group-hover/button:rotate-90 motion-reduce:transition-none"
                     whileHover={shouldReduceMotion ? undefined : { rotate: 90 }}
                   >
                     {action.icon}
-                  </motion.span>
+                  </m.span>
                 ) : (
                   <Plus className="size-4" />
                 )}
                 {action.label}
               </Button>
-            </motion.div>
+            </m.div>
           )}
         </div>
-      </motion.section>
+      </m.section>
     </LazyMotion>
   );
 }

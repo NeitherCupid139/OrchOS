@@ -682,7 +682,7 @@ interface ChatAreaProps {
 }
 
 function Favicon({ url }: { url: string }) {
-  const [failed, setFailed] = useState(false);
+  const failedRef = useRef(false);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
@@ -704,7 +704,7 @@ function Favicon({ url }: { url: string }) {
     return () => observer.disconnect();
   }, []);
 
-  if (failed || !domain) {
+  if (failedRef.current || !domain) {
     return (
       <div ref={ref} className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
         <HugeiconsIcon icon={PinIcon} className="size-4" />
@@ -719,7 +719,10 @@ function Favicon({ url }: { url: string }) {
           src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
           alt=""
           className="size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-          onError={() => setFailed(true)}
+          onError={() => {
+            failedRef.current = true;
+            setVisible(false);
+          }}
         />
       ) : (
         <div className="size-full" />
@@ -753,9 +756,7 @@ function ChatArea({
   const chatBtnRef = useRef<HTMLButtonElement>(null);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
   const pendingConversationUpdateRef = useRef<Promise<void> | null>(null);
-  const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(
-    conversation.runtimeId,
-  );
+  const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(undefined);
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
   const [mode, setMode] = useState<"chat" | "search">("chat");
   const [searchEngineId, setSearchEngineId] = useState<string>(searchEngineMeta[0].id);
@@ -793,7 +794,7 @@ function ChatArea({
   }, []);
 
   const effectiveRuntimeId = isDraftConversation
-    ? draftRuntimeId
+    ? draftRuntimeId ?? conversation.runtimeId
     : conversation.runtimeId;
 
   const { isListening, transcript, isSupported, start, stop } =
@@ -1084,7 +1085,7 @@ function ChatArea({
                     style={{
                       left: "var(--active-left, 4px)",
                       width: "var(--active-width, 50%)",
-                      transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
                       transitionDuration: "400ms",
                     }}
                   />

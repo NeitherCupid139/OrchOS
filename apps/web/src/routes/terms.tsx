@@ -20,7 +20,7 @@ function Terms() {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <h1 className="mb-2 text-4xl font-bold text-foreground">
+          <h1 className="mb-2 text-4xl font-semibold text-foreground">
             {m.terms_of_service()}
           </h1>
           <p className="mb-12 text-lg text-muted-foreground">
@@ -28,8 +28,8 @@ function Terms() {
           </p>
 
           <div className="space-y-8">
-            {sections.map((section, i) => (
-              <section key={i}>
+            {sections.map((section) => (
+              <section key={section.title}>
                 <h2 className="mb-2 text-xl font-semibold text-foreground">
                   {section.title}
                 </h2>

@@ -218,7 +218,7 @@ export function AgentPreviewCard() {
                   {activeAgent.name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-bold text-foreground">{activeAgent.name}</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{activeAgent.name}</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <div
                       className={cn("size-1.5 rounded-full", agentStatusColor[activeAgent.status])}

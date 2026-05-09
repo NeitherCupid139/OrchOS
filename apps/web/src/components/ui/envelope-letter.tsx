@@ -1,5 +1,5 @@
 import { useState, useCallback, type ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
 
 type Phase = "closed" | "opening" | "pulling" | "reading";
 
@@ -31,18 +31,12 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12">
       {/* Envelope + Letter container */}
-      <div
-        className="relative"
-        style={{
-          width: ENVELOPE_W,
-          height: phase === "reading" ? "auto" : 520,
-          perspective: "1200px",
-        }}
-      >
+      <div className="relative" style={{ width: ENVELOPE_W, perspective: "1200px" }}>
+        <LazyMotion features={domAnimation}>
         {/* ===== LETTER (behind envelope, slides up) ===== */}
         <AnimatePresence>
           {(phase === "pulling" || phase === "reading") && (
-            <motion.div
+            <m.div
               initial={{ y: 0, opacity: 0 }}
               animate={{
                 y: phase === "reading" ? -(LETTER_H - ENVELOPE_H + 100) : -200,
@@ -76,14 +70,14 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                 />
                 {children}
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* ===== ENVELOPE ===== */}
         <AnimatePresence>
           {phase !== "reading" && (
-            <motion.div
+            <m.div
               initial={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 60, scale: 0.95 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -108,12 +102,17 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                 className="absolute left-6 right-6"
                 style={{
                   top: 0,
-                  height: phase === "opening" || phase === "pulling" ? 30 : 0,
                   background: "#faf8f0",
                   borderRadius: "0 0 4px 4px",
                   boxShadow: "inset 0 -1px 3px rgba(0,0,0,0.06)",
-                  transition: "height 0.3s ease",
+                  transformOrigin: "top center",
                 }}
+                initial={false}
+                animate={{
+                  scaleY: phase === "opening" || phase === "pulling" ? 1 : 0,
+                  opacity: phase === "opening" || phase === "pulling" ? 1 : 0,
+                }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               />
 
               {/* Envelope inner shadow / depth */}
@@ -183,7 +182,7 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                   perspective: "800px",
                 }}
               >
-                <motion.div
+                <m.div
                   style={{
                     width: "100%",
                     height: "100%",
@@ -247,12 +246,12 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                       strokeWidth="0.5"
                     />
                   </svg>
-                </motion.div>
+                </m.div>
               </div>
 
               {/* Click hint */}
               {phase === "closed" && (
-                <motion.div
+                <m.div
                   className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -268,15 +267,15 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                   >
                     Click to open
                   </p>
-                </motion.div>
+                </m.div>
               )}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* ===== READING STATE: just the letter ===== */}
         {phase === "reading" && (
-          <motion.div
+          <m.div
             initial={{ y: -(LETTER_H - ENVELOPE_H + 100) }}
             animate={{ y: 0 }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
@@ -291,11 +290,12 @@ function EnvelopeLetter({ children }: EnvelopeLetterProps) {
                 margin: "0 auto",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)",
               }}
-            >
-              {children}
-            </div>
-          </motion.div>
+              >
+                {children}
+              </div>
+          </m.div>
         )}
+        </LazyMotion>
       </div>
     </div>
   );

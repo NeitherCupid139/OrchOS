@@ -33,7 +33,7 @@ function LetterPaper({ title, subtitle, children, footer }: LetterPaperProps) {
             fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: "28px",
             lineHeight: `${LINE_GAP}px`,
-            fontWeight: 700,
+             fontWeight: 600,
             letterSpacing: "-0.02em",
           }}
         >

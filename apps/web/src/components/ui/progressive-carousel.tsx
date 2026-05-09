@@ -1,4 +1,4 @@
-import React, { createContext, use, useState, useEffect, useRef } from "react";
+import React, { createContext, use, useState, useEffect, useMemo, useRef } from "react";
 import type { FC, ReactElement, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -63,32 +63,30 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
   activeSlider,
   className,
 }) => {
-  const [active, setActive] = useState<string>(activeSlider);
+  const [activeOverride, setActiveOverride] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const [isFastForward, setIsFastForward] = useState<boolean>(false);
+  const isFastForwardRef = useRef(false);
   const frame = useRef<number>(0);
   const firstFrameTime = useRef<number>(performance.now());
   const targetValue = useRef<string | null>(null);
-  const [sliderValues, setSliderValues] = useState<string[]>([]);
-
-  useEffect(() => {
-    const getChildren = React.Children.toArray(children).find(
+  const active = activeOverride ?? activeSlider;
+  const sliderValues = useMemo(() => {
+    const sliderContent = React.Children.toArray(children).find(
       (child) => (child as React.ReactElement).type === SliderContent,
     ) as ReactElement<{ children?: ReactNode }> | undefined;
 
-    if (getChildren) {
-      const values = React.Children.toArray(getChildren.props.children).map((child) => {
-        const element = child as ReactElement<{ value?: string }>;
-        return element.props.value ?? "";
-      });
-      setSliderValues(values);
-    }
+    if (!sliderContent) return [];
+
+    return React.Children.toArray(sliderContent.props.children).map((child) => {
+      const element = child as ReactElement<{ value?: string }>;
+      return element.props.value ?? "";
+    });
   }, [children]);
 
   useEffect(() => {
-    setActive(activeSlider);
+    setActiveOverride(null);
     setProgress(0);
-    setIsFastForward(false);
+    isFastForwardRef.current = false;
     targetValue.current = null;
     firstFrameTime.current = performance.now();
   }, [activeSlider]);
@@ -96,14 +94,16 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
   useEffect(() => {
     if (sliderValues.length > 0) {
       firstFrameTime.current = performance.now();
+      cancelAnimationFrame(frame.current);
       frame.current = requestAnimationFrame(animate);
     }
     return () => {
       cancelAnimationFrame(frame.current);
     };
-  }, [sliderValues, active, isFastForward]);
+  }, [sliderValues, active, duration, fastDuration]);
 
   const animate = (now: number) => {
+    const isFastForward = isFastForwardRef.current;
     const currentDuration = isFastForward ? fastDuration : duration;
     const elapsedTime = now - firstFrameTime.current;
     const timeFraction = elapsedTime / currentDuration;
@@ -113,16 +113,16 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
       frame.current = requestAnimationFrame(animate);
     } else {
       if (isFastForward) {
-        setIsFastForward(false);
+        isFastForwardRef.current = false;
         if (targetValue.current !== null) {
-          setActive(targetValue.current);
+          setActiveOverride(targetValue.current);
           targetValue.current = null;
         }
       } else {
         // Move to the next slide
         const currentIndex = sliderValues.indexOf(active);
         const nextIndex = (currentIndex + 1) % sliderValues.length;
-        setActive(sliderValues[nextIndex]);
+        setActiveOverride(sliderValues[nextIndex]);
       }
       setProgress(0);
       firstFrameTime.current = performance.now();
@@ -135,8 +135,10 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
       const currentProgress = (elapsedTime / duration) * 100;
       setProgress(currentProgress);
       targetValue.current = value;
-      setIsFastForward(true);
+      isFastForwardRef.current = true;
       firstFrameTime.current = performance.now();
+      cancelAnimationFrame(frame.current);
+      frame.current = requestAnimationFrame(animate);
     }
   };
 

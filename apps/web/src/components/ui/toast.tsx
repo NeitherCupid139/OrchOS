@@ -209,7 +209,7 @@ const ToastContainer = () => {
               )}
               style={{
                 width: 420,
-                transition: "all .35s cubic-bezier(.25,.75,.6,.98)",
+                transition: "opacity .35s cubic-bezier(.25,.75,.6,.98), transform .35s cubic-bezier(.25,.75,.6,.98)",
                 transform: shownIds.includes(toast.id)
                   ? getFinalTransform(index, toasts.length)
                   : "translate3d(0, 100%, 150px) scale(1)",
