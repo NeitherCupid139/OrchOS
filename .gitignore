@@ -48,3 +48,5 @@ apps/web/wrangler.jsonc
 *.db-wal
 *.sqlite
 *.sqlite3
+
+.sisyphus

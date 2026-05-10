@@ -1,0 +1,7 @@
+Package: @cloudflare/vite-plugin
+Version: 1.36.0
+License: MIT
+Source: apps/web/node_modules/@cloudflare/vite-plugin
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

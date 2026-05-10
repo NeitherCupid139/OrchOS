@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { m } from "@/paraglide/messages";
 import { Languages } from "lucide-react";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 const LOCALE_LABELS: Record<string, string> = {
   en: "English",
@@ -41,7 +43,7 @@ export default function LocaleToggle() {
             <DropdownMenuItem key={locale.value} onClick={() => setLocaleWithSync(locale.value)}>
               {LOCALE_LABELS[locale.value]}
               {currentLocale === locale.value && (
-                <span className="ms-auto text-xs text-muted-foreground">✓</span>
+                <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="ms-auto size-3.5 text-muted-foreground" />
               )}
             </DropdownMenuItem>
           ))}

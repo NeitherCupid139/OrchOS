@@ -12,7 +12,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { InfoCard, InfoCardContent, InfoCardDescription } from "@/components/ui/info-card";
-import { RenameDialog } from "@/components/dialogs/RenameDialog";
+import { CreateBoardConversationDialog, type BoardTaskEditData } from "@/components/dialogs/CreateBoardConversationDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useBoardStore } from "@/lib/stores/board";
@@ -42,6 +42,41 @@ function formatBoardTime(value?: string) {
   return boardTimeFormatter.format(new Date(timestamp));
 }
 
+function SubtaskList({ subtasks }: { subtasks: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? subtasks : subtasks.slice(0, 3);
+  const hiddenCount = subtasks.length - 3;
+
+  return (
+    <div className="space-y-0.5">
+      {visible.map((task, i) => (
+        <div key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground/60">
+          <div className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/30" />
+          <span className="line-clamp-1">{task}</span>
+        </div>
+      ))}
+      {!expanded && hiddenCount > 0 ? (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(true); }}
+          className="pl-3.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+        >
+          +{hiddenCount} more
+        </button>
+      ) : null}
+      {expanded && hiddenCount > 0 ? (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(false); }}
+          className="pl-3.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+        >
+          show less
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function priorityTone(priority: BoardTaskPriority) {
   if (priority === "low") return "text-emerald-600 dark:text-emerald-400";
   if (priority === "medium") return "text-amber-600 dark:text-amber-400";
@@ -49,8 +84,7 @@ function priorityTone(priority: BoardTaskPriority) {
 }
 
 export function BoardView({ boardFilter }: BoardViewProps) {
-  const [renameCardId, setRenameCardId] = useState<string | null>(null);
-  const [renameCardTitle, setRenameCardTitle] = useState("");
+  const [editingTask, setEditingTask] = useState<BoardTaskEditData | null>(null);
   const { projects } = useDashboard();
   const tasks = useBoardStore((state) => state.tasks);
   const updateTask = useBoardStore((state) => state.updateTask);
@@ -134,7 +168,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                       ? "flex items-center justify-center"
                       : cn(
                           "grid content-start auto-rows-max gap-3 overflow-y-auto",
-                          boardFilter === "all" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5",
+                          boardFilter === "all" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-2",
                         ),
                   )}
                 >
@@ -168,8 +202,16 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                           onClick={(event) => {
                                             event.preventDefault();
                                             event.stopPropagation();
-                                            setRenameCardId(card.id);
-                                            setRenameCardTitle(card.title);
+                                            setEditingTask({
+                                              id: card.id,
+                                              title: card.title,
+                                              description: card.description,
+                                              projectId: card.projectId,
+                                              dueDate: card.dueDate,
+                                              priority: card.priority,
+                                              tags: card.tags,
+                                              subtasks: card.subtasks,
+                                            });
                                           }}
                                           className="text-muted-foreground/60 hover:text-foreground"
                                         >
@@ -177,7 +219,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                         </Button>
                                       )}
                                     />
-                                    <TooltipContent side="top">{m.board_rename_conversation()}</TooltipContent>
+                                    <TooltipContent side="top">{m.board_edit_task()}</TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -220,9 +262,6 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                     {linkedProject.name}
                                   </span>
                                 ) : null}
-                                <span className={cn("inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px]", priorityTone(card.priority))}>
-                                  {card.priority}
-                                </span>
                                 {card.tags.slice(0, 2).map((tag) => (
                                   <span
                                     key={tag}
@@ -234,16 +273,20 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                 ))}
                               </div>
 
+                              {card.subtasks.length > 0 ? (
+                                <SubtaskList subtasks={card.subtasks} />
+                              ) : null}
+
                               <div className="flex items-center justify-between gap-2 border-t border-border/15 pt-2">
                                 <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground/45">
+                                  <span className={cn("inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px]", priorityTone(card.priority))}>
+                                    {card.priority}
+                                  </span>
                                   {card.dueDate ? (
                                     <span className="inline-flex items-center gap-1">
                                       <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
                                       {card.dueDate}
                                     </span>
-                                  ) : null}
-                                  {card.subtasks.length > 0 ? (
-                                    <span>{card.subtasks.length} subtasks</span>
                                   ) : null}
                                 </div>
                                 <span className="text-[11px] tabular-nums text-muted-foreground/45">
@@ -270,21 +313,14 @@ export function BoardView({ boardFilter }: BoardViewProps) {
         </div>
       </div>
 
-      <RenameDialog
-        open={renameCardId !== null}
-        title={m.board_rename_conversation()}
-        initialValue={renameCardTitle}
-        placeholder={m.untitled_conversation()}
-        onClose={() => {
-          setRenameCardId(null);
-          setRenameCardTitle("");
-        }}
-        onSubmit={(name) => {
-          if (renameCardId && name !== renameCardTitle) {
-            updateTask(renameCardId, { title: name });
-          }
-          setRenameCardId(null);
-          setRenameCardTitle("");
+      <CreateBoardConversationDialog
+        open={editingTask !== null}
+        task={editingTask ?? undefined}
+        onClose={() => setEditingTask(null)}
+        onSubmit={async () => {}}
+        onUpdate={(id, values) => {
+          updateTask(id, values);
+          setEditingTask(null);
         }}
       />
     </div>

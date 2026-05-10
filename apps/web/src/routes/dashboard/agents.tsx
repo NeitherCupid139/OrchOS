@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
 import { AppDialog } from "@/components/ui/app-dialog";
@@ -248,6 +248,22 @@ function AgentsPage() {
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="active:-translate-y-0"
+                      onClick={handleOpenConnect}
+                      aria-label={m.add()}
+                    >
+                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">{m.add()}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
                   render={<Button
                     variant="ghost"
                     size="icon-sm"
@@ -294,7 +310,7 @@ function AgentsPage() {
                   <HugeiconsIcon icon={Settings01Icon} className="size-3.5 shrink-0 opacity-40" />
                   <div className="min-w-0 flex-1 text-left">
                     <div className="truncate text-xs leading-5">{agent.name}</div>
-                    <div className="text-[11px] leading-4 text-muted-foreground">{agent.model}</div>
+                    <div className="truncate text-[11px] leading-4 text-muted-foreground">{agent.model}</div>
                   </div>
                   <div className="relative h-5 w-28 shrink-0">
                     {defaultCustomAgentId === agent.id ? (
@@ -303,24 +319,34 @@ function AgentsPage() {
                       </span>
                     ) : null}
                     <div className="absolute inset-y-0 right-0 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
+                      <Button
                         type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={m.edit()}
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           setEditingAgentId(agent.id);
                           setAgentForm({ name: agent.name, url: agent.url, apiKey: agent.apiKey, model: agent.model });
                           setAvailableModels([]);
                           setLoadingModels(false);
                           setIsConnectDialogOpen(true);
                         }}
-                        className="shrink-0 hover:text-foreground"
+                        className="text-muted-foreground/60 hover:text-foreground"
                       >
-                        <HugeiconsIcon icon={Edit02Icon} className="size-3" />
-                      </button>
-                      <button
+                        <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                      </Button>
+                      <Button
                         type="button"
-                        onClick={async (event) => {
-                          event.stopPropagation();
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={m.delete()}
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           try {
                             const agents = await api.deleteCustomAgent(agent.id);
                             setCustomAgents(agents);
@@ -335,10 +361,10 @@ function AgentsPage() {
                             toast.error(error instanceof Error ? error.message : m.failed_remove_agent());
                           }
                         }}
-                        className="shrink-0 hover:text-destructive"
+                        className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
                       >
-                        <HugeiconsIcon icon={Delete02Icon} className="size-3" />
-                      </button>
+                        <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                      </Button>
                     </div>
                   </div>
                 </div>

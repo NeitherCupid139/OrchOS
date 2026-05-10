@@ -1,0 +1,8 @@
+Package: drizzle-kit
+Version: 0.31.10
+License: MIT
+Source: apps/web/node_modules/drizzle-kit
+Author: Drizzle Team
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

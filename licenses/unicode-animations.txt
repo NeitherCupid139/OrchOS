@@ -1,0 +1,7 @@
+Package: unicode-animations
+Version: 1.0.3
+License: MIT
+Source: node_modules/unicode-animations
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

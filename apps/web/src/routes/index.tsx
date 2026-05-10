@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import Header from "@/components/layout/Header";
 import { m } from "@/paraglide/messages";
-import { useLocale } from "@/lib/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { FeaturesBento } from "@/components/ui/features-bento";
 import Footer from "@/components/layout/Footer";
@@ -11,7 +10,6 @@ import Footer from "@/components/layout/Footer";
 export const Route = createFileRoute("/")({ component: HomePage });
 
 function HomePageInner() {
-  const { locale } = useLocale();
   const [isHeroPreviewExpanded, setIsHeroPreviewExpanded] = useState(false);
 
   return (
@@ -33,10 +31,10 @@ function HomePageInner() {
               style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)" }}
             >
               <>
-                {m.hero_line1()}{locale === "en" || locale === "ko" ? " " : ""}
+                {m.hero_line1()}{" "}
                 <span className="italic">{m.hero_line2_word()}</span>
                 <br />
-                {m.hero_line2()}{locale === "en" || locale === "ko" ? " " : ""}
+                {m.hero_line2()}{" "}
                 <span className="italic text-primary">{m.hero_line3()}</span>
               </>
             </p>

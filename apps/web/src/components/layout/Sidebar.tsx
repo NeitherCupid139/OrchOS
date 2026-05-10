@@ -63,6 +63,7 @@ import { isClerkConfigured } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
 import type { Organization, SidebarView } from "@/lib/types";
+import { OnboardingChangelogDialog } from "@/components/dialogs/OnboardingChangelogDialog";
 import { toast } from "@/components/ui/toast";
 
 interface SidebarSection {
@@ -107,6 +108,7 @@ export function Sidebar({
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
   const [showExpandedContent, setShowExpandedContent] = useState(!collapsed);
   const activeOrganization =
@@ -262,7 +264,7 @@ export function Sidebar({
                     value={orgSearch}
                     onChange={(e) => setOrgSearch(e.target.value)}
                     placeholder={m.space_launcher_search_placeholder()}
-                    className="h-8"
+                    className="h-8 border-border/60 bg-background/80 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
                 {activeOrganization ? (
@@ -339,18 +341,29 @@ export function Sidebar({
               </DropdownMenu>
             )}
           </div>
-          <button
-            onClick={onToggleCollapse}
-            className={cn(
-              "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
-              collapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
-            )}
-          >
-            <HugeiconsIcon
-              icon={collapsed ? SidebarRight01Icon : SidebarLeft01Icon}
-              className="size-4"
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => (
+                <button
+                  {...props}
+                  onClick={onToggleCollapse}
+                  aria-label={collapsed ? m.expand_sidebar() : m.collapse_sidebar()}
+                  className={cn(
+                    "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
+                    collapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
+                  )}
+                >
+                  <HugeiconsIcon
+                    icon={collapsed ? SidebarRight01Icon : SidebarLeft01Icon}
+                    className="size-4"
+                  />
+                </button>
+              )}
             />
-          </button>
+            <TooltipContent side="right">
+              {collapsed ? m.expand_sidebar() : m.collapse_sidebar()}
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Navigation Sections */}
@@ -486,7 +499,7 @@ export function Sidebar({
               : "block opacity-100 delay-300",
           )}
         >
-          <InfoCard storageKey="sidebar-welcome" dismissType="forever">
+          <InfoCard storageKey="sidebar-welcome" dismissType="once">
             <InfoCardContent>
               <InfoCardTitle>{m.welcome_to_orchos()}</InfoCardTitle>
               <InfoCardDescription>{m.welcome_desc()}</InfoCardDescription>
@@ -503,6 +516,20 @@ export function Sidebar({
             />
             <InfoCardFooter>
               <InfoCardDismiss>{m.dismiss()}</InfoCardDismiss>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={() => setOnboardingOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOnboardingOpen(true);
+                  }
+                }}
+                className="cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground"
+              >
+                查看
+              </span>
             </InfoCardFooter>
           </InfoCard>
         </div>
@@ -560,6 +587,10 @@ export function Sidebar({
           }}
           confirmLabel={m.delete()}
           variant="destructive"
+        />
+        <OnboardingChangelogDialog
+          open={onboardingOpen}
+          onClose={() => setOnboardingOpen(false)}
         />
       </aside>
     </TooltipProvider>

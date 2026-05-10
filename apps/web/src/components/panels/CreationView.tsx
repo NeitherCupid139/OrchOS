@@ -90,7 +90,6 @@ export function CreationView({
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(!creationSidebarCollapsed);
   const [showBookmarks, setShowBookmarks] = useState(true);
-  const autoCreatingConversationRef = useRef(false);
   const collapseTimerRef = useRef<number | null>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<string | null>(null);
@@ -276,27 +275,8 @@ export function CreationView({
       return;
     }
 
-    if (availableConversations.length > 0) {
-      setActiveConversationId(availableConversations[0].id);
-      loadMessages(availableConversations[0].id);
-      return;
-    }
-
-    if (autoCreatingConversationRef.current) {
-      return;
-    }
-
-    autoCreatingConversationRef.current = true;
-    void handleNewConversation().finally(() => {
-      autoCreatingConversationRef.current = false;
-    });
-  }, [
-    activeConversationId,
-    availableConversations,
-    handleNewConversation,
-    hasLoadedConversations,
-    setActiveConversationId,
-  ]);
+    if (activeConversationId) return;
+  }, [activeConversationId, availableConversations, hasLoadedConversations]);
 
   const handleDeleteConversation = useCallback(async () => {
     if (!convToDelete) return;

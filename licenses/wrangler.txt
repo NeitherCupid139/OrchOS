@@ -1,0 +1,8 @@
+Package: wrangler
+Version: 4.88.0
+License: MIT OR Apache-2.0
+Source: apps/web/node_modules/wrangler
+Author: wrangler@cloudflare.com
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

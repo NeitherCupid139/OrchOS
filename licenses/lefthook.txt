@@ -1,0 +1,8 @@
+Package: lefthook
+Version: 1.13.6
+License: MIT
+Source: node_modules/lefthook
+Author: mrexox
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

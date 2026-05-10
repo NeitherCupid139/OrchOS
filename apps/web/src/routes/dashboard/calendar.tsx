@@ -810,7 +810,7 @@ function CalendarPage() {
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{m.calendar_add_calendar()}</TooltipContent>
+                  <TooltipContent side="bottom">{m.add()}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
@@ -1186,7 +1186,7 @@ function CalendarPage() {
                       <HugeiconsIcon key="c3" icon={Add01Icon} className="size-6" />,
                     ]}
                     action={{
-                      label: m.calendar_add_calendar(),
+                      label: m.add(),
                       icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                       onClick: () => setIsCalendarSourceDialogOpen(true),
                     }}

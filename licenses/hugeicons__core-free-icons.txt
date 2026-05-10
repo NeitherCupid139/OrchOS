@@ -1,0 +1,8 @@
+Package: @hugeicons/core-free-icons
+Version: 4.1.1
+License: MIT
+Source: apps/web/node_modules/@hugeicons/core-free-icons
+Author: Hugeicons
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.

@@ -404,14 +404,9 @@ export function SettingsDialog({
             <h2 className="text-sm font-semibold text-foreground">
               {tabDefs.find((t) => t.id === activeTab)?.labelKey()}
             </h2>
-            <Tooltip>
-              <TooltipTrigger
-                render={<Button variant="ghost" size="icon-sm" onClick={onClose}>
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
-                </Button>}
-              />
-              <TooltipContent side="top">{m.close()}</TooltipContent>
-            </Tooltip>
+            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={m.close()}>
+              <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+            </Button>
           </div>
 
           {/* Content area */}

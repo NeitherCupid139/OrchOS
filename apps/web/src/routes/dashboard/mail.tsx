@@ -550,7 +550,7 @@ function MailPage() {
             aria-orientation="vertical"
             aria-label={m.resize_mail_sidebar()}
             className={cn(
-              "group absolute right-[-8px] top-0 z-20 h-full w-4",
+              "group pointer-events-none absolute right-[-8px] top-0 z-20 h-full w-4",
               sidebarCollapsed && "hidden",
               isResizingSidebar &&
                 "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",

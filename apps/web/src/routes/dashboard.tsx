@@ -138,7 +138,6 @@ function DashboardContent() {
   const createBoardTask = useBoardStore((state) => state.createTask);
 
   const {
-    projects: dashboardProjects,
     organizations,
     problems,
     settings,
@@ -153,7 +152,6 @@ function DashboardContent() {
     inboxCounts,
     loading,
   } = useDashboard();
-  const projects = dashboardProjects ?? [];
 
   const {
     activeOrganizationId,
@@ -321,7 +319,6 @@ function DashboardContent() {
         )}
         <CreateBoardConversationDialog
           open={createBoardDialogOpen}
-          projects={projects}
           onClose={() => setCreateBoardDialogOpen(false)}
           onSubmit={async (values) => {
             createBoardTask({

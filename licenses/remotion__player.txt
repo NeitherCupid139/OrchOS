@@ -1,0 +1,8 @@
+Package: @remotion/player
+Version: 4.0.456
+License: SEE LICENSE IN LICENSE.md
+Source: apps/web/node_modules/@remotion/player
+Author: Jonny Burger <jonny@remotion.dev>
+
+No standalone LICENSE/NOTICE file was found in the installed package directory.
+Retaining the package metadata license declaration above.
