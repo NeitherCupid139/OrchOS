@@ -259,6 +259,78 @@ export abstract class ConversationService {
     };
   }
 
+  static async deleteLastAssistantMessage(
+    db: AppDb,
+    conversationId: string,
+  ): Promise<void> {
+    const allMessages = await ConversationService.getMessages(db, conversationId);
+    const lastAssistant = [...allMessages].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant) {
+      await db.delete(messages).where(eq(messages.id, lastAssistant.id)).run();
+    }
+  }
+
+  static async retryLastReply(
+    db: AppDb,
+    conversationId: string,
+  ): Promise<Message> {
+    const conv = await ConversationService.get(db, conversationId);
+    if (!conv) throw new Error("Conversation not found");
+
+    await ConversationService.deleteLastAssistantMessage(db, conversationId);
+
+    const runtimeId = conv.runtimeId;
+    if (!runtimeId) {
+      const errorMsg =
+        "No runtime configured for this conversation. Please select an agent/runtime.";
+      return ConversationService.addMessage(
+        db,
+        conversationId,
+        "assistant",
+        errorMsg,
+        errorMsg,
+      );
+    }
+
+    const allMessages = await ConversationService.getMessages(db, conversationId);
+    const contextMessages = allMessages.slice(0, -1);
+
+    const lastUser = [...allMessages].reverse().find((m) => m.role === "user");
+    const userContent = lastUser?.content ?? "";
+
+    const contextPrompt = contextMessages
+      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+      .join("\n\n");
+
+    const prompt = contextPrompt
+      ? `${contextPrompt}\n\nUser: ${userContent}\n\nAssistant:`
+      : userContent;
+
+    try {
+      const startTime = Date.now();
+      const result = await RuntimeService.chat(db, runtimeId, prompt);
+      const responseTime = Date.now() - startTime;
+
+      return ConversationService.addMessage(
+        db,
+        conversationId,
+        "assistant",
+        result.output || result.error || "No response",
+        result.success ? undefined : result.error,
+        responseTime,
+      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to get response";
+      return ConversationService.addMessage(
+        db,
+        conversationId,
+        "assistant",
+        errorMsg,
+        errorMsg,
+      );
+    }
+  }
+
   static mapMessageRow(row: typeof messages.$inferSelect): Message {
     return {
       id: row.id,

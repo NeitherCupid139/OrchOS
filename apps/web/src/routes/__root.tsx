@@ -1,5 +1,4 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScriptPreferenceProvider } from "@/components/providers/ScriptPreferenceProvider";
 import { I18nProvider } from "@/lib/i18n-provider";
@@ -47,12 +46,6 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: React.ReactNode }) {
   const publicRuntimeConfig = getPublicRuntimeConfig();
   const serializedPublicRuntimeConfig = `window.__ORCHOS_PUBLIC_CONFIG__=${JSON.stringify(publicRuntimeConfig)};`;
-
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      void import("react-grab");
-    }
-  }, []);
 
   return (
     <html lang={getLocale()} suppressHydrationWarning>

@@ -21,8 +21,16 @@ export const orpc: ContractRouterClient<AppContract> = createORPCClient(
         return {};
       }
 
-      const token = await window.Clerk?.session?.getToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
+      try {
+        const token = await window.Clerk?.session?.getToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("Clerk token unavailable, continuing without auth.", error);
+        }
+
+        return {};
+      }
     },
     fetch(input, init) {
       return fetch(input, {

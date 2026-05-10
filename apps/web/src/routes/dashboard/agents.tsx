@@ -53,6 +53,7 @@ function AgentsPage() {
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const collapseTimerRef = useRef<number | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const selectedAgent = useMemo(() => {
     if (!selectedItem) return null;
@@ -198,11 +199,14 @@ function AgentsPage() {
 
   const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const sidebarEl = event.currentTarget.parentElement;
-    const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
+    const sidebarEl = sidebarRef.current;
+    if (!sidebarEl) return;
+    const sidebarLeft = sidebarEl.getBoundingClientRect().left;
 
     setIsResizingSidebar(true);
-    document.body.style.cssText += ";cursor:col-resize;user-select:none;";
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    sidebarEl.style.transition = "none";
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
@@ -211,7 +215,9 @@ function AgentsPage() {
 
     const handlePointerUp = () => {
       setIsResizingSidebar(false);
-      document.body.style.cssText += ";cursor:;user-select:";
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      sidebarEl.style.transition = "";
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
@@ -223,6 +229,7 @@ function AgentsPage() {
   return (
     <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
       <div
+        ref={sidebarRef}
         className={cn(
           "relative hidden min-h-0 shrink-0 flex-col overflow-visible border-r bg-card transition-[width] duration-300 ease-out lg:flex",
           sidebarCollapsed ? "w-0 border-r-transparent" : "w-[var(--agents-sidebar-width)]",
@@ -382,16 +389,16 @@ function AgentsPage() {
           role="separator"
           aria-orientation="vertical"
           aria-label={m.resize_agents_sidebar()}
+          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4",
+            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
             sidebarCollapsed && "hidden",
             isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
-            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >

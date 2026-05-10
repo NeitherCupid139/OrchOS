@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import clsx from "clsx";
 import { Button } from "@/components/ui/button-1";
 import { m } from "@/paraglide/messages";
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  AlertTriangleIcon,
+  InfoIcon,
+} from "lucide-react";
 
 const CloseIcon = ({ className }: { className: string }) => (
   <svg height="16" strokeLinejoin="round" viewBox="0 0 16 16" width="16" className={className}>
@@ -115,15 +120,6 @@ const toastStore = {
 
 const ToastContainer = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [shownIds, setShownIds] = useState<number[]>([]);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-
-  const measureRef = (toast: Toast) => (node: HTMLDivElement | null) => {
-    if (node && toast.measuredHeight == null) {
-      toast.measuredHeight = node.getBoundingClientRect().height;
-      toastStore.notify();
-    }
-  };
 
   useEffect(() => {
     setToasts([...toastStore.toasts]);
@@ -133,150 +129,95 @@ const ToastContainer = () => {
     });
   }, []);
 
-  useEffect(() => {
-    const unseen = toasts.reduce<number[]>((acc, t) => { if (!shownIds.includes(t.id)) acc.push(t.id); return acc; }, []);
-    if (unseen.length > 0) {
-      requestAnimationFrame(() => {
-        setShownIds(prev => [...prev, ...unseen]);
-      });
-    }
-  }, [toasts]);
-
-  const lastVisibleCount = 3;
-  const lastVisibleStart = Math.max(0, toasts.length - lastVisibleCount);
-
-  const getFinalTransform = (index: number, length: number) => {
-    if (index === length - 1) {
-      return "none";
-    }
-    const offset = length - 1 - index;
-    let translateY = toasts[length - 1]?.measuredHeight || 63;
-    for (let i = length - 1; i > index; i--) {
-      if (isHovered) {
-        translateY += (toasts[i - 1]?.measuredHeight || 63) + 10;
-      } else {
-        translateY += 20;
-      }
-    }
-    const z = -offset;
-    const scale = isHovered ? 1 : (1 - 0.05 * offset);
-    return `translate3d(0, calc(100% - ${translateY}px), ${z}px) scale(${scale})`;
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    toastStore.toasts.forEach((t) => t.pause?.());
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    toastStore.toasts.forEach((t) => t.resume?.());
-  };
-
-  const visibleToasts = toasts.slice(lastVisibleStart);
-  const containerHeight = visibleToasts.reduce((acc, toast) => {
-    return acc + (toast.measuredHeight ?? 63);
-  }, 0);
+  const visibleToasts = toasts.slice(-5);
 
   return (
-    <div
-      className="fixed bottom-4 right-4 z-[9999] pointer-events-none w-[420px]"
-      style={{ height: containerHeight }}
-    >
-      <div
-        className="relative pointer-events-auto w-full"
-        style={{ height: containerHeight }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {toasts.map((toast, index) => {
-          const isVisible = index >= lastVisibleStart;
+    <div className="fixed bottom-4 right-4 z-[9999] pointer-events-none">
+      {visibleToasts.map((toast, i) => {
+        const isTop = i === visibleToasts.length - 1;
+        const offset = visibleToasts.length - 1 - i;
 
-          return (
-            <div
-              key={toast.id}
-              ref={measureRef(toast)}
-              className={clsx(
-                "absolute right-0 bottom-0 shadow-menu rounded-xl leading-[21px] p-4 h-fit",
-                {
-                  message: "bg-geist-background text-gray-1000",
-                  success: "bg-blue-700 text-contrast-fg",
-                  warning: "bg-amber-800 text-gray-1000 dark:text-gray-100",
-                  error: "bg-red-800 text-contrast-fg",
-                }[toast.type],
-                isVisible ? "opacity-100" : "opacity-0",
-                index < lastVisibleStart && "pointer-events-none",
-              )}
-              style={{
-                width: 420,
-                transition: "opacity .35s cubic-bezier(.25,.75,.6,.98), transform .35s cubic-bezier(.25,.75,.6,.98)",
-                transform: shownIds.includes(toast.id)
-                  ? getFinalTransform(index, toasts.length)
-                  : "translate3d(0, 100%, 150px) scale(1)",
-              }}
-            >
-              <div className="flex flex-col items-center justify-between text-[.875rem]">
-                <div className="w-full h-full flex items-center justify-between gap-4">
-                  <span>{toast.text}</span>
-                  {!toast.action && (
-                    <div className="flex gap-1">
-                      {toast.onUndoAction && (
-                        <Button
-                          type="tertiary"
-                          svgOnly
-                          size="small"
-                          onClick={() => {
-                            toast.onUndoAction?.();
-                            toastStore.remove(toast.id);
-                          }}
-                        >
-                          <UndoIcon />
-                        </Button>
-                      )}
-                      <Button
-                        type="tertiary"
-                        svgOnly
-                        size="small"
-                        onClick={() => toastStore.remove(toast.id)}
-                      >
-                        <CloseIcon className={{
-                          message: "fill-gray-1000",
-                          success: "fill-contrast-fg",
-                          warning: "fill-gray-1000 dark:fill-gray-100",
-                          error: "fill-contrast-fg",
-                        }[toast.type]} />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                {toast.action && (
-                  <div className="w-full flex items-center justify-end gap-2">
-                    <Button
-                      type="tertiary"
-                      size="small"
-                      onClick={() => toastStore.remove(toast.id)}
-                    >
-                      {m.dismiss()}
-                    </Button>
-                    <Button
-                      type="primary"
-                      size="small"
-                      onClick={() => {
-                        if (toast?.onAction) {
-                          toast?.onAction();
-                        }
-                        toastStore.remove(toast.id);
-                      }}
-                    >
-                      {toast.action}
-                    </Button>
-                  </div>
+        return (
+          <div
+            key={toast.id}
+            className="absolute right-0 bottom-0 pointer-events-auto animate-in fade-in slide-in-from-right-5 rounded-xl bg-background/80 backdrop-blur-md border border-border shadow-lg text-foreground p-4"
+            style={{
+              width: 420,
+              zIndex: 9999 - offset,
+              transform: isTop
+                ? "none"
+                : `translateY(${-offset * 16}px) scale(${1 - offset * 0.03})`,
+              transition: "transform .35s ease, opacity .35s ease",
+            }}
+            onMouseEnter={() => toastStore.toasts.forEach((t) => t.pause?.())}
+            onMouseLeave={() => toastStore.toasts.forEach((t) => t.resume?.())}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {toast.type === "success" && (
+                  <CheckCircleIcon className="size-4 shrink-0 text-emerald-500" />
                 )}
+                {toast.type === "error" && (
+                  <XCircleIcon className="size-4 shrink-0 text-red-500" />
+                )}
+                {toast.type === "warning" && (
+                  <AlertTriangleIcon className="size-4 shrink-0 text-amber-500" />
+                )}
+                {toast.type === "message" && (
+                  <InfoIcon className="size-4 shrink-0 text-muted-foreground" />
+                )}
+                <span className="truncate text-sm">{toast.text}</span>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                {toast.onUndoAction && (
+                  <Button
+                    type="tertiary"
+                    svgOnly
+                    size="small"
+                    onClick={() => {
+                      toast.onUndoAction?.();
+                      toastStore.remove(toast.id);
+                    }}
+                  >
+                    <UndoIcon />
+                  </Button>
+                )}
+                <Button
+                  type="tertiary"
+                  svgOnly
+                  size="small"
+                  onClick={() => toastStore.remove(toast.id)}
+                >
+                  <CloseIcon className="fill-foreground/60" />
+                </Button>
               </div>
             </div>
-          );
-        })}
-      </div>
+            {toast.action && (
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <Button
+                  type="tertiary"
+                  size="small"
+                  onClick={() => toastStore.remove(toast.id)}
+                >
+                  {m.dismiss()}
+                </Button>
+                {toast.onAction && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => {
+                      toast.onAction?.();
+                      toastStore.remove(toast.id);
+                    }}
+                  >
+                    {toast.action}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

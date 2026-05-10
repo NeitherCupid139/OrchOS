@@ -74,6 +74,69 @@ async function sendConversationMessage(
   return ConversationService.sendAndReply(db, conversationId, content);
 }
 
+async function retryConversationMessage(
+  conversationId: string,
+  customAgentId?: string,
+) {
+  const db = await getLocalDb();
+
+  if (customAgentId) {
+    const agentService = new CustomAgentService(db);
+    const agents = await agentService.list();
+    const agent = agents.find((item) => item.id === customAgentId);
+    if (!agent) {
+      throw new Error("Custom agent not found");
+    }
+
+    await ConversationService.deleteLastAssistantMessage(db, conversationId);
+
+    const prevMessages = await ConversationService.getMessages(db, conversationId);
+    const history = prevMessages
+      .filter((message) => message.role === "user" || message.role === "assistant")
+      .map((message) => ({ role: message.role, content: message.content }));
+
+    try {
+      const url = agent.url.endsWith("/chat/completions")
+        ? agent.url
+        : `${agent.url.replace(/\/+$/, "")}/chat/completions`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${agent.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: agent.model,
+          messages: history,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Agent returned ${response.status}: ${errorText}`);
+      }
+
+      const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+      const replyContent = data.choices?.[0]?.message?.content ?? "No response";
+
+      return ConversationService.addMessage(db, conversationId, "assistant", replyContent);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to get response from custom agent";
+      return ConversationService.addMessage(
+        db,
+        conversationId,
+        "assistant",
+        errorMessage,
+        errorMessage,
+      );
+    }
+  }
+
+  return ConversationService.retryLastReply(db, conversationId);
+}
+
 export const conversationsRouter = {
   list: os.conversations.list.handler(async () => {
     return ConversationService.list(await getLocalDb());
@@ -117,6 +180,9 @@ export const conversationsRouter = {
   }),
   sendMessage: os.conversations.sendMessage.handler(async ({ input }) => {
     return sendConversationMessage(input.id, input.content, input.customAgentId);
+  }),
+  retryMessage: os.conversations.retryMessage.handler(async ({ input }) => {
+    return retryConversationMessage(input.id, input.customAgentId);
   }),
 };
 

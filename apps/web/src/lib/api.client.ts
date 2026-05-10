@@ -491,6 +491,14 @@ export const api = {
       await orpc.conversations.sendMessage({ id, content, customAgentId }),
     );
   },
+  retryConversationMessage: async (
+    id: string,
+    customAgentId?: string,
+  ): Promise<ConversationMessage> => {
+    return normalizeConversationMessage(
+      await orpc.conversations.retryMessage({ id, customAgentId }),
+    );
+  },
   getObservabilityThroughput: async (
     timeRange: string,
   ): Promise<TimeSeriesPoint[]> => {

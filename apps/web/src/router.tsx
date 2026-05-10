@@ -1,3 +1,7 @@
+if (import.meta.env.DEV && typeof document !== "undefined") {
+  void import("react-grab");
+}
+
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 

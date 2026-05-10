@@ -91,6 +91,7 @@ export function CreationView({
   const [showExpandedContent, setShowExpandedContent] = useState(!creationSidebarCollapsed);
   const [showBookmarks, setShowBookmarks] = useState(true);
   const collapseTimerRef = useRef<number | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<string | null>(null);
 
@@ -298,19 +299,31 @@ export function CreationView({
   const handleResizeStart = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       event.preventDefault();
-      const sidebarEl = event.currentTarget.parentElement;
-      const sidebarLeft = sidebarEl?.getBoundingClientRect().left ?? 0;
+      const sidebarEl = sidebarRef.current;
+      if (!sidebarEl) return;
+      const sidebarLeft = sidebarEl.getBoundingClientRect().left;
       setIsResizingSidebar(true);
-      document.body.style.cssText += ";cursor:col-resize;user-select:none;";
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      // Suppress CSS transition during drag
+      sidebarEl.style.transition = "none";
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
         const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
-        setCreationSidebarWidth(nextWidth);
+        sidebarEl.style.setProperty("--creation-sidebar-width", `${nextWidth}px`);
       };
 
       const handlePointerUp = () => {
         setIsResizingSidebar(false);
-        document.body.style.cssText += ";cursor:;user-select:";
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        // Restore CSS transition
+        sidebarEl.style.transition = "";
+        // Sync final width to store
+        const finalWidth = sidebarEl.style.getPropertyValue("--creation-sidebar-width");
+        if (finalWidth) {
+          setCreationSidebarWidth(Number.parseFloat(finalWidth));
+        }
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
       };
@@ -357,6 +370,7 @@ export function CreationView({
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <div
+        ref={sidebarRef}
         className={cn(
           "relative flex min-h-0 shrink-0 flex-col bg-card transition-[width] duration-300 ease-out",
           creationSidebarCollapsed
@@ -464,6 +478,29 @@ export function CreationView({
                               size="icon-xs"
                               onClick={(event) => {
                                 event.stopPropagation();
+                                handleUpdateConversation(conversation.id, {
+                                  archived: !conversation.archived,
+                                });
+                              }}
+                              className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
+                            >
+                              <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent side="bottom">{m.archive()}</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(props) => (
+                            <Button
+                              {...props}
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={(event) => {
+                                event.stopPropagation();
                                 setConvToDelete(conversation.id);
                                 setDeleteConfirmOpen(true);
                               }}
@@ -522,16 +559,16 @@ export function CreationView({
           role="separator"
           aria-orientation="vertical"
           aria-label={m.resize_creation_sidebar()}
+          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4",
+            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
             creationSidebarCollapsed && "hidden",
             isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
-            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-auto absolute top-1/2 left-1/2 flex h-12 w-2 cursor-col-resize -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >
@@ -725,6 +762,7 @@ function ChatArea({
   onCreateConversation,
   onUpdateConversation,
   onSendMessage,
+  onReloadMessages,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -1257,9 +1295,32 @@ function ChatArea({
                 <div className="flex-1 space-y-4 px-4 py-4 md:px-6">
                   {allMessages.length > 0 || showPendingAssistantReply ? (
                     <>
-                      {allMessages.map((message) => (
-                        <MessageBubble key={message.id} msg={message} userImageUrl={user?.imageUrl} />
-                      ))}
+                      {allMessages.map((message, index) => {
+                        const onRetry =
+                          message.role === "assistant" &&
+                          allMessages[index - 1]?.role === "user"
+                            ? async () => {
+                                try {
+                                  await api.retryConversationMessage(
+                                    conversation.id,
+                                    selectedCustomAgentId ?? undefined,
+                                  );
+                                  await onReloadMessages?.();
+                                } catch (err) {
+                                  console.error("Retry failed:", err);
+                                }
+                              }
+                            : undefined;
+
+                        return (
+                          <MessageBubble
+                            key={message.id}
+                            msg={message}
+                            userImageUrl={user?.imageUrl}
+                            onRetry={onRetry}
+                          />
+                        );
+                      })}
                       {showPendingAssistantReply ? <ChatThinkingState /> : null}
                       <div ref={messagesEndRef} />
                     </>

@@ -102,4 +102,12 @@ export const conversationsContract = {
       }),
     )
     .output(conversationMessageSchema),
+  retryMessage: oc
+    .input(
+      z.object({
+        id: z.string(),
+        customAgentId: z.string().optional(),
+      }),
+    )
+    .output(conversationMessageSchema),
 };

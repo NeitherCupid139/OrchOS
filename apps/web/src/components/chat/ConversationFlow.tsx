@@ -1,4 +1,5 @@
 import { type UIMessage } from "ai";
+import { useCallback } from "react";
 import { cn, formatDuration } from "@/lib/utils";
 import type { ConversationMessage } from "@/lib/api";
 import { m } from "@/paraglide/messages";
@@ -6,6 +7,12 @@ import { ChatClarificationCard } from "@/components/chat/ChatClarificationCard";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
 import { ChatToolTimeline } from "@/components/chat/ChatToolTimeline";
+import { Actions, Action } from "@/components/ui/actions";
+import { toast } from "@/components/ui/toast";
+import {
+  CopyIcon,
+  RefreshCcwIcon,
+} from "lucide-react";
 
 type ConversationUiPart = (
   | { type: "text"; text: string }
@@ -118,7 +125,15 @@ export function mapConversationMessagesToUiMessages(messages: ConversationMessag
   }));
 }
 
-export function MessageBubble({ msg, userImageUrl }: { msg: UIMessage; userImageUrl?: string }) {
+export function MessageBubble({
+  msg,
+  userImageUrl,
+  onRetry,
+}: {
+  msg: UIMessage;
+  userImageUrl?: string;
+  onRetry?: () => void;
+}) {
   const isUser = msg.role === "user";
   const parts = msg.parts as ConversationUiPart[];
   const metadata = (msg.metadata ?? {}) as {
@@ -131,68 +146,123 @@ export function MessageBubble({ msg, userImageUrl }: { msg: UIMessage; userImage
     projectName?: string;
   };
 
+  const handleCopy = useCallback(async () => {
+    const text = parts
+      .filter((p) => p.type === "text")
+      .map((p) => (p as { text: string }).text)
+      .join("\n");
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("Copied!");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  }, [parts]);
+
   return (
-    <div className="flex w-full gap-2">
-      <span
-        className={cn(
-          "mt-[3px] inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-medium leading-none",
-          isUser
-            ? "bg-primary/10 text-primary"
-            : metadata.error
+    <div className={cn("flex w-full gap-2.5", isUser ? "justify-end" : "justify-start")}>
+      {!isUser && (
+        <span
+          className={cn(
+            "mt-[3px] inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-medium leading-none",
+            metadata.error
               ? "bg-destructive/10 text-destructive"
               : "bg-muted",
-        )}
-      >
-        {isUser ? (
-          userImageUrl ? (
-            <img src={userImageUrl} alt="" className="size-full object-cover" />
-          ) : (
-            "U"
-          )
-        ) : (
+          )}
+        >
           <img src="/logo.svg" alt="" className="size-4" />
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        </span>
+      )}
+      <div className={cn("min-w-0", isUser ? "max-w-[80%]" : "max-w-[85%]")}>
+        <div className={cn(
+          "mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground",
+          isUser && "justify-end",
+        )}>
           <span className="font-medium text-foreground/60">{isUser ? m.user() : m.assistant()}</span>
           {metadata.responseTime != null && <span className="opacity-50">{formatDuration(metadata.responseTime)}</span>}
         </div>
-        {parts.map((part) => {
-          if (part.type === "text") {
-            return (
-              <div key={part.id} className="text-sm leading-7 text-foreground/90">
-                <ChatMarkdown content={part.text} />
-              </div>
-            );
-          }
+        <div className={cn(
+          "rounded-2xl px-3 py-2",
+          isUser
+            ? "bg-primary text-primary-foreground [&_a]:text-primary-foreground/80 [&_a]:underline-offset-4 [&_code]:bg-primary-foreground/15"
+            : "bg-muted/50",
+        )}>
+          {parts.map((part) => {
+            if (part.type === "text") {
+              return (
+                <div key={part.id} className={cn("text-sm leading-7", isUser ? "text-primary-foreground" : "text-foreground/90")}>
+                  <ChatMarkdown content={part.text} />
+                </div>
+              );
+            }
 
-          if (part.type === "reasoning") {
-            return <ChatReasoningDrawer key={part.id} text={part.text} metadata={metadata} />;
-          }
+            if (part.type === "reasoning") {
+              return <ChatReasoningDrawer key={part.id} text={part.text} metadata={metadata} />;
+            }
 
-          if (part.type === "clarification") {
-            return (
-              <ChatClarificationCard
-                key={part.id}
-                summary={part.summary}
-                questions={part.questions}
-              />
-            );
-          }
+            if (part.type === "clarification") {
+              return (
+                <ChatClarificationCard
+                  key={part.id}
+                  summary={part.summary}
+                  questions={part.questions}
+                />
+              );
+            }
 
-          if (part.type.startsWith("tool-")) {
-            return (
-              <ChatToolTimeline
-                key={part.id}
-                part={part as Record<string, unknown> & { type: string }}
-              />
-            );
-          }
+            if (part.type.startsWith("tool-")) {
+              return (
+                <ChatToolTimeline
+                  key={part.id}
+                  part={part as Record<string, unknown> & { type: string }}
+                />
+              );
+            }
 
-          return null;
-        })}
+            return null;
+          })}
+        </div>
+        {!isUser && (
+          <Actions className="mt-2">
+            {onRetry && (
+              <Action
+                label="Retry"
+                tooltip="Retry"
+                onClick={onRetry}
+              >
+                <RefreshCcwIcon className="size-4" />
+              </Action>
+            )}
+            <Action
+              label="Copy"
+              tooltip="Copy"
+              onClick={handleCopy}
+            >
+              <CopyIcon className="size-4" />
+            </Action>
+          </Actions>
+        )}
       </div>
+      {isUser && (
+        <span className="mt-[3px] inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-medium leading-none text-primary">
+          {userImageUrl ? (
+            <img src={userImageUrl} alt="" className="size-full object-cover" />
+          ) : (
+            "U"
+          )}
+        </span>
+      )}
     </div>
   );
 }
