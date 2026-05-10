@@ -22,5 +22,6 @@ export async function getLocalDb(): Promise<AppDb> {
   }
 
   dbInstancePromise = Promise.resolve(createD1Db(d1));
+
   return dbInstancePromise;
 }

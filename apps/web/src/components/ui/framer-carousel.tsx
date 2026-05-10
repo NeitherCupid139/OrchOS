@@ -1,22 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { motion, useMotionValue, animate } from "motion/react";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
 
 export interface CarouselItem {
   id: string;
-  icon: IconSvgElement;
+  media: ReactNode;
   title: string;
   desc: string;
 }
 
-export function FramerCarousel({ items }: { items: CarouselItem[] }) {
-  const [index, setIndex] = useState(0);
+export function FramerCarousel({
+  items,
+  index: controlledIndex,
+  onIndexChange: _onIndexChange,
+}: {
+  items: CarouselItem[];
+  index?: number;
+  onIndexChange?: (index: number) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
+  const index = controlledIndex ?? 0;
 
   useEffect(() => {
     if (containerRef.current) {
@@ -30,65 +33,26 @@ export function FramerCarousel({ items }: { items: CarouselItem[] }) {
   }, [index, x]);
 
   return (
-    <div className="relative overflow-hidden rounded-lg" ref={containerRef}>
+    <div className="relative overflow-hidden" ref={containerRef}>
       <motion.div className="flex" style={{ x }}>
         {items.map((item) => (
-          <div key={item.id} className="flex w-full shrink-0 items-start gap-3 px-1">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <HugeiconsIcon icon={item.icon} className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium">{item.title}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{item.desc}</div>
+          <div key={item.id} className="w-full shrink-0 px-1">
+            <div className="overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,rgba(247,248,250,0.96),rgba(241,244,247,0.9))] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_24px_60px_rgba(15,23,42,0.1)] ring-1 ring-black/8 dark:bg-[linear-gradient(180deg,rgba(24,28,36,0.96),rgba(16,20,27,0.96))] dark:ring-white/10">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-[18px] bg-muted/30 m-2 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset] ring-1 ring-black/10 dark:ring-white/10">
+                {item.media}
+              </div>
+              <div className="px-5 pb-5 pt-2">
+                <div className="text-[15px] font-semibold text-foreground [text-wrap:balance]">
+                  {item.title}
+                </div>
+                <div className="mt-1.5 text-sm leading-6 text-muted-foreground [text-wrap:pretty]">
+                  {item.desc}
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </motion.div>
-
-      {items.length > 1 ? (
-        <>
-          <button
-            type="button"
-            disabled={index === 0}
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            className={`absolute left-0 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full shadow-sm transition-opacity ${
-              index === 0
-                ? "pointer-events-none opacity-20"
-                : "bg-popover opacity-70 hover:opacity-100"
-            }`}
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-          </button>
-
-          <button
-            type="button"
-            disabled={index === items.length - 1}
-            onClick={() => setIndex((i) => Math.min(items.length - 1, i + 1))}
-            className={`absolute right-0 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full shadow-sm transition-opacity ${
-              index === items.length - 1
-                ? "pointer-events-none opacity-20"
-                : "bg-popover opacity-70 hover:opacity-100"
-            }`}
-          >
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-          </button>
-
-          <div className="mt-2 flex justify-center gap-1.5">
-            {items.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index
-                    ? "w-5 bg-primary"
-                    : "w-1.5 bg-muted-foreground/25 hover:bg-muted-foreground/40"
-                }`}
-              />
-            ))}
-          </div>
-        </>
-      ) : null}
     </div>
   );
 }

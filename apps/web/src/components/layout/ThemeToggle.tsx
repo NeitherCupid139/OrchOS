@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { startTransition, useEffect } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { m } from "@/paraglide/messages";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,18 @@ function applyThemeMode(mode: ThemeMode) {
   document.documentElement.style.colorScheme = resolved;
 }
 
+function applyThemeModeWithoutTransitions(mode: ThemeMode) {
+  const root = document.documentElement;
+  root.classList.add("theme-switching");
+  applyThemeMode(mode);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      root.classList.remove("theme-switching");
+    });
+  });
+}
+
 export default function ThemeToggle() {
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
@@ -38,8 +50,16 @@ export default function ThemeToggle() {
     return () => media.removeEventListener("change", onChange);
   }, [theme]);
 
+  function handleThemeChange(nextTheme: string) {
+    const mode = nextTheme as ThemeMode;
+    applyThemeModeWithoutTransitions(mode);
+    startTransition(() => {
+      setTheme(mode);
+    });
+  }
+
   return (
-    <Tabs value={theme} onValueChange={(v) => setTheme(v as ThemeMode)}>
+    <Tabs value={theme} onValueChange={handleThemeChange}>
       <TabsList>
         <TabsTrigger value="light" aria-label={m.theme_switch_mode({ label: m.theme_light() })}>
           <Sun className="size-4" />

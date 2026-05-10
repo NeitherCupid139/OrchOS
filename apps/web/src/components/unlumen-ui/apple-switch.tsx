@@ -284,7 +284,7 @@ const AppleSwitch = (
         aria-label={typeof label === "string" ? label : props["aria-label"]}
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full active:cursor-grabbing",
-          "border border-input bg-transparent dark:bg-input/30 shadow-sm",
+          "border border-input bg-transparent dark:bg-input/30",
           "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-45",
           className,
@@ -302,8 +302,6 @@ const AppleSwitch = (
             className="absolute inset-0 rounded-full"
             style={{
               backgroundColor: colors.off,
-              boxShadow:
-                "inset 0 1px 1px rgba(255,255,255,0.34), inset 0 -1px 2px rgba(0,0,0,0.08)",
             }}
           />
 
@@ -346,8 +344,6 @@ const AppleSwitch = (
             opacity: thumbOpacity,
             backdropFilter: "blur(9px)",
             WebkitBackdropFilter: "blur(9px)",
-            boxShadow:
-              "0 3px 11px rgba(0,0,0,0.24), 0 1px 1px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.78), inset 0 -1px 1px rgba(0,0,0,0.05)",
           }}
         />
       </button>
