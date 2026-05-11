@@ -111,8 +111,6 @@ export function Sidebar({
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
   const [showExpandedContent, setShowExpandedContent] = useState(!collapsed);
-  const activeOrganization =
-    organizations.find((o) => o.id === activeOrganizationId) ?? null;
   const filteredOrganizations = organizations.filter((org) =>
     org.name.toLowerCase().includes(orgSearch.trim().toLowerCase()),
   );
@@ -267,27 +265,6 @@ export function Sidebar({
                     className="h-8 border-border/60 bg-background/80 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
-                {activeOrganization ? (
-                  <>
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>
-                        {m.space_launcher_current()}
-                      </DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onOrganizationChange(activeOrganization.id)
-                        }
-                      >
-                        <span className="flex-1">{activeOrganization.name}</span>
-                        <HugeiconsIcon
-                          icon={Tick02Icon}
-                          className="size-4 text-primary"
-                        />
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                  </>
-                ) : null}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>{m.space_launcher_all()}</DropdownMenuLabel>
                   {filteredOrganizations.length > 0 ? (
@@ -499,7 +476,7 @@ export function Sidebar({
               : "block opacity-100 delay-300",
           )}
         >
-          <InfoCard storageKey="sidebar-welcome" dismissType="once">
+          <InfoCard storageKey="sidebar-welcome" dismissType="forever">
             <InfoCardContent>
               <InfoCardTitle>{m.welcome_to_orchos()}</InfoCardTitle>
               <InfoCardDescription>{m.welcome_desc()}</InfoCardDescription>

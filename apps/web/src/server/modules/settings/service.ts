@@ -9,6 +9,7 @@ export class SettingsService {
     modelStrategy: "adaptive",
     locale: "en",
     showShortcutHints: false,
+    sendShortcut: "enter",
     useMixedScript: false,
     preferKanji: false,
   };
@@ -29,6 +30,7 @@ export class SettingsService {
       if (row.key === "modelStrategy") this.settings.modelStrategy = row.value as ControlSettings["modelStrategy"];
       if (row.key === "locale") this.settings.locale = row.value;
       if (row.key === "showShortcutHints") this.settings.showShortcutHints = row.value === "true";
+      if (row.key === "sendShortcut") this.settings.sendShortcut = row.value as ControlSettings["sendShortcut"];
       if (row.key === "useMixedScript") this.settings.useMixedScript = row.value === "true";
       if (row.key === "preferKanji") this.settings.preferKanji = row.value === "true";
     }
@@ -72,6 +74,13 @@ export class SettingsService {
       await this.db.insert(settings).values({ key: "showShortcutHints", value: String(patch.showShortcutHints) }).onConflictDoUpdate({
         target: settings.key,
         set: { value: String(patch.showShortcutHints) },
+      }).run();
+    }
+    if (patch.sendShortcut !== undefined) {
+      this.settings.sendShortcut = patch.sendShortcut;
+      await this.db.insert(settings).values({ key: "sendShortcut", value: patch.sendShortcut }).onConflictDoUpdate({
+        target: settings.key,
+        set: { value: patch.sendShortcut },
       }).run();
     }
     if (patch.useMixedScript !== undefined) {

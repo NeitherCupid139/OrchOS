@@ -78,9 +78,9 @@ function subtasksToRows(subtasks: string[]): TodoRow[] {
 }
 
 const PRIORITY_OPTIONS: Array<{ value: BoardTaskPriority; label: string }> = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
+  { value: "low", label: m.priority_low() },
+  { value: "medium", label: m.priority_medium() },
+  { value: "high", label: m.priority_high() },
 ];
 
 export function CreateBoardConversationDialog({
@@ -100,7 +100,7 @@ export function CreateBoardConversationDialog({
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [todoRows, setTodoRows] = useState<TodoRow[]>([makeEmptyRow()]);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -114,7 +114,7 @@ export function CreateBoardConversationDialog({
       setTags([]);
       setTagInput("");
       setTodoRows([makeEmptyRow()]);
-      setDraggedIndex(null);
+      setDraggedRowId(null);
       setSubmitting(false);
       return;
     }
@@ -192,12 +192,34 @@ export function CreateBoardConversationDialog({
   };
 
   const moveTodoRow = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) {
+      return;
+    }
+
     setTodoRows((prev) => {
       const next = [...prev];
       const [removed] = next.splice(fromIndex, 1);
+      if (!removed) {
+        return prev;
+      }
       next.splice(toIndex, 0, removed);
       return next;
     });
+  };
+
+  const moveTodoRowById = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) {
+      return;
+    }
+
+    const fromIndex = todoRows.findIndex((row) => row.id === sourceId);
+    const toIndex = todoRows.findIndex((row) => row.id === targetId);
+
+    if (fromIndex === -1 || toIndex === -1) {
+      return;
+    }
+
+    moveTodoRow(fromIndex, toIndex);
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -342,20 +364,36 @@ export function CreateBoardConversationDialog({
 
           <div className="space-y-1.5">
             {todoRows.map((row, rowIdx) => (
-              <div key={row.id} className="flex items-center gap-1.5">
+              <div
+                key={row.id}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  if (draggedRowId) {
+                    event.dataTransfer.dropEffect = "move";
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!draggedRowId) {
+                    return;
+                  }
+
+                  moveTodoRowById(draggedRowId, row.id);
+                  setDraggedRowId(null);
+                }}
+                className="flex items-center gap-1.5"
+              >
                 <button
                   type="button"
                   draggable
-                  onDragStart={() => setDraggedIndex(rowIdx)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (draggedIndex === null || draggedIndex === rowIdx) return;
-                    moveTodoRow(draggedIndex, rowIdx);
-                    setDraggedIndex(rowIdx);
+                  onDragStart={(event) => {
+                    setDraggedRowId(row.id);
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", row.id);
                   }}
-                  onDragEnd={() => setDraggedIndex(null)}
+                  onDragEnd={() => setDraggedRowId(null)}
                   className="inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
-                  aria-label="Drag to reorder"
+                  aria-label={m.drag_to_reorder()}
                 >
                   <HugeiconsIcon icon={DragDropVerticalIcon} className="size-4" />
                 </button>
@@ -370,7 +408,7 @@ export function CreateBoardConversationDialog({
                   type="button"
                   onClick={() => removeTodoRow(row.id)}
                   className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  aria-label="Remove item"
+                  aria-label={m.remove_item()}
                 >
                   <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
                 </button>

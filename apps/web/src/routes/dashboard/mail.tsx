@@ -67,7 +67,8 @@ function MailPage() {
     Record<string, InboxMessage[]>
   >({});
   const [integrations, setIntegrations] = useState<MailIntegration[]>([]);
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);

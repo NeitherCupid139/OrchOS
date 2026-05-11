@@ -69,6 +69,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
   const [index, setIndex] = useState(0);
   const isFirstSlide = index === 0;
   const isLastSlide = index === ONBOARDING_SECTIONS.length - 1;
+  const currentSection = ONBOARDING_SECTIONS[index];
 
   useEffect(() => {
     if (open) {
@@ -86,22 +87,38 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
       size="lg"
       className="max-w-4xl"
       bodyClassName="p-5 md:p-6"
-      footer={
-        <div className="flex w-full items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {ONBOARDING_SECTIONS.map((section, sectionIndex) => (
-              <button
-                key={section.id}
-                type="button"
-                aria-label={`Go to ${section.title}`}
-                onClick={() => setIndex(sectionIndex)}
-                className={`h-1.5 rounded-full transition-[width,background-color,opacity] ${
-                  sectionIndex === index
-                    ? "w-6 bg-primary"
-                    : "w-2.5 bg-muted-foreground/20 hover:bg-muted-foreground/35"
-                }`}
-              />
-            ))}
+    >
+      <div className="space-y-4">
+        <FramerCarousel
+          items={ONBOARDING_SECTIONS}
+          index={index}
+          onIndexChange={setIndex}
+        />
+        <div className="flex w-full flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0">
+              <div className="text-[15px] font-semibold text-foreground [text-wrap:balance]">
+                {currentSection.title}
+              </div>
+              <div className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty]">
+                {currentSection.desc}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {ONBOARDING_SECTIONS.map((section, sectionIndex) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  aria-label={`Go to ${section.title}`}
+                  onClick={() => setIndex(sectionIndex)}
+                  className={`h-1.5 rounded-full transition-[width,background-color,opacity] ${
+                    sectionIndex === index
+                      ? "w-6 bg-primary"
+                      : "w-2.5 bg-muted-foreground/20 hover:bg-muted-foreground/35"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -131,13 +148,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
             </Button>
           </div>
         </div>
-      }
-    >
-      <FramerCarousel
-        items={ONBOARDING_SECTIONS}
-        index={index}
-        onIndexChange={setIndex}
-      />
+      </div>
     </AppDialog>
   );
 }

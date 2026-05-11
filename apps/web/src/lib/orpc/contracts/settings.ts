@@ -9,6 +9,7 @@ export const settingsSchema = z.object({
   modelStrategy: modelStrategySchema,
   locale: z.string(),
   showShortcutHints: z.boolean(),
+  sendShortcut: z.enum(["enter", "cmd-enter"]),
   useMixedScript: z.boolean(),
   preferKanji: z.boolean(),
 });

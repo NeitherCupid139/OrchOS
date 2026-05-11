@@ -23,6 +23,7 @@ import { toast } from "@/components/ui/toast";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FullScreenCalendar, type FullScreenCalendarDay } from "@/components/ui/fullscreen-calendar";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Input } from "@/components/ui/input";
@@ -88,12 +89,6 @@ type CalendarEventDetail = {
   event: CalendarRenderableEvent;
   task?: ReturnType<typeof useBoardStore.getState>["tasks"][number];
   calendar?: LocalCalendar;
-  group?: LocalCalendarGroup;
-};
-
-type LocalGroupFormState = {
-  id: string | null;
-  name: string;
 };
 
 type LocalCalendarFormState = {
@@ -135,10 +130,6 @@ function offsetDateTime(value: string, offsetMinutes: number) {
   return new Date(new Date(value).getTime() + offsetMinutes * 60_000);
 }
 
-function getCalendarEventDayLabel(value: string) {
-  return formatLongDate(formatDayKey(new Date(value)));
-}
-
 export const Route = createFileRoute("/dashboard/calendar")({ component: CalendarPage });
 
 function CalendarPage() {
@@ -148,10 +139,10 @@ function CalendarPage() {
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<string[]>([]);
   const [isCalendarSourceDialogOpen, setIsCalendarSourceDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isLocalGroupDialogOpen, setIsLocalGroupDialogOpen] = useState(false);
   const [isLocalCalendarDialogOpen, setIsLocalCalendarDialogOpen] = useState(false);
   const [isLocalEventDialogOpen, setIsLocalEventDialogOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -165,7 +156,7 @@ function CalendarPage() {
   const boardTasks = useBoardStore((state) => state.tasks);
   const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "events" | "tasks">("all");
   const [selectedEventDetailId, setSelectedEventDetailId] = useState<string | null>(null);
-  const [localGroupForm, setLocalGroupForm] = useState<LocalGroupFormState>({ id: null, name: "" });
+  const [calendarPendingDelete, setCalendarPendingDelete] = useState<LocalCalendar | null>(null);
   const [localCalendarForm, setLocalCalendarForm] = useState<LocalCalendarFormState>({
     id: null,
     groupId: "",
@@ -190,18 +181,9 @@ function CalendarPage() {
   );
   const accounts = integration?.accounts ?? [];
   const activeAccount = accounts.find((account) => account.id === activeAccountId) ?? accounts[0] ?? null;
-  const localGroups = localStore.groups;
   const localCalendars = localStore.calendars;
   const localEvents = localStore.events;
-  const hasSidebarCalendars = accounts.length > 0 || localGroups.length > 0;
-  const groupedLocalCalendars = useMemo(
-    () =>
-      localGroups.map((group) => ({
-        group,
-        calendars: localCalendars.filter((calendar) => calendar.groupId === group.id),
-      })),
-    [localGroups, localCalendars],
-  );
+  const hasSidebarCalendars = accounts.length > 0 || localCalendars.length > 0;
 
   const activeLocalCalendarIds = useMemo(() => {
     return localCalendars
@@ -232,11 +214,6 @@ function CalendarPage() {
   const renderableEvents = useMemo<CalendarRenderableEvent[]>(
     () => [...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })), ...boardTasksToCalendarEvents(boardTasks)],
     [boardTasks, localEventsInScope],
-  );
-
-  const upcomingEvents = useMemo(
-    () => renderableEvents.slice().sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()).slice(0, 8),
-    [renderableEvents],
   );
 
   const fullScreenCalendarData = useMemo<FullScreenCalendarDay[]>(
@@ -287,13 +264,11 @@ function CalendarPage() {
     }
 
     const calendar = localCalendars.find((item) => item.id === event.calendarId);
-    const group = calendar ? localGroups.find((item) => item.id === calendar.groupId) : undefined;
     return {
       event,
       calendar,
-      group,
     };
-  }, [boardTasks, localCalendars, localGroups, renderableEvents, selectedEventDetailId]);
+  }, [boardTasks, localCalendars, renderableEvents, selectedEventDetailId]);
 
   useEffect(() => {
     void loadIntegrations();
@@ -523,10 +498,28 @@ function CalendarPage() {
     setIsAddDialogOpen(true);
   }
 
-  function openLocalGroupDialog(group?: LocalCalendarGroup) {
+  function openLocalCalendarDialog(calendar?: LocalCalendar) {
     setIsCalendarSourceDialogOpen(false);
-    setLocalGroupForm(group ? { id: group.id, name: group.name } : { id: null, name: "" });
-    setIsLocalGroupDialogOpen(true);
+    setLocalCalendarForm(
+      calendar
+        ? {
+            id: calendar.id,
+            groupId: calendar.groupId,
+            name: calendar.name,
+            color: calendar.color,
+            description: calendar.description ?? "",
+            icon: calendar.icon,
+          }
+        : {
+            id: null,
+            groupId: "",
+            name: "",
+            color: LOCAL_CALENDAR_COLORS[0],
+            description: "",
+            icon: "Calendar03",
+          },
+    );
+    setIsLocalCalendarDialogOpen(true);
   }
 
   function openLocalEventDialog(dayKey?: string, event?: LocalCalendarEvent) {
@@ -575,40 +568,8 @@ function CalendarPage() {
     setIsLocalEventDialogOpen(true);
   }
 
-  function handleSaveLocalGroup() {
-    const name = localGroupForm.name.trim();
-    if (!name) {
-      toast.error(m.calendar_enter_group_name());
-      return;
-    }
-
-    setLocalStore((current) => {
-      if (localGroupForm.id) {
-        return {
-          ...current,
-          groups: current.groups.map((group) => (group.id === localGroupForm.id ? { ...group, name } : group)),
-        };
-      }
-
-      const groupId = createId("group");
-      setSelectedSidebarItem(`local-group:${groupId}`);
-
-      return {
-        ...current,
-        groups: [...current.groups, { id: groupId, name }],
-      };
-    });
-
-    setIsLocalGroupDialogOpen(false);
-    toast.success(localGroupForm.id ? m.calendar_group_updated() : m.calendar_group_created());
-  }
-
   function handleSaveLocalCalendar() {
     const name = localCalendarForm.name.trim();
-    if (!localCalendarForm.groupId) {
-      toast.error(m.calendar_choose_group_first());
-      return;
-    }
 
     if (!name) {
       toast.error(m.calendar_enter_calendar_name());
@@ -623,7 +584,7 @@ function CalendarPage() {
             calendar.id === localCalendarForm.id
               ? {
                   ...calendar,
-                  groupId: localCalendarForm.groupId,
+                  groupId: "",
                   name,
                   color: localCalendarForm.color,
                   description: localCalendarForm.description.trim(),
@@ -643,7 +604,7 @@ function CalendarPage() {
           ...current.calendars,
           {
             id: calendarId,
-            groupId: localCalendarForm.groupId,
+            groupId: "",
             name,
             color: localCalendarForm.color,
             description: localCalendarForm.description.trim(),
@@ -711,19 +672,23 @@ function CalendarPage() {
     toast.success(localEventForm.id ? m.calendar_event_updated() : m.calendar_event_created());
   }
 
-  function handleDeleteLocalGroup(group: LocalCalendarGroup) {
-    const relatedCalendarIds = localCalendars.flatMap((calendar) => calendar.groupId === group.id ? [calendar.id] : []);
-    if (!window.confirm(m.calendar_delete_group_confirm({ name: group.name }))) {
-      return;
-    }
+  function handleDeleteLocalCalendar(calendar: LocalCalendar) {
+    setCalendarPendingDelete(calendar);
+  }
 
+  function confirmDeleteLocalCalendar() {
+    if (!calendarPendingDelete) return;
+
+    const calendar = calendarPendingDelete;
     setLocalStore((current) => ({
-      groups: current.groups.filter((item) => item.id !== group.id),
-      calendars: current.calendars.filter((item) => item.groupId !== group.id),
-      events: current.events.filter((item) => !relatedCalendarIds.includes(item.calendarId)),
+      ...current,
+      calendars: current.calendars.filter((item) => item.id !== calendar.id),
+      events: current.events.filter((item) => item.calendarId !== calendar.id),
     }));
-    setSelectedSidebarItem(localGroups.length > 1 ? "local-overview" : "google-overview");
-    toast.success(m.calendar_group_deleted());
+    setHiddenCalendarIds((current) => current.filter((id) => id !== calendar.id));
+    setSelectedSidebarItem((current) => current === `local-calendar:${calendar.id}` ? "local-overview" : current);
+    setCalendarPendingDelete(null);
+    toast.success(m.calendar_calendar_deleted());
   }
 
   const handleCollapseSidebar = useCallback(() => {
@@ -779,7 +744,7 @@ function CalendarPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div
           ref={sidebarRef}
           className={cn(
@@ -906,87 +871,68 @@ function CalendarPage() {
                   ) : null}
 
                   <div className="space-y-0.5">
-                    {groupedLocalCalendars.length > 0 ? (
+                    {localCalendars.length > 0 ? (
                       <div className="space-y-0.5">
-                        {groupedLocalCalendars.map(({ group, calendars }) => {
+                        {localCalendars.map((calendar) => {
+                          const isHidden = hiddenCalendarIds.includes(calendar.id);
+
                           return (
-                            <div key={group.id}>
-                              <div
-                                className={cn(
-                                  "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
-                                )}
-                              >
-                                <HugeiconsIcon
-                                  icon={Calendar03Icon}
-                                  className="size-3.5 shrink-0 text-violet-500"
-                                />
-                                <span className="min-w-0 flex-1 truncate">{group.name}</span>
-                                <div className="grid items-center justify-items-center">
-                                  <div className="col-start-1 row-start-1 flex items-center opacity-0 transition-opacity group-hover:opacity-100">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-xs"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openLocalGroupDialog(group);
-                                      }}
-                                      title={m.edit()}
-                                    >
-                                      <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-xs"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteLocalGroup(group);
-                                      }}
-                                      className="hover:text-destructive"
-                                      title={m.calendar_delete_group()}
-                                    >
-                                      <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                    </Button>
-                                  </div>
-                                  <span className="pointer-events-none col-start-1 row-start-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
-                                    {calendars.length}
-                                  </span>
+                            <div
+                              key={calendar.id}
+                              className={cn(
+                                "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                isHidden && "opacity-45",
+                              )}
+                            >
+                              <HugeiconsIcon
+                                icon={LOCAL_CALENDAR_ICONS.find((i) => i.name === calendar.icon)?.component ?? Calendar03Icon}
+                                className="size-3.5 shrink-0"
+                                style={{ color: calendar.color }}
+                              />
+                              <span className="min-w-0 flex-1 truncate">{calendar.name}</span>
+                              <div className="grid items-center justify-items-center">
+                                <div className="col-start-1 row-start-1 flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openLocalCalendarDialog(calendar);
+                                    }}
+                                    title={m.edit()}
+                                  >
+                                    <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteLocalCalendar(calendar);
+                                    }}
+                                    className="hover:text-destructive"
+                                    title={typeof m.calendar_delete_calendar === "function" ? m.calendar_delete_calendar() : m.delete()}
+                                  >
+                                    <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleCalendarVisibility(calendar.id);
+                                    }}
+                                    title={isHidden ? "Show calendar" : "Hide calendar"}
+                                  >
+                                    <HugeiconsIcon icon={ViewOffSlashIcon} className={cn("size-3.5", isHidden && "opacity-60")} />
+                                  </Button>
                                 </div>
-                              </div>
-
-                              <div className="ml-3 space-y-0.5">
-                                {calendars.map((calendar) => {
-                                  const isHidden = hiddenCalendarIds.includes(calendar.id);
-
-                                  return (
-                                    <div
-                                      key={calendar.id}
-                                      className={cn(
-                                        "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
-                                        isHidden && "opacity-45",
-                                      )}
-                                    >
-                                      <HugeiconsIcon
-                                        icon={LOCAL_CALENDAR_ICONS.find((i) => i.name === calendar.icon)?.component ?? Calendar03Icon}
-                                        className="size-3.5 shrink-0"
-                                        style={{ color: calendar.color }}
-                                      />
-                                      <span className="min-w-0 flex-1 truncate">{calendar.name}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleCalendarVisibility(calendar.id)}
-                                        className="mr-1 inline-flex size-7 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-background/70 group-hover:opacity-100"
-                                        aria-label={isHidden ? "Show calendar" : "Hide calendar"}
-                                      >
-                                        <HugeiconsIcon icon={ViewOffSlashIcon} className={cn("size-3.5", isHidden && "opacity-60")} />
-                                      </button>
-                                      <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                        {localEvents.filter((event) => event.calendarId === calendar.id).length}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+                                <span className="pointer-events-none col-start-1 row-start-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
+                                  {localEvents.filter((event) => event.calendarId === calendar.id).length}
+                                </span>
                               </div>
                             </div>
                           );
@@ -1008,8 +954,6 @@ function CalendarPage() {
               <div className="min-h-0 flex-1" />
             )}
           </div>
-
-        </div>
 
         <div
           role="separator"
@@ -1038,6 +982,8 @@ function CalendarPage() {
           </div>
         </div>
 
+          </div>
+
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {sidebarCollapsed ? (
             <Tooltip>
@@ -1059,13 +1005,13 @@ function CalendarPage() {
             </Tooltip>
           ) : null}
           <ScrollArea className="h-full">
-            <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 p-6">
+            <div className="flex min-h-full w-full flex-col gap-6 p-6">
               {loading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <AsciiLoading label={m.loading()} />
                 </div>
               ) : selectedSidebarItem.startsWith("local") ? (
-                localGroups.length === 0 ? (
+                localCalendars.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center">
                     <EmptyState
                       variant="subtle"
@@ -1078,9 +1024,9 @@ function CalendarPage() {
                         <HugeiconsIcon key="l3" icon={Add01Icon} className="size-6" />,
                       ]}
                       action={{
-                        label: m.calendar_create_group(),
+                        label: m.calendar_new_calendar(),
                         icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
-                        onClick: () => openLocalGroupDialog(),
+                        onClick: () => openLocalCalendarDialog(),
                       }}
                       className="w-full max-w-lg"
                     />
@@ -1088,34 +1034,6 @@ function CalendarPage() {
                 ) : (
                   <section className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
                     <div className="space-y-6">
-                      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                          <div>
-                            <div className="text-sm font-medium text-muted-foreground">{m.calendar_overview()}</div>
-                            <h2 className="mt-1 text-balance text-2xl font-semibold text-foreground">{m.calendar_local_workspace()}</h2>
-                            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                              All calendars are shown together by default. Hide any calendar from the sidebar eye control.
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button type="button" variant="outline" onClick={() => openLocalGroupDialog()}>
-                              <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                              {m.calendar_new_group()}
-                            </Button>
-                            <Button type="button" onClick={() => openLocalEventDialog(selectedLocalDate)}>
-                              <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                              {m.calendar_add_event()}
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 grid gap-4 md:grid-cols-4">
-                          <MetricCard label={m.calendar_groups()} value={localGroups.length} />
-                          <MetricCard label={m.calendar_calendars()} value={localCalendars.length} />
-                          <MetricCard label={m.calendar_events()} value={localEvents.length} />
-                          <MetricCard label="Tasks" value={boardTasksToCalendarEvents(boardTasks).length} />
-                        </div>
-                      </div>
 
                       <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
                         <div className="border-b border-border/60 px-4 py-3">
@@ -1143,40 +1061,6 @@ function CalendarPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">{m.calendar_upcoming()}</div>
-                          <div className="mt-1 text-lg font-semibold text-foreground">{m.calendar_next_events()}</div>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                          {upcomingEvents.map((event) => (
-                            <button
-                              key={event.id}
-                              type="button"
-                              onClick={() => {
-                                openEventDetail(String(event.id));
-                              }}
-                              className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition-colors hover:bg-accent/40"
-                            >
-                              <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", event.source === "task" ? "bg-sky-500" : "bg-emerald-500")} />
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
-                                  <div className="mt-1 text-xs text-muted-foreground">
-                                   {getCalendarEventDayLabel(event.startAt)} · {event.source === "task" ? "Task" : "Event"}
-                                  </div>
-                              </div>
-                            </button>
-                          ))}
-                          {renderableEvents.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-                              {m.calendar_events_will_show()}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
                   </section>
                 )
               ) : accounts.length === 0 ? (
@@ -1196,7 +1080,7 @@ function CalendarPage() {
                       icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                       onClick: () => setIsCalendarSourceDialogOpen(true),
                     }}
-                    className="w-full max-w-lg"
+                    className="w-full"
                   />
                 </div>
               ) : (
@@ -1349,7 +1233,6 @@ function CalendarPage() {
                           <span className="size-3 rounded-full" style={{ backgroundColor: selectedEventDetail.calendar.color }} />
                           <div>
                             <div className="text-sm font-medium text-foreground">{selectedEventDetail.calendar.name}</div>
-                            <div className="text-xs text-muted-foreground">{selectedEventDetail.group?.name}</div>
                           </div>
                         </div>
                       </div>
@@ -1486,7 +1369,7 @@ function CalendarPage() {
 
           <button
             type="button"
-            onClick={() => openLocalGroupDialog()}
+            onClick={() => openLocalCalendarDialog()}
             className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
@@ -1559,35 +1442,6 @@ function CalendarPage() {
       </AppDialog>
 
       <AppDialog
-        open={isLocalGroupDialogOpen}
-        onOpenChange={setIsLocalGroupDialogOpen}
-        title={localGroupForm.id ? m.calendar_edit_local_group() : m.calendar_create_local_group()}
-        description={m.calendar_local_group_desc()}
-        size="md"
-        footer={
-          <>
-            <Button type="button" variant="outline" onClick={() => setIsLocalGroupDialogOpen(false)}>
-              {m.cancel()}
-            </Button>
-            <Button type="button" onClick={handleSaveLocalGroup}>
-              {localGroupForm.id ? m.save() : m.calendar_create_group()}
-            </Button>
-          </>
-        }
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.calendar_group_label()}</span>
-            <Input
-              value={localGroupForm.name}
-              onChange={(event) => setLocalGroupForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder={m.calendar_group_name_placeholder()}
-            />
-          </label>
-        </div>
-      </AppDialog>
-
-      <AppDialog
         open={isLocalCalendarDialogOpen}
         onOpenChange={setIsLocalCalendarDialogOpen}
         title={localCalendarForm.id ? m.calendar_edit_calendar() : m.calendar_new_calendar()}
@@ -1598,29 +1452,13 @@ function CalendarPage() {
             <Button type="button" variant="outline" onClick={() => setIsLocalCalendarDialogOpen(false)}>
               {m.cancel()}
             </Button>
-            <Button type="button" onClick={handleSaveLocalCalendar} disabled={localGroups.length === 0}>
+            <Button type="button" onClick={handleSaveLocalCalendar}>
               {localCalendarForm.id ? m.save() : m.calendar_new_calendar()}
             </Button>
           </>
         }
       >
-        {localGroups.length > 0 ? (
-          <div className="grid gap-4">
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.calendar_group_label()}</span>
-              <select
-                value={localCalendarForm.groupId}
-                onChange={(event) => setLocalCalendarForm((current) => ({ ...current, groupId: event.target.value }))}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {localGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
+        <div className="grid gap-4">
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-foreground">{m.calendar_calendar_name()}</span>
               <Input
@@ -1649,15 +1487,6 @@ function CalendarPage() {
               </div>
             </div>
 
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.description()}</span>
-              <Textarea
-                value={localCalendarForm.description}
-                onChange={(event) => setLocalCalendarForm((current) => ({ ...current, description: event.target.value }))}
-                placeholder={m.calendar_description_placeholder()}
-              />
-            </label>
-
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-foreground">{m.calendar_icon()}</span>
               <div className="flex flex-wrap gap-2">
@@ -1680,11 +1509,6 @@ function CalendarPage() {
               </div>
             </div>
           </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-            {m.calendar_create_local_first_alt()}
-          </div>
-        )}
       </AppDialog>
 
       <AppDialog
@@ -1714,13 +1538,12 @@ function CalendarPage() {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {localCalendars.map((calendar) => {
-                  const group = localGroups.find((item) => item.id === calendar.groupId);
-                  return (
-                    <option key={calendar.id} value={calendar.id}>
-                      {group?.name ? `${group.name} / ${calendar.name}` : calendar.name}
-                    </option>
-                  );
-                })}
+                    return (
+                      <option key={calendar.id} value={calendar.id}>
+                        {calendar.name}
+                      </option>
+                    );
+                  })}
               </select>
             </label>
 
@@ -1771,14 +1594,6 @@ function CalendarPage() {
               />
             </label>
 
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{m.calendar_notes()}</span>
-              <Textarea
-                value={localEventForm.description}
-                onChange={(event) => setLocalEventForm((current) => ({ ...current, description: event.target.value }))}
-                placeholder={m.calendar_notes_placeholder()}
-              />
-            </label>
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
@@ -1786,15 +1601,20 @@ function CalendarPage() {
           </div>
         )}
       </AppDialog>
-    </div>
-  );
-}
 
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/80 p-5 shadow-sm">
-      <div className="text-sm font-medium text-muted-foreground">{label}</div>
-      <div className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{value}</div>
+      <ConfirmDialog
+        open={calendarPendingDelete !== null}
+        title={typeof m.calendar_delete_calendar === "function" ? m.calendar_delete_calendar() : m.delete()}
+        description={calendarPendingDelete && typeof m.calendar_delete_calendar_confirm === "function"
+          ? m.calendar_delete_calendar_confirm({ name: calendarPendingDelete.name })
+          : m.delete()}
+        confirmLabel={m.delete()}
+        onOpenChange={(open) => {
+          if (!open) setCalendarPendingDelete(null);
+        }}
+        onConfirm={confirmDeleteLocalCalendar}
+        variant="destructive"
+      />
     </div>
   );
 }

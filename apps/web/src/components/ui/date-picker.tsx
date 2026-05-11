@@ -25,8 +25,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
 interface DatePickerProps {
   value?: Date | undefined;
   onChange?: (date: Date | undefined) => void;
@@ -58,7 +56,7 @@ export function DatePicker({
   value,
   onChange,
   className,
-  placeholder = "YYYY-MM-DD",
+  placeholder = m.date_picker_placeholder(),
   id,
 }: DatePickerProps) {
   const [month, setMonth] = React.useState(() => value ?? new Date());
@@ -118,6 +116,15 @@ export function DatePicker({
 
   const goToPrevious = () => setMonth((m) => add(m, { months: -1 }));
   const goToNext = () => setMonth((m) => add(m, { months: 1 }));
+  const weekdays = [
+    m.date_picker_weekday_sun(),
+    m.date_picker_weekday_mon(),
+    m.date_picker_weekday_tue(),
+    m.date_picker_weekday_wed(),
+    m.date_picker_weekday_thu(),
+    m.date_picker_weekday_fri(),
+    m.date_picker_weekday_sat(),
+  ];
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -148,12 +155,9 @@ export function DatePicker({
         }
       />
       <Popover.Portal>
-        <Popover.Positioner
-          sideOffset={6}
-          className="z-[70]"
-        >
-          <Popover.Popup className="origin-(--transform-origin) rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-lg duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
-            <div className="flex items-center justify-between">
+        <Popover.Positioner sideOffset={8} className="z-[70]">
+          <Popover.Popup className="origin-(--transform-origin) min-w-[19rem] w-[max(19rem,var(--anchor-width))] rounded-2xl border border-border/70 bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-black/5 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+            <div className="flex items-center justify-between gap-2">
               <Button
                 type="button"
                 variant="ghost"
@@ -163,7 +167,7 @@ export function DatePicker({
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
               </Button>
-              <span className="text-sm font-medium tabular-nums">
+              <span className="flex-1 text-center text-sm font-medium tabular-nums">
                 {format(month, "MMMM yyyy")}
               </span>
               <Button
@@ -177,22 +181,22 @@ export function DatePicker({
               </Button>
             </div>
 
-            <div className="mt-3 grid grid-cols-7 text-center text-xs text-muted-foreground">
-              {WEEKDAYS.map((d) => (
-                <div key={d} className="py-1">
+            <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
+              {weekdays.map((d) => (
+                <div key={d} className="flex h-8 items-center justify-center">
                   {d}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7">
+            <div className="grid grid-cols-7 gap-1">
               {days.map((day) => (
                 <button
                   key={day.toISOString()}
                   type="button"
                   onClick={() => handleDateSelect(day)}
                   className={cn(
-                    "flex h-8 w-full items-center justify-center rounded-md text-sm tabular-nums transition-colors hover:bg-muted",
+                    "flex h-9 w-9 items-center justify-center rounded-xl text-sm tabular-nums transition-colors hover:bg-muted active:scale-[0.96]",
                     !isSameMonth(day, month) && "text-muted-foreground/40",
                     value && isSameDay(day, value) && "bg-primary text-primary-foreground hover:bg-primary/90",
                     isToday(day) && !(value && isSameDay(day, value)) && "bg-foreground text-background",

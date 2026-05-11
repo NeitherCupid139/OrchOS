@@ -80,6 +80,18 @@ export abstract class BookmarkService {
     }
     await Promise.all(insertPromises);
 
+    // D1 is eventually consistent — retry list a few times
+    // in case the read replica hasn't caught up yet
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      const result = await BookmarkService.list(db);
+      if (result.length > 0 || categories.length === 0) {
+        return result;
+      }
+    }
+
     return BookmarkService.list(db);
   }
 

@@ -766,6 +766,7 @@ function ChatArea({
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const settings = useUIStore((s) => s.settings);
   const [isConversationUpdating, setIsConversationUpdating] = useState(false);
   const [inputCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1014,9 +1015,9 @@ function ChatArea({
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSend();
+      return;
     }
-    // Allow Enter to send (without shift)
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && settings?.sendShortcut !== "cmd-enter") {
       e.preventDefault();
       handleSend();
     }

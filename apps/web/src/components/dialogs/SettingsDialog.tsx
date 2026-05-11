@@ -14,6 +14,7 @@ import {
   Edit02Icon,
   EyeIcon,
   ViewOffSlashIcon,
+  CommandIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/layout/ThemeToggle";
@@ -52,7 +53,7 @@ const defaultEventSounds: Record<string, string> = {
   social: "pong",
 };
 
-type SettingsTab = "general" | "notifications" | "mail" | "about";
+type SettingsTab = "general" | "notifications" | "mail" | "shortcuts" | "about";
 
 type MailServerConfig = {
   host: string;
@@ -87,6 +88,7 @@ const tabDefs: { id: SettingsTab; icon: IconSvgElement; labelKey: () => string }
   { id: "general", icon: SlidersHorizontalIcon, labelKey: m.general },
   { id: "notifications", icon: NotificationIcon, labelKey: m.notifications },
   { id: "mail", icon: InboxIcon, labelKey: m.mail },
+  { id: "shortcuts", icon: CommandIcon, labelKey: m.shortcuts },
   { id: "about", icon: InformationCircleIcon, labelKey: m.about },
 ];
 
@@ -222,6 +224,12 @@ export function SettingsDialog({
     } catch (err) {
       console.error("Failed to update locale:", err);
     }
+  };
+
+  const handleSendShortcutChange = (value: "enter" | "cmd-enter") => {
+    if (!currentSettings) return;
+    const merged = { ...currentSettings, sendShortcut: value };
+    onSettingsChange(merged);
   };
 
   const handleNotificationToggle = async (key: "system" | "sound") => {
@@ -799,6 +807,39 @@ export function SettingsDialog({
                     </div>
                   </div>
                 </AppDialog>
+              </div>
+            )}
+
+            {activeTab === "shortcuts" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="max-w-[280px]">
+                    <span className="text-sm font-medium text-foreground">{m.shortcuts_send_message()}</span>
+                    <p className="text-xs text-muted-foreground">{m.shortcuts_send_message_desc()}</p>
+                  </div>
+                  <Select
+                    value={currentSettings.sendShortcut}
+                    onValueChange={(value) => value && handleSendShortcutChange(value as "enter" | "cmd-enter")}
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue>
+                        {currentSettings.sendShortcut === "cmd-enter"
+                          ? m.shortcuts_cmd_enter()
+                          : m.shortcuts_enter()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="enter">
+                          {m.shortcuts_enter()}
+                        </SelectItem>
+                        <SelectItem value="cmd-enter">
+                          {m.shortcuts_cmd_enter()}
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 

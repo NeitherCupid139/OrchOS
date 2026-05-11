@@ -36,6 +36,7 @@ interface UIState {
   sidebarCollapsed: boolean;
   creationSidebarCollapsed: boolean;
   creationSidebarWidth: number;
+  sidebarWidth: number;
 
   // Theme
   theme: ThemeMode;
@@ -66,6 +67,7 @@ interface UIActions {
   setCreationSidebarCollapsed: (collapsed: boolean) => void;
   toggleCreationSidebar: () => void;
   setCreationSidebarWidth: (width: number) => void;
+  setSidebarWidth: (width: number) => void;
   setTheme: (mode: ThemeMode) => void;
   setSettings: (settings: ControlSettings) => void;
 }
@@ -78,6 +80,7 @@ const defaultSettings: ControlSettings = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   projectChatsRequireSandbox: true,
   showShortcutHints: false,
+  sendShortcut: "enter" as const,
   useMixedScript: false,
   preferKanji: false,
   notifications: { system: true, sound: true, eventSounds: {}, eventSoundFiles: {} },
@@ -108,6 +111,7 @@ export const useUIStore = create<UIState & UIActions>()(
       sidebarCollapsed: false,
       creationSidebarCollapsed: false,
       creationSidebarWidth: 280,
+      sidebarWidth: 280,
 
       // Theme
       theme: "auto" as ThemeMode,
@@ -136,6 +140,7 @@ export const useUIStore = create<UIState & UIActions>()(
       setCreationSidebarCollapsed: (collapsed) => set({ creationSidebarCollapsed: collapsed }),
       toggleCreationSidebar: () => set((s) => ({ creationSidebarCollapsed: !s.creationSidebarCollapsed })),
       setCreationSidebarWidth: (width) => set({ creationSidebarWidth: width }),
+      setSidebarWidth: (width) => set({ sidebarWidth: width }),
       setTheme: (mode) => set({ theme: mode }),
       setSettings: (settings) => set({ settings }),
     }),

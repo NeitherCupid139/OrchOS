@@ -149,6 +149,7 @@ export interface ControlSettings {
   defaultRuntimeId?: string;
   projectChatsRequireSandbox: boolean;
   showShortcutHints: boolean;
+  sendShortcut: "enter" | "cmd-enter";
   useMixedScript: boolean;
   preferKanji: boolean;
   notifications: {

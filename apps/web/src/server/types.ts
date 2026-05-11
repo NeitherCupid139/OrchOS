@@ -120,6 +120,7 @@ export interface ControlSettings {
   modelStrategy: "local-first" | "cloud-first" | "adaptive";
   locale: string;
   showShortcutHints: boolean;
+  sendShortcut: "enter" | "cmd-enter";
   useMixedScript: boolean;
   preferKanji: boolean;
 }

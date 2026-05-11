@@ -32,6 +32,7 @@ import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
+import { useUIStore } from "@/lib/store";
 
 export const Route = createFileRoute("/dashboard/bookmarks")({
   component: BookmarksPage,
@@ -377,7 +378,8 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
 
 function BookmarksPage() {
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);

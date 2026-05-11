@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
+import { useUIStore } from "@/lib/store";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { LocalDevicesView } from "@/components/panels/LocalDevicesView";
 import { api, type CustomAgent } from "@/lib/api";
@@ -48,7 +49,8 @@ function AgentsPage() {
       });
     } catch {}
   }
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -308,7 +310,7 @@ function AgentsPage() {
                   role="button"
                   tabIndex={0}
                   className={cn(
-                    "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
+                    "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
                     selectedItem?.kind === "custom" && selectedItem.id === agent.id
                       ? "bg-accent text-foreground"
                       : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
@@ -319,9 +321,9 @@ function AgentsPage() {
                     <div className="truncate text-xs leading-5">{agent.name}</div>
                     <div className="truncate text-[11px] leading-4 text-muted-foreground">{agent.model}</div>
                   </div>
-                  <div className="relative h-5 w-28 shrink-0">
+                  <div className="relative h-5 shrink-0">
                     {defaultCustomAgentId === agent.id ? (
-                      <span className="absolute inset-y-0 right-0 inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary transition-opacity group-hover:opacity-0">
+                      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary transition-opacity group-hover:opacity-0">
                         {m.default_agent()}
                       </span>
                     ) : null}
