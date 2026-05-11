@@ -107,6 +107,7 @@ export function Sidebar({
   const { locale: _locale } = useLocale();
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [targetOrganizationId, setTargetOrganizationId] = useState<string | null>(null);
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
@@ -236,14 +237,14 @@ export function Sidebar({
           <div
             className={cn(
               "flex min-w-0 flex-1 items-center gap-2 transition-opacity duration-300 ease-out",
-              collapsed ? "justify-center px-0" : "px-2 pr-9",
+              collapsed ? "justify-center px-0" : "px-0 pr-9",
               !showExpandedContent
                 ? "pointer-events-none absolute opacity-0 delay-0"
                 : "opacity-100 delay-180",
             )}
           >
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-sm font-medium text-sidebar-foreground/80 outline-none transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer">
+              <DropdownMenuTrigger className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 text-sm font-medium text-sidebar-foreground/80 outline-none transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer">
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <HugeiconsIcon icon={Target01Icon} className="size-3.5" />
                 </span>
@@ -274,6 +275,34 @@ export function Sidebar({
                         onClick={() => onOrganizationChange(org.id)}
                       >
                         <span className="flex-1">{org.name}</span>
+                        <div className="mr-1 flex items-center gap-1 opacity-0 transition-opacity group-data-[highlighted]/dropdown-menu-item:opacity-100">
+                          <button
+                            type="button"
+                            aria-label={m.edit()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setTargetOrganizationId(org.id);
+                              setRenameOpen(true);
+                            }}
+                            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          >
+                            <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={m.delete()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setTargetOrganizationId(org.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                          </button>
+                        </div>
                         {org.id === activeOrganizationId && (
                           <HugeiconsIcon
                             icon={Tick02Icon}
@@ -302,14 +331,20 @@ export function Sidebar({
                   <HugeiconsIcon icon={MoreHorizontal} className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-36">
-                  <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                  <DropdownMenuItem onClick={() => {
+                    setTargetOrganizationId(activeOrganizationId);
+                    setRenameOpen(true);
+                  }}>
                     <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
                     {m.rename()}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     variant="destructive"
-                    onClick={() => setDeleteConfirmOpen(true)}
+                    onClick={() => {
+                      setTargetOrganizationId(activeOrganizationId);
+                      setDeleteConfirmOpen(true);
+                    }}
                   >
                     <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
                     {m.delete()}
@@ -542,25 +577,35 @@ export function Sidebar({
           open={renameOpen}
           title={m.rename_space()}
           initialValue={
-            organizations.find((o) => o.id === activeOrganizationId)?.name ?? ""
+            organizations.find((o) => o.id === targetOrganizationId)?.name ?? ""
           }
           placeholder={m.space_name_placeholder()}
-          onClose={() => setRenameOpen(false)}
-          onSubmit={(name) => {
-            if (activeOrganizationId)
-              onOrganizationRename(activeOrganizationId, name);
+          onClose={() => {
             setRenameOpen(false);
+            setTargetOrganizationId(null);
+          }}
+          onSubmit={(name) => {
+            if (targetOrganizationId)
+              onOrganizationRename(targetOrganizationId, name);
+            setRenameOpen(false);
+            setTargetOrganizationId(null);
           }}
         />
 
         <ConfirmDialog
           open={deleteConfirmOpen}
-          onOpenChange={setDeleteConfirmOpen}
+          onOpenChange={(open) => {
+            setDeleteConfirmOpen(open);
+            if (!open) {
+              setTargetOrganizationId(null);
+            }
+          }}
           title={m.delete_space()}
           description={m.delete_space()}
           onConfirm={() => {
-            if (activeOrganizationId)
-              onOrganizationDelete(activeOrganizationId);
+            if (targetOrganizationId)
+              onOrganizationDelete(targetOrganizationId);
+            setTargetOrganizationId(null);
           }}
           confirmLabel={m.delete()}
           variant="destructive"

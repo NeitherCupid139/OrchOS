@@ -6,7 +6,6 @@ import {
   SquareIcon,
   InformationCircleIcon,
   Alert01Icon,
-  CheckmarkBadge01Icon,
   GoogleIcon,
   InboxIcon,
 } from "@hugeicons/core-free-icons";
@@ -83,8 +82,8 @@ export function InboxList({
   const isMailContext = Boolean(accounts && onAccountChange);
 
   return (
-    <div className="flex h-full min-w-0 w-full flex-col bg-background">
-      <ScrollArea className="flex-1">
+    <div className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="p-2 space-y-0.5">
           {threads.map((thread) => {
             const config = kindConfig[thread.kind];
@@ -129,13 +128,10 @@ export function InboxList({
             );
           })}
 
-          {threads.length === 0 && (
+          {threads.length === 0 && !isMailContext && (
             <div className="py-8 text-center">
-              <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
-                <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-5 text-emerald-500" />
-              </div>
-              <p className="text-sm text-muted-foreground">{isMailContext ? m.mail_accounts() : m.inbox_is_empty()}</p>
-              <p className="mt-1 text-xs text-muted-foreground/60">{isMailContext ? m.no_new_mail_items() : m.no_new_items()}</p>
+              <p className="text-sm text-muted-foreground">{m.inbox_is_empty()}</p>
+              <p className="mt-1 text-xs text-muted-foreground/60">{m.no_new_items()}</p>
             </div>
           )}
         </div>

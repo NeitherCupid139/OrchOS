@@ -1,5 +1,6 @@
 import type { AppDb } from "@/server/db/types";
 import { createD1Db } from "@/server/db";
+import { runLightweightMigrations } from "@/server/db/lightweight-migrations";
 import { env } from "cloudflare:workers";
 
 let dbInstancePromise: Promise<AppDb> | null = null;
@@ -21,7 +22,15 @@ export async function getLocalDb(): Promise<AppDb> {
     );
   }
 
-  dbInstancePromise = Promise.resolve(createD1Db(d1));
+  dbInstancePromise = (async () => {
+    try {
+      await runLightweightMigrations(d1);
+      return createD1Db(d1);
+    } catch (error) {
+      dbInstancePromise = null;
+      throw error;
+    }
+  })();
 
   return dbInstancePromise;
 }

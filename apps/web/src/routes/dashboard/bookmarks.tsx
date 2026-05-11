@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowLeft01Icon,
@@ -376,6 +376,103 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
   );
 }
 
+const BookmarkCard = memo(function BookmarkCard({
+  bookmark,
+  categoryId,
+  onTogglePin,
+  onEdit,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+  onDropReorder,
+}: {
+  bookmark: BookmarkCategory["bookmarks"][number];
+  categoryId: string;
+  onTogglePin: (categoryId: string, bookmarkId: string, currentPinned: boolean) => void;
+  onEdit: (bookmarkId: string, title: string, url: string) => void;
+  onDelete: (bookmarkId: string) => void;
+  onDragStart: (bookmarkId: string, sourceCategoryId: string) => void;
+  onDragEnd: () => void;
+  onDropReorder: (targetBookmarkId: string) => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(bookmark.id, categoryId)}
+      onDragEnd={onDragEnd}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={() => onDropReorder(bookmark.id)}
+      className={cn(
+        "group h-[108px] rounded-2xl bg-card p-5 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] [contain-intrinsic-size:108px] [content-visibility:auto]",
+        !bookmark.pinned && "ring-1 ring-black/[0.06] shadow-sm hover:ring-black/[0.08] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]",
+        bookmark.pinned && "border border-primary/30 bg-primary/[0.02] shadow-sm",
+      )}
+    >
+      <div className="relative flex items-start gap-3">
+        <a
+          href={bookmark.url}
+          target="_blank"
+          rel="noreferrer"
+          className={cn(
+            "flex min-w-0 flex-1 items-start gap-3",
+            !bookmark.pinned && "group-hover:pr-[86px]",
+          )}
+        >
+          <Favicon url={bookmark.url} pinned={bookmark.pinned} />
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-sm font-medium text-foreground">{bookmark.title}</h2>
+            <p className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
+              {bookmark.url}
+            </p>
+          </div>
+        </a>
+        <div className={cn(
+          "flex items-center gap-1 transition-opacity",
+          bookmark.pinned
+            ? "shrink-0 opacity-100"
+            : "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
+        )}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onTogglePin(categoryId, bookmark.id, bookmark.pinned)}
+            className={cn(bookmark.pinned && "text-primary")}
+            title={bookmark.pinned ? m.unpin() : m.pin_to_home()}
+          >
+            <HugeiconsIcon icon={PinIcon} className={cn("size-3.5", bookmark.pinned && "fill-primary")} />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onEdit(bookmark.id, bookmark.title, bookmark.url)}
+            title={m.edit_bookmark()}
+          >
+            <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onDelete(bookmark.id)}
+            className="hover:text-destructive"
+            title={m.delete_bookmark()}
+          >
+            <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}, (prev, next) =>
+  prev.categoryId === next.categoryId
+  && prev.bookmark.id === next.bookmark.id
+  && prev.bookmark.title === next.bookmark.title
+  && prev.bookmark.url === next.bookmark.url
+  && prev.bookmark.pinned === next.bookmark.pinned,
+);
+
 function BookmarksPage() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
@@ -400,6 +497,7 @@ function BookmarksPage() {
   const [createOrImportStep, setCreateOrImportStep] = useState<"choose" | "create" | "import">("choose");
   const [createCategoryName, setCreateCategoryName] = useState("");
   const { searchQuery } = useDashboard();
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
     void loadBookmarks();
@@ -619,19 +717,51 @@ function BookmarksPage() {
 
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? categories[0] ?? null;
   const editingBookmark = selectedCategory?.bookmarks.find((bookmark) => bookmark.id === editingBookmarkId) ?? null;
-  const filteredBookmarks = selectedCategory
-    ? selectedCategory.bookmarks.filter((bookmark) => {
-        const query = searchQuery.trim().toLowerCase();
-        if (!query) {
-          return true;
-        }
+  const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase();
+  const filteredBookmarks = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
 
-        return (
-          bookmark.title.toLowerCase().includes(query) ||
-          bookmark.url.toLowerCase().includes(query)
-        );
-      })
-    : [];
+    if (!normalizedSearchQuery) {
+      return selectedCategory.bookmarks;
+    }
+
+    return selectedCategory.bookmarks.filter((bookmark) =>
+      bookmark.title.toLowerCase().includes(normalizedSearchQuery)
+      || bookmark.url.toLowerCase().includes(normalizedSearchQuery),
+    );
+  }, [normalizedSearchQuery, selectedCategory]);
+
+  const handleEditBookmark = useCallback((bookmarkId: string, title: string, url: string) => {
+    setEditingBookmarkId(bookmarkId);
+    setBookmarkDraft({ title, url });
+  }, []);
+
+  const handleDeleteBookmark = useCallback((bookmarkId: string) => {
+    setDeletingBookmarkId(bookmarkId);
+  }, []);
+
+  const handleBookmarkDragStart = useCallback((bookmarkId: string, sourceCategoryId: string) => {
+    setDraggedBookmark({ bookmarkId, sourceCategoryId });
+  }, []);
+
+  const handleBookmarkDragEnd = useCallback(() => {
+    setDraggedBookmark(null);
+  }, []);
+
+  const handleBookmarkDropReorder = useCallback((targetBookmarkId: string) => {
+    if (!draggedBookmark || !selectedCategory) {
+      return;
+    }
+
+    if (draggedBookmark.sourceCategoryId !== selectedCategory.id) {
+      return;
+    }
+
+    reorderBookmarkWithinCategory(draggedBookmark.bookmarkId, targetBookmarkId);
+    setDraggedBookmark(null);
+  }, [draggedBookmark, selectedCategory]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
@@ -921,88 +1051,17 @@ function BookmarksPage() {
                 <section className={cn("flex-1", filteredBookmarks.length > 0 ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "flex items-center justify-center")}>
                   {filteredBookmarks.length > 0 ? (
                     filteredBookmarks.map((bookmark) => (
-                      <div
+                      <BookmarkCard
                         key={bookmark.id}
-                        draggable
-                        onDragStart={() => setDraggedBookmark({ bookmarkId: bookmark.id, sourceCategoryId: selectedCategory.id })}
-                        onDragEnd={() => setDraggedBookmark(null)}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={() => {
-                          if (!draggedBookmark) {
-                            return;
-                          }
-
-                          if (draggedBookmark.sourceCategoryId === selectedCategory.id) {
-                            reorderBookmarkWithinCategory(draggedBookmark.bookmarkId, bookmark.id);
-                            setDraggedBookmark(null);
-                            return;
-                          }
-                        }}
-        className={cn(
-          "group rounded-2xl bg-card p-5 h-[108px] transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96]",
-          !bookmark.pinned && "ring-1 ring-black/[0.06] dark:ring-white/[0.08] shadow-sm hover:ring-black/[0.08] dark:hover:ring-white/[0.13]",
-          bookmark.pinned && "border border-primary/30 bg-primary/[0.02] shadow-sm",
-        )}
-                      >
-                        <div className="relative flex items-start gap-3">
-                          <a
-                            href={bookmark.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={cn(
-                              "flex min-w-0 flex-1 items-start gap-3",
-                              !bookmark.pinned && "group-hover:pr-[86px]",
-                            )}
-                          >
-                            <Favicon url={bookmark.url} pinned={bookmark.pinned} />
-                            <div className="min-w-0 flex-1">
-                              <h2 className="truncate text-sm font-medium text-foreground">{bookmark.title}</h2>
-                              <p className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
-                                {bookmark.url}
-                              </p>
-                            </div>
-                          </a>
-                          <div className={cn(
-                            "flex items-center gap-1 transition-opacity",
-                            bookmark.pinned
-                              ? "opacity-100 shrink-0"
-                              : "opacity-0 group-hover:opacity-100 absolute right-0 top-0",
-                          )}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={() => handleTogglePin(selectedCategory!.id, bookmark.id, bookmark.pinned)}
-                              className={cn(bookmark.pinned && "text-primary")}
-                              title={bookmark.pinned ? m.unpin() : m.pin_to_home()}
-                            >
-                              <HugeiconsIcon icon={PinIcon} className={cn("size-3.5", bookmark.pinned && "fill-primary")} />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={() => {
-                                setEditingBookmarkId(bookmark.id);
-                                setBookmarkDraft({ title: bookmark.title, url: bookmark.url });
-                              }}
-                              title={m.edit_bookmark()}
-                            >
-                              <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={() => setDeletingBookmarkId(bookmark.id)}
-                              className="hover:text-destructive"
-                              title={m.delete_bookmark()}
-                            >
-                              <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                        bookmark={bookmark}
+                        categoryId={selectedCategory.id}
+                        onTogglePin={handleTogglePin}
+                        onEdit={handleEditBookmark}
+                        onDelete={handleDeleteBookmark}
+                        onDragStart={handleBookmarkDragStart}
+                        onDragEnd={handleBookmarkDragEnd}
+                        onDropReorder={handleBookmarkDropReorder}
+                      />
                     ))
                   ) : (
                     <div className="flex justify-center md:col-span-2 xl:col-span-3">

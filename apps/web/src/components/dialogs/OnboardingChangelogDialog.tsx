@@ -93,6 +93,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
           items={ONBOARDING_SECTIONS}
           index={index}
           onIndexChange={setIndex}
+          flush
         />
         <div className="flex w-full flex-wrap items-end justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-3">

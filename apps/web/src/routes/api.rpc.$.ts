@@ -7,7 +7,22 @@ import { appRouter } from "@/server/orpc/router";
 const handler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
-      console.error(error);
+      const errorDetails = error instanceof Error
+        ? {
+            message: error.message,
+            stack: error.stack,
+            cause: "cause" in error ? error.cause : undefined,
+          }
+        : {
+            message: String(error),
+            stack: undefined,
+            cause: undefined,
+          };
+
+      console.error("RPC route error", {
+        ...errorDetails,
+        error,
+      });
     }),
   ],
 });
