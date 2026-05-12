@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { m } from "@/paraglide/messages";
+import { cancel, save } from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
 
@@ -52,10 +52,10 @@ export function RenameDialog({
       footer={
         <>
           <Button size="sm" type="button" variant="outline" onClick={onClose}>
-            {m.cancel()}
+            {cancel()}
           </Button>
           <Button size="sm" type="submit" form="rename-dialog-form">
-            {m.save()}
+            {save()}
           </Button>
         </>
       }

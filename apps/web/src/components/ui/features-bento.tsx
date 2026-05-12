@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { m } from "@/paraglide/messages";
+import { agents, ai_ask, calendar, home_bento_agents_desc, home_bento_calendar_desc, home_bento_chat_fixed_with, home_bento_chat_input_hint, home_bento_chat_placeholder, home_bento_chat_start_fixed, home_bento_kanban_desc, home_bento_mail_desc, home_bento_mock_input, home_bento_mock_response_capabilities, home_bento_mock_response_default, home_bento_mock_response_help, home_bento_mock_trigger_help, home_bento_mock_trigger_what_can_you_do, kanban, mail, no_agents_available, thinking } from "@/paraglide/messages";
 import { formatDuration } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -60,7 +60,7 @@ interface AskMessage {
 export function FeaturesBento() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<AskMessage[]>([]);
-  const defaultInput = m.home_bento_mock_input();
+  const defaultInput = home_bento_mock_input();
   const [input, setInput] = useState(defaultInput);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -102,11 +102,11 @@ export function FeaturesBento() {
     await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200));
 
     const responseContent = getMockResponse(userMessage.content, {
-      whatCanYouDoTrigger: m.home_bento_mock_trigger_what_can_you_do(),
-      helpTrigger: m.home_bento_mock_trigger_help(),
-      defaultResponse: m.home_bento_mock_response_default(),
-      whatCanYouDoResponse: m.home_bento_mock_response_capabilities(),
-      helpResponse: m.home_bento_mock_response_help(),
+      whatCanYouDoTrigger: home_bento_mock_trigger_what_can_you_do(),
+      helpTrigger: home_bento_mock_trigger_help(),
+      defaultResponse: home_bento_mock_response_default(),
+      whatCanYouDoResponse: home_bento_mock_response_capabilities(),
+      helpResponse: home_bento_mock_response_help(),
     });
     const responseTime = Date.now() - startTime;
 
@@ -132,10 +132,10 @@ export function FeaturesBento() {
               <CardHeader className="pb-0">
                 <div className="md:p-4 md:pb-2">
                   <p className="font-medium">
-                    {m.kanban()}
+                    {kanban()}
                   </p>
                   <p className="text-muted-foreground mt-3 max-w-sm text-sm">
-                    {m.home_bento_kanban_desc()}
+                    {home_bento_kanban_desc()}
                   </p>
                 </div>
               </CardHeader>
@@ -168,9 +168,9 @@ export function FeaturesBento() {
             <Card className="group h-full overflow-hidden shadow-zinc-950/5 sm:col-span-2 sm:rounded-none sm:rounded-tr-xl">
               <CardHeader>
                 <div className="md:p-4 md:pb-2">
-                  <p className="font-medium">{m.mail()}</p>
+                  <p className="font-medium">{mail()}</p>
                   <p className="text-muted-foreground mt-3 max-w-sm text-sm">
-                    {m.home_bento_mail_desc()}
+                    {home_bento_mail_desc()}
                   </p>
                 </div>
               </CardHeader>
@@ -208,10 +208,10 @@ export function FeaturesBento() {
               <CardHeader className="pb-0">
                 <div className="md:p-4 md:pb-2">
                   <p className="font-medium">
-                    {m.calendar()}
+                    {calendar()}
                   </p>
                   <p className="text-muted-foreground mt-3 max-w-sm text-sm">
-                    {m.home_bento_calendar_desc()}
+                    {home_bento_calendar_desc()}
                   </p>
                 </div>
               </CardHeader>
@@ -221,9 +221,9 @@ export function FeaturesBento() {
             <Card className="group relative shadow-black/5 sm:col-span-3 sm:rounded-none sm:rounded-br-xl">
               <CardHeader className="pb-0">
                 <div className="md:p-4 md:pb-2">
-                  <p className="font-medium">{m.agents()}</p>
+                  <p className="font-medium">{agents()}</p>
                   <p className="text-muted-foreground mt-3 max-w-sm text-sm">
-                    {m.home_bento_agents_desc()}
+                    {home_bento_agents_desc()}
                   </p>
                 </div>
               </CardHeader>
@@ -273,11 +273,11 @@ export function FeaturesBento() {
               <div className="flex items-center gap-2">
                 <HugeiconsIcon icon={Robot02Icon} className="size-4 text-primary" />
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">{m.ai_ask()}</h2>
+                  <h2 className="text-sm font-semibold text-foreground">{ai_ask()}</h2>
                   <p className="text-xs text-muted-foreground">
                     {selectedRuntime
-                      ? m.home_bento_chat_fixed_with({ name: selectedRuntime.name })
-                      : m.no_agents_available()}
+                      ? home_bento_chat_fixed_with({ name: selectedRuntime.name })
+                      : no_agents_available()}
                   </p>
                 </div>
               </div>
@@ -295,11 +295,11 @@ export function FeaturesBento() {
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
                     <HugeiconsIcon icon={Robot02Icon} className="size-6 opacity-20" />
-                    <p className="text-sm text-foreground">{m.ai_ask()}</p>
+                    <p className="text-sm text-foreground">{ai_ask()}</p>
                     <p className="max-w-sm text-xs text-muted-foreground/70">
                       {selectedRuntime
-                        ? m.home_bento_chat_start_fixed({ name: selectedRuntime.name })
-                        : m.no_agents_available()}
+                        ? home_bento_chat_start_fixed({ name: selectedRuntime.name })
+                        : no_agents_available()}
                     </p>
                   </div>
                 ) : null}
@@ -331,7 +331,7 @@ export function FeaturesBento() {
                   <div className="mr-12 rounded-xl bg-muted px-4 py-3 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Spinner size="sm" className="text-muted-foreground" />
-                      <span className="text-xs">{m.thinking()}</span>
+                      <span className="text-xs">{thinking()}</span>
                     </div>
                   </div>
                 ) : null}
@@ -349,8 +349,8 @@ export function FeaturesBento() {
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={
                       selectedRuntime
-                        ? m.home_bento_chat_placeholder({ name: selectedRuntime.name })
-                        : m.no_agents_available()
+                        ? home_bento_chat_placeholder({ name: selectedRuntime.name })
+                        : no_agents_available()
                     }
                     className="min-h-[68px] max-h-[220px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
                     disabled={!selectedRuntime || sending}
@@ -380,7 +380,7 @@ export function FeaturesBento() {
                   </Button>
                 </div>
                 <p className="mt-1.5 text-center text-[10px] text-muted-foreground/50">
-                  {m.home_bento_chat_input_hint({ name: selectedRuntime?.name || m.ai_ask() })}
+                  {home_bento_chat_input_hint({ name: selectedRuntime?.name || ai_ask() })}
                 </p>
               </form>
             </div>

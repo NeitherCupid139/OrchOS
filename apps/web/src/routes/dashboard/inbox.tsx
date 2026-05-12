@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useUIStore } from "@/lib/store";
 import { useConversationStore } from "@/lib/stores/conversation";
-import { m } from "@/paraglide/messages";
+import { redirecting_to_creation } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/dashboard/inbox")({ component: InboxPage });
 
@@ -24,7 +24,7 @@ function InboxPage() {
 
   return (
       <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background text-sm text-muted-foreground">
-        {m.redirecting_to_creation()}
+        {redirecting_to_creation()}
       </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Button } from "@/components/ui/button-1";
-import { m } from "@/paraglide/messages";
+import { dismiss } from "@/paraglide/messages";
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -199,7 +199,7 @@ const ToastContainer = () => {
                   size="small"
                   onClick={() => toastStore.remove(toast.id)}
                 >
-                  {m.dismiss()}
+                  {dismiss()}
                 </Button>
                 {toast.onAction && (
                   <Button

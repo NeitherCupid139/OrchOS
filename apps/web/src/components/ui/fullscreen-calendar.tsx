@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { calendar_add_event, calendar_n_more, next, previous, today as today_label } from "@/paraglide/messages";
 
 export type FullScreenCalendarViewMode = "day" | "week" | "month";
 export type FullScreenCalendarSource = "calendar" | "task";
@@ -213,7 +213,7 @@ export function FullScreenCalendar({
               className="rounded-none shadow-none first:rounded-s-xl last:rounded-e-xl focus-visible:z-10 active:scale-[0.96]"
               variant="outline"
               size="icon"
-              aria-label={m.previous()}
+              aria-label={previous()}
             >
               <ChevronLeftIcon size={16} strokeWidth={2} aria-hidden="true" />
             </Button>
@@ -222,14 +222,14 @@ export function FullScreenCalendar({
               className="w-full rounded-none shadow-none first:rounded-s-xl last:rounded-e-xl focus-visible:z-10 md:w-auto active:scale-[0.96]"
               variant="outline"
             >
-              {m.today()}
+              {today_label()}
             </Button>
             <Button
               onClick={nextRange}
               className="rounded-none shadow-none first:rounded-s-xl last:rounded-e-xl focus-visible:z-10 active:scale-[0.96]"
               variant="outline"
               size="icon"
-              aria-label={m.next()}
+              aria-label={next()}
             >
               <ChevronRightIcon size={16} strokeWidth={2} aria-hidden="true" />
             </Button>
@@ -240,7 +240,7 @@ export function FullScreenCalendar({
 
           <Button className="w-full gap-2 md:w-auto active:scale-[0.96]" onClick={onCreateEvent}>
             <PlusCircleIcon size={16} strokeWidth={2} aria-hidden="true" />
-            <span>{m.calendar_add_event()}</span>
+            <span>{calendar_add_event()}</span>
           </Button>
         </div>
       </div>
@@ -667,7 +667,7 @@ function MonthGridView({
                     ))}
                     {dayEvents.length > 3 ? (
                       <div className="text-[11px] text-muted-foreground">
-                        +{dayEvents.length - 3} {m.calendar_n_more({ n: dayEvents.length - 3 })}
+                        +{dayEvents.length - 3} {calendar_n_more({ n: dayEvents.length - 3 })}
                       </div>
                     ) : null}
                   </div>

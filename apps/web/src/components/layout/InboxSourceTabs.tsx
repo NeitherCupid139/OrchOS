@@ -2,7 +2,7 @@ import { GitPullRequestIcon, InformationCircleIcon, Menu01Icon, SquareIcon, Wren
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { agents, all, issues, mentions, prs } from "@/paraglide/messages";
 import type { InboxSource } from "@/lib/types";
 
 export type SourceFilter = "all" | InboxSource;
@@ -20,11 +20,11 @@ interface InboxSourceTabsProps {
 }
 
 const sourceFilterConfig: Record<SourceFilter, { icon: typeof Menu01Icon; label: string; iconClassName: string }> = {
-  all: { icon: Menu01Icon, label: m.all(), iconClassName: "text-muted-foreground/80" },
-  github_pr: { icon: GitPullRequestIcon, label: m.prs(), iconClassName: "text-violet-500" },
-  github_issue: { icon: SquareIcon, label: m.issues(), iconClassName: "text-emerald-500" },
-  mention: { icon: InformationCircleIcon, label: m.mentions(), iconClassName: "text-sky-500" },
-  agent_request: { icon: Wrench01Icon, label: m.agents(), iconClassName: "text-amber-500" },
+  all: { icon: Menu01Icon, label: all(), iconClassName: "text-muted-foreground/80" },
+  github_pr: { icon: GitPullRequestIcon, label: prs(), iconClassName: "text-violet-500" },
+  github_issue: { icon: SquareIcon, label: issues(), iconClassName: "text-emerald-500" },
+  mention: { icon: InformationCircleIcon, label: mentions(), iconClassName: "text-sky-500" },
+  agent_request: { icon: Wrench01Icon, label: agents(), iconClassName: "text-amber-500" },
 };
 
 export function InboxSourceTabs({ value, counts, onChange }: InboxSourceTabsProps) {

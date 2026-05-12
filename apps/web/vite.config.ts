@@ -6,9 +6,25 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
-const config = defineConfig({
+const config = defineConfig(({ isSsrBuild }) => ({
   resolve: {
     tsconfigPaths: true,
+    alias: isSsrBuild
+      ? [
+          {
+            find: "shiki",
+            replacement: "/root/project/OrchOS/apps/web/src/server/ssr-stubs/shiki.ts",
+          },
+          {
+            find: "recharts",
+            replacement: "/root/project/OrchOS/apps/web/src/server/ssr-stubs/recharts.tsx",
+          },
+          {
+            find: "@remotion/player",
+            replacement: "/root/project/OrchOS/apps/web/src/server/ssr-stubs/remotion-player.tsx",
+          },
+        ]
+      : undefined,
   },
   server: {
     host: "0.0.0.0",
@@ -32,6 +48,6 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
-});
+}));
 
 export default config;

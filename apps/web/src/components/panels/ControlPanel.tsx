@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Settings02Icon,
 } from "@hugeicons/core-free-icons";
-import { m } from "@/paraglide/messages";
+import { adaptive, auto_commit, auto_fix, control_panel, model_cloud, model_local, model_strategy, off, on } from "@/paraglide/messages";
 import type { ControlSettings } from "@/lib/types";
 import { api } from "@/lib/api";
 
@@ -38,7 +38,7 @@ export function ControlPanel({ settings, onSettingsChange }: ControlPanelProps) 
         className="flex w-full items-center gap-2 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-accent/50"
       >
         <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-        <span className="flex-1 text-left">{m.control_panel()}</span>
+        <span className="flex-1 text-left">{control_panel()}</span>
         {expanded ? (
           <HugeiconsIcon icon={ChevronDown} className="size-3" />
         ) : (
@@ -50,13 +50,13 @@ export function ControlPanel({ settings, onSettingsChange }: ControlPanelProps) 
         <div className="space-y-3 border-t border-border px-6 py-4">
           {/* Auto Commit */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">{m.auto_commit()}</span>
+            <span className="text-sm text-foreground">{auto_commit()}</span>
             <div className="flex items-center gap-2 text-sm">
               <AppleSwitch
                 checked={settings.autoCommit}
                 onCheckedChange={() => void handleToggle("autoCommit")}
                 size="sm"
-                aria-label={m.auto_commit()}
+                aria-label={auto_commit()}
               />
               <span
                 className={cn(
@@ -64,20 +64,20 @@ export function ControlPanel({ settings, onSettingsChange }: ControlPanelProps) 
                   settings.autoCommit ? "text-emerald-600" : "text-muted-foreground",
                 )}
               >
-                {settings.autoCommit ? m.on() : m.off()}
+                {settings.autoCommit ? on() : off()}
               </span>
             </div>
           </div>
 
           {/* Auto Fix */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">{m.auto_fix()}</span>
+            <span className="text-sm text-foreground">{auto_fix()}</span>
             <div className="flex items-center gap-2 text-sm">
               <AppleSwitch
                 checked={settings.autoFix}
                 onCheckedChange={() => void handleToggle("autoFix")}
                 size="sm"
-                aria-label={m.auto_fix()}
+                aria-label={auto_fix()}
               />
               <span
                 className={cn(
@@ -85,20 +85,20 @@ export function ControlPanel({ settings, onSettingsChange }: ControlPanelProps) 
                   settings.autoFix ? "text-emerald-600" : "text-muted-foreground",
                 )}
               >
-                {settings.autoFix ? m.on() : m.off()}
+                {settings.autoFix ? on() : off()}
               </span>
             </div>
           </div>
 
           {/* Model Strategy */}
           <div>
-            <span className="mb-2 block text-sm text-foreground">{m.model_strategy()}</span>
+            <span className="mb-2 block text-sm text-foreground">{model_strategy()}</span>
             <div className="flex gap-1.5">
               {(["local-first", "cloud-first", "adaptive"] as const).map((strategy) => {
                 const labelMap = {
-                  "local-first": m.model_local(),
-                  "cloud-first": m.model_cloud(),
-                  adaptive: m.adaptive(),
+                  "local-first": model_local(),
+                  "cloud-first": model_cloud(),
+                  adaptive: adaptive(),
                 };
                 return (
                   <button

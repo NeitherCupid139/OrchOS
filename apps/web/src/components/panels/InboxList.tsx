@@ -11,7 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { m } from "@/paraglide/messages";
+import { agent_request, all, inbox_is_empty, issue, mention, no_new_items, pull_request } from "@/paraglide/messages";
 import type { InboxThread, InboxThreadKind } from "@/lib/api";
 
 function formatThreadTime(value: unknown) {
@@ -30,25 +30,25 @@ const kindConfig: Record<
 > = {
   agent_request: {
     icon: Robot02Icon,
-    label: m.agent_request(),
+    label: agent_request(),
     colorClass: "text-amber-600 dark:text-amber-400",
     bgClass: "bg-amber-500/10",
   },
   pull_request: {
     icon: GitPullRequestIcon,
-    label: m.pull_request(),
+    label: pull_request(),
     colorClass: "text-purple-600 dark:text-purple-400",
     bgClass: "bg-purple-500/10",
   },
   issue: {
     icon: SquareIcon,
-    label: m.issue(),
+    label: issue(),
     colorClass: "text-green-600 dark:text-green-400",
     bgClass: "bg-green-500/10",
   },
   mention: {
     icon: InformationCircleIcon,
-    label: m.mention(),
+    label: mention(),
     colorClass: "text-blue-600 dark:text-blue-400",
     bgClass: "bg-blue-500/10",
   },
@@ -130,8 +130,8 @@ export function InboxList({
 
           {threads.length === 0 && !isMailContext && (
             <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">{m.inbox_is_empty()}</p>
-              <p className="mt-1 text-xs text-muted-foreground/60">{m.no_new_items()}</p>
+              <p className="text-sm text-muted-foreground">{inbox_is_empty()}</p>
+              <p className="mt-1 text-xs text-muted-foreground/60">{no_new_items()}</p>
             </div>
           )}
         </div>
@@ -141,7 +141,7 @@ export function InboxList({
         <div className="flex h-10 items-center border-t border-border p-2">
           <div className="flex flex-wrap items-center gap-1 rounded-md px-1">
             {[
-              { id: null, label: m.all(), icon: InboxIcon },
+              { id: null, label: all(), icon: InboxIcon },
               ...accounts.map((a) => ({ id: a.id, label: a.label, icon: a.source === "Gmail" ? GoogleIcon : InboxIcon })),
             ].map((item) => {
               const isActive = activeAccountId === item.id;

@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Robot02Icon, CodeIcon, CloudIcon, Clock01Icon } from "@hugeicons/core-free-icons";
-import { m } from "@/paraglide/messages";
+import { active, agent_capabilities, agent_model, agent_role, agents, all, cap_commit, cap_fix_bug, cap_review, cap_run_tests, cap_write_code, command_label, create_agent, idle_status, model_cloud, model_local, no_agent_selected, status_error } from "@/paraglide/messages";
 
 // --- Mock Data ---
 type AgentStatus = "idle" | "active" | "error";
@@ -74,17 +74,17 @@ const agentStatusColor: Record<AgentStatus, string> = {
 };
 
 const agentStatusLabel: Record<AgentStatus, string> = {
-  idle: m.idle_status(),
-  active: m.active(),
-  error: m.status_error(),
+  idle: idle_status(),
+  active: active(),
+  error: status_error(),
 };
 
 const capLabelMap: Record<string, string> = {
-  write_code: m.cap_write_code(),
-  fix_bug: m.cap_fix_bug(),
-  run_tests: m.cap_run_tests(),
-  commit: m.cap_commit(),
-  review: m.cap_review(),
+  write_code: cap_write_code(),
+  fix_bug: cap_fix_bug(),
+  run_tests: cap_run_tests(),
+  commit: cap_commit(),
+  review: cap_review(),
 };
 
 type ModelFilter = "all" | "local" | "cloud";
@@ -114,7 +114,7 @@ export function AgentPreviewCard() {
           <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
             <HugeiconsIcon icon={Robot02Icon} className="size-3.5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground">{m.agents()}</span>
+          <span className="text-sm font-semibold text-foreground">{agents()}</span>
         </div>
 
         {/* Model Filter Tabs */}
@@ -135,10 +135,10 @@ export function AgentPreviewCard() {
                 {Icon && <HugeiconsIcon icon={Icon} className="size-2.5" />}
                 <span>
                   {filter === "all"
-                    ? m.all()
+                    ? all()
                     : filter === "local"
-                      ? m.model_local()
-                      : m.model_cloud()}
+                      ? model_local()
+                      : model_cloud()}
                 </span>
                 <span className="tabular-nums opacity-50">{agentCounts[filter]}</span>
               </button>
@@ -227,7 +227,7 @@ export function AgentPreviewCard() {
                       {agentStatusLabel[activeAgent.status]}
                     </span>
                     <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5">
-                      {activeAgent.modelType === "local" ? m.model_local() : m.model_cloud()}
+                      {activeAgent.modelType === "local" ? model_local() : model_cloud()}
                     </Badge>
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export function AgentPreviewCard() {
               {/* Role */}
               <div className="mb-3">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {m.agent_role()}
+                  {agent_role()}
                 </p>
                 <p className="text-xs text-foreground">{activeAgent.role}</p>
               </div>
@@ -244,7 +244,7 @@ export function AgentPreviewCard() {
               {/* Model */}
               <div className="mb-3">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {m.agent_model()}
+                  {agent_model()}
                 </p>
                 <div className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1">
                   <HugeiconsIcon
@@ -261,7 +261,7 @@ export function AgentPreviewCard() {
               {/* Capabilities */}
               <div className="mb-3">
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {m.agent_capabilities()}
+                  {agent_capabilities()}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {activeAgent.capabilities.map((cap) => (
@@ -276,7 +276,7 @@ export function AgentPreviewCard() {
               {activeAgent.currentTask && (
                 <div className="mb-3">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {m.command_label()}
+                    {command_label()}
                   </p>
                   <div className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1.5">
                     <HugeiconsIcon icon={Clock01Icon} className="size-3 shrink-0 text-primary/60" />
@@ -293,7 +293,7 @@ export function AgentPreviewCard() {
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 <HugeiconsIcon icon={Robot02Icon} className="size-3" />
-                {m.create_agent()}
+                {create_agent()}
               </Link>
             </div>
           ) : (
@@ -302,7 +302,7 @@ export function AgentPreviewCard() {
                 <div className="mx-auto size-10 rounded-full bg-muted/30 flex items-center justify-center mb-2">
                   <HugeiconsIcon icon={Robot02Icon} className="size-4 text-muted-foreground/50" />
                 </div>
-                <p className="text-xs text-muted-foreground">{m.no_agent_selected()}</p>
+                <p className="text-xs text-muted-foreground">{no_agent_selected()}</p>
               </div>
             </div>
           )}

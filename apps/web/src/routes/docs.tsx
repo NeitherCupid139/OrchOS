@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { m } from "@/paraglide/messages";
+import { docs_audio_badge, docs_audio_description, docs_audio_get_started_heading, docs_audio_get_started_react_desc, docs_audio_get_started_react_title, docs_audio_get_started_typescript_desc, docs_audio_get_started_typescript_title, docs_audio_information_api_desc, docs_audio_information_api_title, docs_audio_information_changelog_desc, docs_audio_information_changelog_title, docs_audio_information_heading, docs_audio_integrate_cli_desc, docs_audio_integrate_cli_title, docs_audio_integrate_heading, docs_audio_integrate_patches_desc, docs_audio_integrate_patches_title, docs_audio_integrate_react_desc, docs_audio_integrate_react_title, docs_audio_open_link, docs_audio_playground_caption, docs_audio_playground_play, docs_audio_playground_preview_desc, docs_audio_playground_preview_label, docs_audio_playground_stop, docs_audio_playground_title, docs_audio_quickstart_define, docs_audio_quickstart_heading, docs_audio_quickstart_intro, docs_audio_title } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/docs")({
   component: DocsPage,
@@ -27,44 +27,44 @@ const installCommands = [
 const getStartedCards = [
   {
     href: "/getting-started/typescript",
-    title: () => m.docs_audio_get_started_typescript_title(),
-    description: () => m.docs_audio_get_started_typescript_desc(),
+    title: () => docs_audio_get_started_typescript_title(),
+    description: () => docs_audio_get_started_typescript_desc(),
   },
   {
     href: "/getting-started/react",
-    title: () => m.docs_audio_get_started_react_title(),
-    description: () => m.docs_audio_get_started_react_desc(),
+    title: () => docs_audio_get_started_react_title(),
+    description: () => docs_audio_get_started_react_desc(),
   },
 ] as const;
 
 const integrateCards = [
   {
     href: "/integrations/patches",
-    title: () => m.docs_audio_integrate_patches_title(),
-    description: () => m.docs_audio_integrate_patches_desc(),
+    title: () => docs_audio_integrate_patches_title(),
+    description: () => docs_audio_integrate_patches_desc(),
   },
   {
     href: "/integrations/react",
-    title: () => m.docs_audio_integrate_react_title(),
-    description: () => m.docs_audio_integrate_react_desc(),
+    title: () => docs_audio_integrate_react_title(),
+    description: () => docs_audio_integrate_react_desc(),
   },
   {
     href: "/cli",
-    title: () => m.docs_audio_integrate_cli_title(),
-    description: () => m.docs_audio_integrate_cli_desc(),
+    title: () => docs_audio_integrate_cli_title(),
+    description: () => docs_audio_integrate_cli_desc(),
   },
 ] as const;
 
 const informationCards = [
   {
     href: "/api/sounds/define-sound",
-    title: () => m.docs_audio_information_api_title(),
-    description: () => m.docs_audio_information_api_desc(),
+    title: () => docs_audio_information_api_title(),
+    description: () => docs_audio_information_api_desc(),
   },
   {
     href: "/resources/changelog",
-    title: () => m.docs_audio_information_changelog_title(),
-    description: () => m.docs_audio_information_changelog_desc(),
+    title: () => docs_audio_information_changelog_title(),
+    description: () => docs_audio_information_changelog_desc(),
   },
 ] as const;
 
@@ -87,23 +87,23 @@ function DocsPage() {
           <div className="space-y-16">
             <div className="space-y-6">
               <div className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                {m.docs_audio_badge()}
+                {docs_audio_badge()}
               </div>
               <div className="max-w-3xl space-y-4">
                 <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-                  {m.docs_audio_title()}
+                  {docs_audio_title()}
                 </h1>
                 <p className="text-lg leading-8 text-muted-foreground">
-                  {m.docs_audio_description()}
+                  {docs_audio_description()}
                 </p>
               </div>
               <PlaygroundPreview />
             </div>
 
             <section id="quickstart" className="space-y-6 scroll-mt-20">
-              <SectionHeading title={m.docs_audio_quickstart_heading()} />
+              <SectionHeading title={docs_audio_quickstart_heading()} />
               <p className="text-muted-foreground">
-                {m.docs_audio_quickstart_intro()}
+                {docs_audio_quickstart_intro()}
               </p>
 
               <Tabs defaultValue={installCommands[0].label} className="w-full">
@@ -128,26 +128,26 @@ function DocsPage() {
 
               <div className="space-y-4">
                 <p className="text-muted-foreground">
-                  {m.docs_audio_quickstart_define()}
+                  {docs_audio_quickstart_define()}
                 </p>
                 <CodePanel code={quickstartCode} language="ts" />
               </div>
             </section>
 
             <DocsSection
-              title={m.docs_audio_get_started_heading()}
+              title={docs_audio_get_started_heading()}
               cards={getStartedCards}
               columns="md:grid-cols-2"
             />
 
             <DocsSection
-              title={m.docs_audio_integrate_heading()}
+              title={docs_audio_integrate_heading()}
               cards={integrateCards}
               columns="lg:grid-cols-3"
             />
 
             <DocsSection
-              title={m.docs_audio_information_heading()}
+              title={docs_audio_information_heading()}
               cards={informationCards}
               columns="md:grid-cols-2"
             />
@@ -187,7 +187,7 @@ function PlaygroundPreview() {
   return (
     <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
       <div className="border-b border-border bg-muted/40 px-5 py-3 text-sm text-muted-foreground">
-        {m.docs_audio_playground_title()}
+        {docs_audio_playground_title()}
       </div>
       <div className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
@@ -198,11 +198,11 @@ function PlaygroundPreview() {
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" onClick={() => setActive((value) => !value)}>
               {active
-                ? m.docs_audio_playground_stop()
-                : m.docs_audio_playground_play()}
+                ? docs_audio_playground_stop()
+                : docs_audio_playground_play()}
             </Button>
             <span className="text-sm text-muted-foreground">
-              {m.docs_audio_playground_caption()}
+              {docs_audio_playground_caption()}
             </span>
           </div>
         </div>
@@ -210,10 +210,10 @@ function PlaygroundPreview() {
         <div className="flex min-h-64 flex-col justify-between rounded-2xl border border-border bg-background p-5">
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">
-              {m.docs_audio_playground_preview_label()}
+              {docs_audio_playground_preview_label()}
             </p>
             <p className="text-sm leading-6 text-muted-foreground">
-              {m.docs_audio_playground_preview_desc()}
+              {docs_audio_playground_preview_desc()}
             </p>
           </div>
 
@@ -263,7 +263,7 @@ function DocsSection({
             </CardHeader>
             <CardContent className="pb-5">
               <Button asChild variant="outline">
-                <Link to={card.href}>{m.docs_audio_open_link()}</Link>
+                <Link to={card.href}>{docs_audio_open_link()}</Link>
               </Button>
             </CardContent>
           </Card>

@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { m } from "@/paraglide/messages";
+import { privacy_intro, privacy_policy, privacy_section_clerk_body, privacy_section_clerk_title, privacy_section_collect_body, privacy_section_collect_title, privacy_section_contact_body, privacy_section_contact_title, privacy_section_use_body, privacy_section_use_title } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/privacy")({
   component: Privacy,
 });
 
 const sections = [
-  { title: m.privacy_section_collect_title(), body: m.privacy_section_collect_body() },
-  { title: m.privacy_section_use_title(), body: m.privacy_section_use_body() },
-  { title: m.privacy_section_clerk_title(), body: m.privacy_section_clerk_body() },
-  { title: m.privacy_section_contact_title(), body: m.privacy_section_contact_body() },
+  { title: privacy_section_collect_title(), body: privacy_section_collect_body() },
+  { title: privacy_section_use_title(), body: privacy_section_use_body() },
+  { title: privacy_section_clerk_title(), body: privacy_section_clerk_body() },
+  { title: privacy_section_contact_title(), body: privacy_section_contact_body() },
 ];
 
 function Privacy() {
@@ -21,10 +21,10 @@ function Privacy() {
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-6 py-16">
           <h1 className="mb-2 text-4xl font-semibold text-foreground">
-            {m.privacy_policy()}
+            {privacy_policy()}
           </h1>
           <p className="mb-12 text-lg text-muted-foreground">
-            {m.privacy_intro()}
+            {privacy_intro()}
           </p>
 
           <div className="space-y-8">

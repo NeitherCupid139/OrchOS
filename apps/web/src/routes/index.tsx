@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useState } from "react";
 import Header from "@/components/layout/Header";
-import { m } from "@/paraglide/messages";
+import { hero_line1, hero_line2, hero_line2_word, hero_line3, hero_subtitle, open_dashboard } from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
 import { FeaturesBento } from "@/components/ui/features-bento";
 import Footer from "@/components/layout/Footer";
@@ -31,22 +31,22 @@ function HomePageInner() {
               style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)" }}
             >
               <>
-                {m.hero_line1()}{" "}
-                <span className="italic">{m.hero_line2_word()}</span>
+                {hero_line1()}{" "}
+                <span className="italic">{hero_line2_word()}</span>
                 <br />
-                {m.hero_line2()}{" "}
-                <span className="italic text-primary">{m.hero_line3()}</span>
+                {hero_line2()}{" "}
+                <span className="italic text-primary">{hero_line3()}</span>
               </>
             </p>
             <p className="mb-6 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
-              {m.hero_subtitle()}
+              {hero_subtitle()}
             </p>
             <div className="flex flex-wrap items-center justify-start gap-3">
               <Button
                 asChild
                 className="h-auto rounded-2xl px-6 py-3 shadow-sm"
               >
-                <Link to="/dashboard">{m.open_dashboard()}</Link>
+                <Link to="/dashboard">{open_dashboard()}</Link>
               </Button>
             </div>
 

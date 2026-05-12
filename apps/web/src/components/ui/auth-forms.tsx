@@ -3,7 +3,7 @@ import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { loading as loading_label, sign_in, sign_up } from "@/paraglide/messages";
 
 function AppleIcon({ className }: { className?: string }) {
   return (
@@ -151,7 +151,7 @@ export function SignInForm() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? m.loading() : m.sign_in()}
+          {loading ? loading_label() : sign_in()}
         </Button>
       </form>
     </div>
@@ -266,7 +266,7 @@ export function SignUpForm() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? m.loading() : "Verify"}
+          {loading ? loading_label() : "Verify"}
         </Button>
       </form>
     );
@@ -360,7 +360,7 @@ export function SignUpForm() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? m.loading() : m.sign_up()}
+          {loading ? loading_label() : sign_up()}
         </Button>
       </form>
     </div>

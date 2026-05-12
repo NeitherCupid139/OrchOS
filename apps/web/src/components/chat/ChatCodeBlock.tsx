@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import { createHighlighter } from "shiki";
 import { Check, Copy } from "lucide-react";
 
-import { m } from "@/paraglide/messages";
+import { copy_file_content, loading } from "@/paraglide/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CHAT_CODE_LANGS = [
@@ -159,12 +159,12 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
               </button>
             )}
           />
-          <TooltipContent side="top">{m.copy_file_content()}</TooltipContent>
+          <TooltipContent side="top">{copy_file_content()}</TooltipContent>
         </Tooltip>
       </div>
       <div className="overflow-x-auto">
         {highlight.loading ? (
-          <div className="px-3 py-4 text-[11px] text-muted-foreground/50 font-mono">{m.loading()}</div>
+          <div className="px-3 py-4 text-[11px] text-muted-foreground/50 font-mono">{loading()}</div>
         ) : (
           /* react-doctor-disable-next-line react/no-danger */
           <div

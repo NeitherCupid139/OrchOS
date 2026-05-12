@@ -31,7 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { back, bookmark_count, bookmark_created, bookmark_deleted, bookmark_moved, bookmark_updated, bookmarks, bookmarks_workspace, bookmarks_workspace_desc, cancel, category_deleted, category_name, category_renamed, collapse_sidebar, create, create_or_import, delete as delete_message, delete_bookmark, delete_bookmark_desc, delete_category, delete_category_desc, edit_bookmark, edit_bookmark_desc, edit_category, expand_sidebar, failed_to_create_bookmark, failed_to_create_category, failed_to_delete_bookmark, failed_to_delete_category, failed_to_import_bookmarks, failed_to_load_bookmarks, failed_to_move_bookmark, failed_to_rename_category, failed_to_reorder_bookmarks, failed_to_reorder_categories, failed_to_toggle_pin, failed_to_update_bookmark, import as import_message, import_bookmarks_desc, import_from_file, imported_bookmarks, loading as loading_label, name, new_bookmark, new_bookmark_desc, new_category, new_category_desc, no_bookmarks_desc, no_bookmarks_in_category, no_bookmarks_to_import, no_results_desc, no_results_found, pin_to_home, resize_bookmarks_sidebar, save, select_category_first, title as title_label, title_url_required, unpin, unsupported_bookmark_format, url } from "@/paraglide/messages";
 import { useUIStore } from "@/lib/store";
 
 export const Route = createFileRoute("/dashboard/bookmarks")({
@@ -438,7 +438,7 @@ const BookmarkCard = memo(function BookmarkCard({
             size="icon-xs"
             onClick={() => onTogglePin(categoryId, bookmark.id, bookmark.pinned)}
             className={cn(bookmark.pinned && "text-primary")}
-            title={bookmark.pinned ? m.unpin() : m.pin_to_home()}
+            title={bookmark.pinned ? unpin() : pin_to_home()}
           >
             <HugeiconsIcon icon={PinIcon} className={cn("size-3.5", bookmark.pinned && "fill-primary")} />
           </Button>
@@ -447,7 +447,7 @@ const BookmarkCard = memo(function BookmarkCard({
             variant="ghost"
             size="icon-xs"
             onClick={() => onEdit(bookmark.id, bookmark.title, bookmark.url)}
-            title={m.edit_bookmark()}
+            title={edit_bookmark()}
           >
             <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
           </Button>
@@ -457,7 +457,7 @@ const BookmarkCard = memo(function BookmarkCard({
             size="icon-xs"
             onClick={() => onDelete(bookmark.id)}
             className="hover:text-destructive"
-            title={m.delete_bookmark()}
+            title={delete_bookmark()}
           >
             <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
           </Button>
@@ -583,7 +583,7 @@ function BookmarksPage() {
       setCategories(nextCategories);
       setSelectedCategoryId((current) => current ?? nextCategories[0]?.id ?? null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : m.failed_to_load_bookmarks());
+      toast.error(error instanceof Error ? error.message : failed_to_load_bookmarks());
     } finally {
       setLoading(false);
     }
@@ -611,7 +611,7 @@ function BookmarksPage() {
   }
 
   function handleCreateCategorySubmit() {
-    const name = createCategoryName.trim() || `${m.new_category()} ${categories.length + 1}`;
+    const name = createCategoryName.trim() || `${new_category()} ${categories.length + 1}`;
     const newCategory: BookmarkCategory = {
       id: `custom-${Date.now()}`,
       name,
@@ -621,7 +621,7 @@ function BookmarksPage() {
 
     const nextCategories = [...categories, newCategory];
     void persistCategories(nextCategories, newCategory.id).catch((error) => {
-      toast.error(error instanceof Error ? error.message : m.failed_to_create_category());
+      toast.error(error instanceof Error ? error.message : failed_to_create_category());
     });
     setIsCreateOrImportDialogOpen(false);
   }
@@ -641,7 +641,7 @@ function BookmarksPage() {
     const [moved] = next.splice(sourceIndex, 1);
     next.splice(targetIndex, 0, moved);
     void persistCategories(next, selectedCategoryId).catch((error) => {
-      toast.error(error instanceof Error ? error.message : m.failed_to_reorder_categories());
+      toast.error(error instanceof Error ? error.message : failed_to_reorder_categories());
     });
   }
 
@@ -664,7 +664,7 @@ function BookmarksPage() {
     );
 
     void persistCategories(nextCategories, selectedCategory.id).catch((error) => {
-      toast.error(error instanceof Error ? error.message : m.failed_to_reorder_bookmarks());
+      toast.error(error instanceof Error ? error.message : failed_to_reorder_bookmarks());
     });
   }
 
@@ -686,20 +686,20 @@ function BookmarksPage() {
       } else if (lowerName.endsWith(".csv")) {
         parsed = parseBookmarkCsv(text);
       } else {
-        throw new Error(m.unsupported_bookmark_format());
+        throw new Error(unsupported_bookmark_format());
       }
 
       if (parsed.length === 0) {
-        throw new Error(m.no_bookmarks_to_import());
+        throw new Error(no_bookmarks_to_import());
       }
 
       await persistCategories(parsed, parsed[0]?.id ?? null);
-      toast.success(m.imported_bookmarks({
+      toast.success(imported_bookmarks({
         count: parsed.reduce((count, category) => count + category.bookmarks.length, 0),
       }));
       setIsCreateOrImportDialogOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : m.failed_to_import_bookmarks());
+      toast.error(error instanceof Error ? error.message : failed_to_import_bookmarks());
     }
 
     event.target.value = "";
@@ -711,7 +711,7 @@ function BookmarksPage() {
       setCategories(saved);
     } catch (error) {
       console.error("Failed to toggle pin:", error);
-      toast.error(error instanceof Error ? error.message : m.failed_to_toggle_pin());
+      toast.error(error instanceof Error ? error.message : failed_to_toggle_pin());
     }
   }, []);
 
@@ -794,7 +794,7 @@ function BookmarksPage() {
           aria-hidden={!showExpandedContent}
         >
           <div className="flex h-10 items-center justify-between rounded-md px-2">
-            <div className="text-sm font-semibold text-foreground">{m.bookmarks()}</div>
+            <div className="text-sm font-semibold text-foreground">{bookmarks()}</div>
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger
@@ -810,7 +810,7 @@ function BookmarksPage() {
                     </Button>
                   )}
                 />
-                <TooltipContent side="bottom">{m.new_category()}</TooltipContent>
+                <TooltipContent side="bottom">{new_category()}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -827,7 +827,7 @@ function BookmarksPage() {
                     </Button>
                   )}
                 />
-                <TooltipContent side="bottom">{m.collapse_sidebar()}</TooltipContent>
+                <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -869,9 +869,9 @@ function BookmarksPage() {
                                 setCategories(saved);
                                 setSelectedCategoryId(category.id);
                                 setDraggedBookmark(null);
-                                toast.success(m.bookmark_moved());
+                                toast.success(bookmark_moved());
                               }).catch((error) => {
-                                toast.error(error instanceof Error ? error.message : m.failed_to_move_bookmark());
+                                toast.error(error instanceof Error ? error.message : failed_to_move_bookmark());
                               });
                             }
                           }}
@@ -906,7 +906,7 @@ function BookmarksPage() {
                                           setCategories(saved);
                                           setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
                                         }).catch((error) => {
-                                          toast.error(error instanceof Error ? error.message : m.failed_to_rename_category());
+                                          toast.error(error instanceof Error ? error.message : failed_to_rename_category());
                                         });
                                       }}
                                     >
@@ -914,7 +914,7 @@ function BookmarksPage() {
                                     </Button>
                                   )}
                                 />
-                                <TooltipContent side="top">{m.edit_category()}</TooltipContent>
+                                <TooltipContent side="top">{edit_category()}</TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger
@@ -930,7 +930,7 @@ function BookmarksPage() {
                                     </Button>
                                   )}
                                 />
-                                <TooltipContent side="top">{m.edit_category()}</TooltipContent>
+                                <TooltipContent side="top">{edit_category()}</TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger
@@ -947,7 +947,7 @@ function BookmarksPage() {
                                     </Button>
                                   )}
                                 />
-                                <TooltipContent side="top">{m.delete_category()}</TooltipContent>
+                                <TooltipContent side="top">{delete_category()}</TooltipContent>
                               </Tooltip>
                             </div>
                             <span className="absolute inset-y-0 right-0 flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
@@ -967,7 +967,7 @@ function BookmarksPage() {
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label={m.resize_bookmarks_sidebar()}
+          aria-label={resize_bookmarks_sidebar()}
           onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
@@ -1008,7 +1008,7 @@ function BookmarksPage() {
                 </Button>
               )}
             />
-            <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+            <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
         ) : null}
 
@@ -1016,7 +1016,7 @@ function BookmarksPage() {
           <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-6">
             {loading ? (
               <div className="flex flex-1 items-center justify-center">
-                <AsciiLoading label={m.loading()} />
+                <AsciiLoading label={loading_label()} />
               </div>
             ) : selectedCategory ? (
               <>
@@ -1030,7 +1030,7 @@ function BookmarksPage() {
                       <span className="truncate">{selectedCategory.name}</span>
                     </h1>
                     <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
-                      {m.bookmark_count({ count: selectedCategory.bookmarks.length })}
+                      {bookmark_count({ count: selectedCategory.bookmarks.length })}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -1042,7 +1042,7 @@ function BookmarksPage() {
                       }}
                     >
                       <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                      {m.new_bookmark()}
+                      {new_bookmark()}
                     </Button>
 
                   </div>
@@ -1068,15 +1068,15 @@ function BookmarksPage() {
                       <EmptyState
                         variant="subtle"
                         size="lg"
-                        title={searchQuery.trim() ? m.no_results_found() : m.no_bookmarks_in_category()}
-                        description={searchQuery.trim() ? m.no_results_desc() : m.no_bookmarks_desc()}
+                        title={searchQuery.trim() ? no_results_found() : no_bookmarks_in_category()}
+                        description={searchQuery.trim() ? no_results_desc() : no_bookmarks_desc()}
                         icons={[
                           <HugeiconsIcon key="s1" icon={Search01Icon} className="size-6" />,
                           <HugeiconsIcon key="s2" icon={Bookmark01Icon} className="size-6" />,
                           <HugeiconsIcon key="s3" icon={Folder01Icon} className="size-6" />,
                         ]}
                         action={searchQuery.trim() ? undefined : {
-                          label: m.new_bookmark(),
+                          label: new_bookmark(),
                           icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                           onClick: () => {
                             setBookmarkDraft({ title: "", url: "" });
@@ -1094,15 +1094,15 @@ function BookmarksPage() {
                 <EmptyState
                   variant="subtle"
                   size="lg"
-                  title={m.bookmarks_workspace()}
-                  description={m.bookmarks_workspace_desc()}
+                  title={bookmarks_workspace()}
+                  description={bookmarks_workspace_desc()}
                   icons={[
                     <HugeiconsIcon key="b1" icon={Bookmark01Icon} className="size-6" />,
                     <HugeiconsIcon key="b2" icon={Folder01Icon} className="size-6" />,
                     <HugeiconsIcon key="b3" icon={Upload01Icon} className="size-6" />,
                   ]}
                   action={{
-                    label: m.import_from_file(),
+                    label: import_from_file(),
                     icon: <HugeiconsIcon icon={Upload01Icon} className="size-4" />,
                     onClick: handleCreateCategory,
                   }}
@@ -1116,9 +1116,9 @@ function BookmarksPage() {
 
       <RenameDialog
         open={renameCategoryId !== null}
-        title={m.edit_category()}
+        title={edit_category()}
         initialValue={categories.find((category) => category.id === renameCategoryId)?.name ?? ""}
-        placeholder={m.category_name()}
+        placeholder={category_name()}
         onClose={() => setRenameCategoryId(null)}
         onSubmit={(name) => {
           const category = categories.find((item) => item.id === renameCategoryId);
@@ -1130,9 +1130,9 @@ function BookmarksPage() {
             setCategories(saved);
             setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
             setRenameCategoryId(null);
-            toast.success(m.category_renamed());
+            toast.success(category_renamed());
           }).catch((error) => {
-            toast.error(error instanceof Error ? error.message : m.failed_to_rename_category());
+            toast.error(error instanceof Error ? error.message : failed_to_rename_category());
           });
         }}
       />
@@ -1140,24 +1140,24 @@ function BookmarksPage() {
       <AppDialog
         open={isCreateBookmarkDialogOpen}
         onOpenChange={setIsCreateBookmarkDialogOpen}
-        title={m.new_bookmark()}
-        description={m.new_bookmark_desc()}
+        title={new_bookmark()}
+        description={new_bookmark_desc()}
         size="md"
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setIsCreateBookmarkDialogOpen(false)}>
-              {m.cancel()}
+              {cancel()}
             </Button>
             <Button
               type="button"
               onClick={() => {
                 if (!selectedCategoryId) {
-                  toast.error(m.select_category_first());
+                  toast.error(select_category_first());
                   return;
                 }
 
                 if (!bookmarkDraft.title.trim() || !bookmarkDraft.url.trim()) {
-                  toast.error(m.title_url_required());
+                  toast.error(title_url_required());
                   return;
                 }
 
@@ -1169,20 +1169,20 @@ function BookmarksPage() {
                   setSelectedCategoryId(selectedCategoryId);
                   setBookmarkDraft({ title: "", url: "" });
                   setIsCreateBookmarkDialogOpen(false);
-                  toast.success(m.bookmark_created());
+                  toast.success(bookmark_created());
                 }).catch((error) => {
-                  toast.error(error instanceof Error ? error.message : m.failed_to_create_bookmark());
+                  toast.error(error instanceof Error ? error.message : failed_to_create_bookmark());
                 });
               }}
             >
-              {m.create()}
+              {create()}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.title()}</span>
+            <span className="font-medium text-foreground">{title_label()}</span>
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
@@ -1190,7 +1190,7 @@ function BookmarksPage() {
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.url()}</span>
+            <span className="font-medium text-foreground">{url()}</span>
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
@@ -1207,9 +1207,9 @@ function BookmarksPage() {
             setDeletingBookmarkId(null);
           }
         }}
-        title={m.delete_bookmark()}
-        description={m.delete_bookmark_desc()}
-        confirmLabel={m.delete()}
+        title={delete_bookmark()}
+        description={delete_bookmark_desc()}
+        confirmLabel={delete_message()}
         variant="destructive"
         onConfirm={() => {
           if (!selectedCategoryId || !deletingBookmarkId) {
@@ -1220,9 +1220,9 @@ function BookmarksPage() {
             setCategories(saved);
             setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
             setDeletingBookmarkId(null);
-            toast.success(m.bookmark_deleted());
+            toast.success(bookmark_deleted());
           }).catch((error) => {
-            toast.error(error instanceof Error ? error.message : m.failed_to_delete_bookmark());
+            toast.error(error instanceof Error ? error.message : failed_to_delete_bookmark());
           });
         }}
       />
@@ -1234,13 +1234,13 @@ function BookmarksPage() {
             setEditingBookmarkId(null);
           }
         }}
-        title={m.edit_bookmark()}
-        description={m.edit_bookmark_desc()}
+        title={edit_bookmark()}
+        description={edit_bookmark_desc()}
         size="md"
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setEditingBookmarkId(null)}>
-              {m.cancel()}
+              {cancel()}
             </Button>
             <Button
               type="button"
@@ -1250,7 +1250,7 @@ function BookmarksPage() {
                 }
 
                 if (!bookmarkDraft.title.trim() || !bookmarkDraft.url.trim()) {
-                  toast.error(m.title_url_required());
+                  toast.error(title_url_required());
                   return;
                 }
 
@@ -1261,20 +1261,20 @@ function BookmarksPage() {
                   setCategories(saved);
                   setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
                   setEditingBookmarkId(null);
-                  toast.success(m.bookmark_updated());
+                  toast.success(bookmark_updated());
                 }).catch((error) => {
-                  toast.error(error instanceof Error ? error.message : m.failed_to_update_bookmark());
+                  toast.error(error instanceof Error ? error.message : failed_to_update_bookmark());
                 });
               }}
             >
-              {m.save()}
+              {save()}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.title()}</span>
+            <span className="font-medium text-foreground">{title_label()}</span>
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
@@ -1282,7 +1282,7 @@ function BookmarksPage() {
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.url()}</span>
+            <span className="font-medium text-foreground">{url()}</span>
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
@@ -1299,9 +1299,9 @@ function BookmarksPage() {
             setDeleteCategoryId(null);
           }
         }}
-        title={m.delete_category()}
-        description={m.delete_category_desc()}
-        confirmLabel={m.delete()}
+        title={delete_category()}
+        description={delete_category_desc()}
+        confirmLabel={delete_message()}
         variant="destructive"
         onConfirm={() => {
           if (!deleteCategoryId) {
@@ -1314,9 +1314,9 @@ function BookmarksPage() {
               setSelectedCategoryId(saved[0]?.id ?? null);
             }
             setDeleteCategoryId(null);
-            toast.success(m.category_deleted());
+            toast.success(category_deleted());
           }).catch((error) => {
-            toast.error(error instanceof Error ? error.message : m.failed_to_delete_category());
+            toast.error(error instanceof Error ? error.message : failed_to_delete_category());
           });
         }}
       />
@@ -1327,30 +1327,30 @@ function BookmarksPage() {
           if (!open) setCreateOrImportStep("choose");
           setIsCreateOrImportDialogOpen(open);
         }}
-        title={createOrImportStep === "choose" ? m.create_or_import() : createOrImportStep === "create" ? m.new_category() : m.import_from_file()}
+        title={createOrImportStep === "choose" ? create_or_import() : createOrImportStep === "create" ? new_category() : import_from_file()}
         size="sm"
         bodyClassName={createOrImportStep === "choose" ? "flex items-center" : undefined}
         footer={
           createOrImportStep === "choose" ? (
             <Button type="button" variant="outline" onClick={() => setIsCreateOrImportDialogOpen(false)}>
-              {m.cancel()}
+              {cancel()}
             </Button>
           ) : createOrImportStep === "create" ? (
             <>
               <Button type="button" variant="outline" onClick={() => setCreateOrImportStep("choose")}>
-                {m.back()}
+                {back()}
               </Button>
               <Button type="button" onClick={handleCreateCategorySubmit}>
-                {m.create()}
+                {create()}
               </Button>
             </>
           ) : (
             <>
               <Button type="button" variant="outline" onClick={() => setCreateOrImportStep("choose")}>
-                {m.back()}
+                {back()}
               </Button>
               <Button type="button" onClick={handleImportBookmarksClick}>
-                {m.import()}
+                {import_message()}
               </Button>
             </>
           )
@@ -1367,9 +1367,9 @@ function BookmarksPage() {
                 <HugeiconsIcon icon={Folder01Icon} className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground">{m.new_category()}</div>
+                <div className="text-sm font-medium text-foreground">{new_category()}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  {m.new_category_desc()}
+                  {new_category_desc()}
                 </div>
               </div>
             </button>
@@ -1382,20 +1382,20 @@ function BookmarksPage() {
                 <HugeiconsIcon icon={Upload01Icon} className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground">{m.import_from_file()}</div>
+                <div className="text-sm font-medium text-foreground">{import_from_file()}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  {m.import_bookmarks_desc()}
+                  {import_bookmarks_desc()}
                 </div>
               </div>
             </button>
           </div>
         ) : createOrImportStep === "create" ? (
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.name()}</span>
+            <span className="font-medium text-foreground">{name()}</span>
             <input
               value={createCategoryName}
               onChange={(event) => setCreateCategoryName(event.target.value)}
-              placeholder={m.category_name()}
+              placeholder={category_name()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -1412,7 +1412,7 @@ function BookmarksPage() {
               <HugeiconsIcon icon={Upload01Icon} className="size-6" />
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              {m.import_bookmarks_desc()}
+              {import_bookmarks_desc()}
             </p>
           </div>
         )}

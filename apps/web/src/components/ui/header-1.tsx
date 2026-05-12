@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import LocaleToggle from "@/components/layout/LocaleToggle";
-import { m } from "@/paraglide/messages";
+import { nav_about, nav_changelog, nav_home, toggle_menu } from "@/paraglide/messages";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
 
@@ -39,15 +39,15 @@ export function Header() {
 
   const links = [
     {
-      label: m.nav_home(),
+      label: nav_home(),
       to: "/",
     },
     {
-      label: m.nav_changelog(),
+      label: nav_changelog(),
       to: "/changelog",
     },
     {
-      label: m.nav_about(),
+      label: nav_about(),
       to: "/about",
     },
   ];
@@ -110,7 +110,7 @@ export function Header() {
           className="md:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
-          aria-label={m.toggle_menu()}
+          aria-label={toggle_menu()}
         >
           <MenuToggleIcon open={open} className="size-5" duration={300} />
         </Button>

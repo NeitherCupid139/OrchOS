@@ -16,7 +16,7 @@ import {
 } from "@/components/layout/InboxSourceTabs";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, PanelLeft, PanelRight, Settings02Icon } from "@hugeicons/core-free-icons";
-import { m } from "@/paraglide/messages";
+import { accounts, add, close_activity_panel, open_activity_panel } from "@/paraglide/messages";
 import type { SidebarView } from "@/lib/types";
 import {
   isCapabilityView,
@@ -137,14 +137,14 @@ export function Toolbar({
                 </Button>
               )}
             />
-            <TooltipContent side="bottom">{m.add()}</TooltipContent>
+            <TooltipContent side="bottom">{add()}</TooltipContent>
           </Tooltip>
         ) : null}
 
         {activeView === "mail" ? (
           <Button variant="outline" size="sm" onClick={onOpenMailAccounts}>
             <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-            {m.accounts()}
+            {accounts()}
           </Button>
         ) : (
           <Tooltip>
@@ -165,7 +165,7 @@ export function Toolbar({
               )}
             />
             <TooltipContent side="bottom">
-              {activityPanelOpen ? m.close_activity_panel() : m.open_activity_panel()}
+              {activityPanelOpen ? close_activity_panel() : open_activity_panel()}
             </TooltipContent>
           </Tooltip>
         )}

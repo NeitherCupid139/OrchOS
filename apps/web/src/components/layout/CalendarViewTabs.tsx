@@ -2,7 +2,7 @@ import { Calendar01Icon, Calendar03Icon, CalendarCheckIn01Icon } from "@hugeicon
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { calendar_day, calendar_month, calendar_week } from "@/paraglide/messages";
 
 export type CalendarViewMode = "day" | "week" | "month";
 
@@ -20,21 +20,21 @@ const calendarViewTabs: Array<{
 }> = [
   {
     id: "day",
-    label: m.calendar_day(),
+    label: calendar_day(),
     icon: CalendarCheckIn01Icon,
     tone: "text-sky-600 dark:text-sky-400",
     bgAccent: "bg-sky-500/5 dark:bg-sky-500/10",
   },
   {
     id: "week",
-    label: m.calendar_week(),
+    label: calendar_week(),
     icon: Calendar03Icon,
     tone: "text-emerald-600 dark:text-emerald-400",
     bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
   },
   {
     id: "month",
-    label: m.calendar_month(),
+    label: calendar_month(),
     icon: Calendar01Icon,
     tone: "text-violet-600 dark:text-violet-400",
     bgAccent: "bg-violet-500/5 dark:bg-violet-500/10",

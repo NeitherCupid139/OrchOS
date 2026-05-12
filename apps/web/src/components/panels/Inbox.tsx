@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { m } from "@/paraglide/messages";
+import { agent_request, convert_to_goal, converting, critical, dismiss, inbox_is_empty, issue, mention, no_new_items, pull_request, suggested } from "@/paraglide/messages";
 import type { Problem, InboxSource, ProblemStatus } from "@/lib/types";
 import { isInboxItem } from "@/lib/types";
 import type { InboxStatusFilter } from "@/components/layout/InboxStatusTabs";
@@ -40,28 +40,28 @@ const sourceConfig: Record<
 > = {
   github_pr: {
     icon: GitPullRequestIcon,
-    label: m.pull_request(),
+    label: pull_request(),
     colorClass: "text-purple-600 dark:text-purple-400",
     bgClass: "bg-purple-500/5",
     borderClass: "border-purple-500/20",
   },
   github_issue: {
     icon: SquareIcon,
-    label: m.issue(),
+    label: issue(),
     colorClass: "text-green-600 dark:text-green-400",
     bgClass: "bg-green-500/5",
     borderClass: "border-green-500/20",
   },
   mention: {
     icon: InformationCircleIcon,
-    label: m.mention(),
+    label: mention(),
     colorClass: "text-blue-600 dark:text-blue-400",
     bgClass: "bg-blue-500/5",
     borderClass: "border-blue-500/10",
   },
   agent_request: {
     icon: Robot02Icon,
-    label: m.agent_request(),
+    label: agent_request(),
     colorClass: "text-amber-600 dark:text-amber-400",
     bgClass: "bg-amber-500/5",
     borderClass: "border-amber-500/20",
@@ -177,7 +177,7 @@ export function Inbox({
                           variant="destructive"
                           className="text-[9px] uppercase tracking-wider px-1.5 py-0"
                         >
-                          {m.critical()}
+                          {critical()}
                         </Badge>
                       )}
                     </div>
@@ -195,7 +195,7 @@ export function Inbox({
                           className="size-3.5 shrink-0 text-primary/60"
                         />
                         <span className="text-xs text-primary/80">
-                          {m.suggested()}
+                          {suggested()}
                           <span className="font-medium text-primary">{item.suggestedGoal}</span>
                         </span>
                       </div>
@@ -214,7 +214,7 @@ export function Inbox({
                         )}
                       >
                         <HugeiconsIcon icon={Target01Icon} className="size-3.5" />
-                        {isConverting ? m.converting() : m.convert_to_goal()}
+                        {isConverting ? converting() : convert_to_goal()}
                       </button>
 
                       {/* Dismiss */}
@@ -225,7 +225,7 @@ export function Inbox({
                         <DropdownMenuContent align="end" className="min-w-36">
                           <DropdownMenuItem onClick={() => onDismiss(item.id)}>
                             <HugeiconsIcon icon={ViewOffIcon} className="size-3.5" />
-                            {m.dismiss()}
+                            {dismiss()}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -246,8 +246,8 @@ export function Inbox({
               <div className="size-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
                 <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-5 text-emerald-500" />
               </div>
-              <p className="text-sm font-medium text-foreground">{m.inbox_is_empty()}</p>
-              <p className="text-xs text-muted-foreground mt-1">{m.no_new_items()}</p>
+              <p className="text-sm font-medium text-foreground">{inbox_is_empty()}</p>
+              <p className="text-xs text-muted-foreground mt-1">{no_new_items()}</p>
             </div>
           )}
         </div>

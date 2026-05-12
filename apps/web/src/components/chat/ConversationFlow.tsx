@@ -2,7 +2,7 @@ import { type UIMessage } from "ai";
 import { useCallback } from "react";
 import { cn, formatDuration } from "@/lib/utils";
 import type { ConversationMessage } from "@/lib/api";
-import { m } from "@/paraglide/messages";
+import { assistant, user } from "@/paraglide/messages";
 import { ChatClarificationCard } from "@/components/chat/ChatClarificationCard";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
@@ -189,7 +189,7 @@ export function MessageBubble({
           "mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground",
           isUser && "justify-end",
         )}>
-          <span className="font-medium text-foreground/60">{isUser ? m.user() : m.assistant()}</span>
+          <span className="font-medium text-foreground/60">{isUser ? user() : assistant()}</span>
           {metadata.responseTime != null && <span className="opacity-50">{formatDuration(metadata.responseTime)}</span>}
         </div>
         <div className={cn(

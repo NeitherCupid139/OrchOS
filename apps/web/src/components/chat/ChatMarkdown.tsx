@@ -1,10 +1,10 @@
 import ReactMarkdown from "react-markdown";
-import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ComponentType, ReactElement, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { createClientOnlyFn } from "@tanstack/react-start";
 import remarkGfm from "remark-gfm";
 import { Folder01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-
-import { ChatCodeBlock } from "@/components/chat/ChatCodeBlock";
 
 function stripNumberedLines(text: string): string {
   const lines = text.split("\n");
@@ -65,6 +65,39 @@ function getCodeText(children: ReactNode): string {
   return "";
 }
 
+const loadChatCodeBlock = createClientOnlyFn(async () => {
+  const mod = await import("@/components/chat/ChatCodeBlock");
+  return mod.ChatCodeBlock;
+});
+
+function ChatCodeBlockClient({ code, language }: { code: string; language?: string }) {
+  const [Component, setComponent] = useState<ComponentType<{ code: string; language?: string }> | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void loadChatCodeBlock().then((loaded) => {
+      if (mounted) {
+        setComponent(() => loaded);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!Component) {
+    return (
+      <pre className="my-2 overflow-x-auto rounded-md border border-border/40 bg-muted/20 p-3">
+        <code>{code}</code>
+      </pre>
+    );
+  }
+
+  return <Component code={code} language={language} />;
+}
+
 export function ChatMarkdown({ content }: { content: string }) {
   const processed = preprocessAgentOutput(content);
 
@@ -92,7 +125,7 @@ export function ChatMarkdown({ content }: { content: string }) {
             const match = /language-([\w-]+)/.exec(codeChild.props.className || "");
             const code = getCodeText(codeChild.props.children).replace(/\n$/, "");
 
-            return <ChatCodeBlock code={code} language={match?.[1]} />;
+            return <ChatCodeBlockClient code={code} language={match?.[1]} />;
           },
           code: ({ className, children, ...props }: ComponentPropsWithoutRef<"code">) => {
             const code = String(children).replace(/\n$/, "");

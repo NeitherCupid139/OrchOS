@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BoardTaskPriority } from "@/lib/types";
-import { m } from "@/paraglide/messages";
+import { add, add_to_board, add_to_board_desc, board_edit_task, board_edit_task_desc, cancel, creating, creating_normal, drag_to_reorder, due_date, follow_up_title, priority as priority_label, priority_high, priority_low, priority_medium, remove_item, save, saving, subtasks_label, subtasks_placeholder, tags_label, tags_placeholder, tags_subtasks_hint, title as title_label } from "@/paraglide/messages";
 
 interface CreateBoardConversationDialogProps {
   open: boolean;
@@ -78,9 +78,9 @@ function subtasksToRows(subtasks: string[]): TodoRow[] {
 }
 
 const PRIORITY_OPTIONS: Array<{ value: BoardTaskPriority; label: string }> = [
-  { value: "low", label: m.priority_low() },
-  { value: "medium", label: m.priority_medium() },
-  { value: "high", label: m.priority_high() },
+  { value: "low", label: priority_low() },
+  { value: "medium", label: priority_medium() },
+  { value: "high", label: priority_high() },
 ];
 
 export function CreateBoardConversationDialog({
@@ -240,7 +240,7 @@ export function CreateBoardConversationDialog({
     }
   };
 
-  const subtaskPlaceholders = m.subtasks_placeholder().split("\n");
+  const subtaskPlaceholders = subtasks_placeholder().split("\n");
 
   return (
     <AppDialog
@@ -250,8 +250,8 @@ export function CreateBoardConversationDialog({
           onClose();
         }
       }}
-      title={isEditMode ? m.board_edit_task() : m.add_to_board()}
-      description={isEditMode ? m.board_edit_task_desc() : m.add_to_board_desc()}
+      title={isEditMode ? board_edit_task() : add_to_board()}
+      description={isEditMode ? board_edit_task_desc() : add_to_board_desc()}
       size="lg"
       className="max-w-2xl"
       bodyClassName="pt-4"
@@ -259,12 +259,12 @@ export function CreateBoardConversationDialog({
       footer={
         <>
           <Button size="sm" type="button" variant="outline" onClick={onClose}>
-            {m.cancel()}
+            {cancel()}
           </Button>
           <Button size="sm" type="submit" form="create-board-conversation-form" disabled={!title.trim() || submitting}>
             {submitting
-              ? isEditMode ? m.saving() : m.creating()
-              : isEditMode ? m.save() : m.creating_normal()}
+              ? isEditMode ? saving() : creating()
+              : isEditMode ? save() : creating_normal()}
           </Button>
         </>
       }
@@ -274,21 +274,21 @@ export function CreateBoardConversationDialog({
           <div className="space-y-4">
             <fieldset className="space-y-1.5">
               <label htmlFor="create-board-title" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {m.title()}
+                {title_label()}
               </label>
               <Input
                 id="create-board-title"
                 ref={inputRef}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={m.follow_up_title()}
+                placeholder={follow_up_title()}
                 className="h-10 border-border/60 bg-background/80"
               />
             </fieldset>
 
             <fieldset className="space-y-1.5">
               <label htmlFor="create-board-priority" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {m.priority()}
+                {priority_label()}
               </label>
               <Select
                 value={priority}
@@ -313,7 +313,7 @@ export function CreateBoardConversationDialog({
 
             <fieldset className="space-y-1.5">
               <label htmlFor="create-board-due-date" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {m.due_date()}
+                {due_date()}
               </label>
               <DatePicker
                 id="create-board-due-date"
@@ -327,7 +327,7 @@ export function CreateBoardConversationDialog({
 
         <section className="rounded-xl bg-muted/[0.18] p-4">
           <div className="mb-3">
-            <p className="text-sm font-medium text-foreground">{m.tags_label()}</p>
+            <p className="text-sm font-medium text-foreground">{tags_label()}</p>
           </div>
           <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2 py-1.5">
             {tags.map((tag) => (
@@ -350,7 +350,7 @@ export function CreateBoardConversationDialog({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
-              placeholder={tags.length === 0 ? m.tags_placeholder() : ""}
+              placeholder={tags.length === 0 ? tags_placeholder() : ""}
               className="min-w-[80px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -358,8 +358,8 @@ export function CreateBoardConversationDialog({
 
         <section className="rounded-xl bg-muted/[0.18] p-4">
           <div className="mb-3">
-            <p className="text-sm font-medium text-foreground">{m.subtasks_label()}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{m.tags_subtasks_hint()}</p>
+            <p className="text-sm font-medium text-foreground">{subtasks_label()}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{tags_subtasks_hint()}</p>
           </div>
 
           <div className="space-y-1.5">
@@ -393,7 +393,7 @@ export function CreateBoardConversationDialog({
                   }}
                   onDragEnd={() => setDraggedRowId(null)}
                   className="inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
-                  aria-label={m.drag_to_reorder()}
+                  aria-label={drag_to_reorder()}
                 >
                   <HugeiconsIcon icon={DragDropVerticalIcon} className="size-4" />
                 </button>
@@ -408,7 +408,7 @@ export function CreateBoardConversationDialog({
                   type="button"
                   onClick={() => removeTodoRow(row.id)}
                   className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  aria-label={m.remove_item()}
+                  aria-label={remove_item()}
                 >
                   <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
                 </button>
@@ -421,7 +421,7 @@ export function CreateBoardConversationDialog({
               className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <HugeiconsIcon icon={Add01Icon} className="size-3.5" />
-              {m.add()}
+              {add()}
             </button>
           </div>
         </section>

@@ -38,7 +38,7 @@ import {
 import { matchesMailFolder } from "@/lib/mail";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useUIStore } from "@/lib/store";
-import { m } from "@/paraglide/messages";
+import { account_label, cancel, client_id, client_secret, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect, connect_gmail, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, expand_sidebar, failed_to_connect_gmail, failed_to_connect_mail_account, gmail_account_label_placeholder, gmail_connect_help, gmail_connected, gmail_credentials_required, gmail_refresh_token_placeholder, google_oauth_client_id_placeholder, google_oauth_client_secret_placeholder, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_custom_mailbox_help, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, refresh_token, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/dashboard/mail")({
   component: MailPage,
@@ -301,7 +301,7 @@ function MailPage() {
       !mailAccountForm.smtpHost.trim() ||
       !mailAccountForm.imapHost.trim()
     ) {
-      toast.error(m.mail_account_details_required());
+      toast.error(mail_account_details_required());
       return;
     }
 
@@ -309,7 +309,7 @@ function MailPage() {
     const imapPort = Number(mailAccountForm.imapPort);
 
     if (!Number.isFinite(smtpPort) || !Number.isFinite(imapPort)) {
-      toast.error(m.mail_ports_must_be_numbers());
+      toast.error(mail_ports_must_be_numbers());
       return;
     }
 
@@ -344,14 +344,14 @@ function MailPage() {
         imapPort: "993",
         imapSecure: true,
       });
-      toast.success(m.mail_account_connected());
+      toast.success(mail_account_connected());
       void loadThreads();
       void loadIntegrations();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : m.failed_to_connect_mail_account(),
+          : failed_to_connect_mail_account(),
         { closeButton: true },
       );
     } finally {
@@ -365,7 +365,7 @@ function MailPage() {
       !gmailForm.clientSecret.trim() ||
       !gmailForm.refreshToken.trim()
     ) {
-      toast.error(m.gmail_credentials_required());
+      toast.error(gmail_credentials_required());
       return;
     }
 
@@ -384,12 +384,12 @@ function MailPage() {
         clientSecret: "",
         refreshToken: "",
       });
-      toast.success(m.gmail_connected());
+      toast.success(gmail_connected());
       void loadThreads();
       void loadIntegrations();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : m.failed_to_connect_gmail(),
+        error instanceof Error ? error.message : failed_to_connect_gmail(),
         { closeButton: true },
       );
     } finally {
@@ -486,7 +486,7 @@ function MailPage() {
             <div className="flex h-10 items-center justify-between rounded-md px-2">
               <div className="flex min-w-0 items-center gap-2">
                 <div className="text-sm font-semibold text-foreground">
-                  {m.mail()}
+                  {mail()}
                 </div>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground tabular-nums">
                   {filteredThreads.length}
@@ -508,7 +508,7 @@ function MailPage() {
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{m.compose_mail()}</TooltipContent>
+                  <TooltipContent side="bottom">{compose_mail()}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
@@ -525,7 +525,7 @@ function MailPage() {
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{m.collapse_sidebar()}</TooltipContent>
+                  <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -556,7 +556,7 @@ function MailPage() {
           <div
             role="separator"
             aria-orientation="vertical"
-            aria-label={m.resize_mail_sidebar()}
+            aria-label={resize_mail_sidebar()}
             onPointerDown={handleResizeStart}
             className={cn(
               "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
@@ -598,13 +598,13 @@ function MailPage() {
                   </Button>
                 )}
               />
-              <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+              <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
             </Tooltip>
           ) : null}
 
           {loading ? (
             <div className="flex flex-1 items-center justify-center">
-              <AsciiLoading label={m.loading()} />
+              <AsciiLoading label={loading_label()} />
             </div>
           ) : activeThread ? (
             <InboxDetail
@@ -626,15 +626,15 @@ function MailPage() {
                 variant="subtle"
                 size="lg"
                 className="hover:bg-transparent dark:hover:bg-transparent w-full max-w-lg"
-                title={m.connect_mailbox()}
-                description={m.connect_mailbox_desc()}
+                title={connect_mailbox()}
+                description={connect_mailbox_desc()}
                 icons={[
                   <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
                   <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
                   <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
                 ]}
                 action={{
-                  label: m.connect_mailbox(),
+                  label: connect_mailbox(),
                   icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                   onClick: () => setIsConnectDialogOpen(true),
                 }}
@@ -649,12 +649,12 @@ function MailPage() {
       <AppDialog
         open={isAccountsDialogOpen}
         onOpenChange={setIsAccountsDialogOpen}
-        title={m.mail_accounts()}
-        description={m.mail_accounts_desc()}
+        title={mail_accounts()}
+        description={mail_accounts_desc()}
         size="lg"
         footer={
           <Button type="button" onClick={() => setIsAccountsDialogOpen(false)}>
-            {m.cancel()}
+            {cancel()}
           </Button>
         }
       >
@@ -694,7 +694,7 @@ function MailPage() {
             ))
           ) : (
             <div className="rounded-xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-              {m.no_mail_accounts()}
+              {no_mail_accounts()}
             </div>
           )}
         </div>
@@ -703,22 +703,22 @@ function MailPage() {
       <AppDialog
         open={isComposeDialogOpen}
         onOpenChange={setIsComposeDialogOpen}
-        title={m.compose_mail()}
-        description={m.compose_mail_pending_desc()}
+        title={compose_mail()}
+        description={compose_mail_pending_desc()}
         size="md"
         footer={
           <Button type="button" onClick={() => setIsComposeDialogOpen(false)}>
-            {m.cancel()}
+            {cancel()}
           </Button>
         }
       >
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p>{m.compose_mail_wired_desc()}</p>
-          <p>{m.compose_mail_next_steps_intro()}</p>
+          <p>{compose_mail_wired_desc()}</p>
+          <p>{compose_mail_next_steps_intro()}</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>{m.compose_mail_step_new_thread()}</li>
-            <li>{m.compose_mail_step_select_identity()}</li>
-            <li>{m.compose_mail_step_external_recipients()}</li>
+            <li>{compose_mail_step_new_thread()}</li>
+            <li>{compose_mail_step_select_identity()}</li>
+            <li>{compose_mail_step_external_recipients()}</li>
           </ul>
         </div>
       </AppDialog>
@@ -731,8 +731,8 @@ function MailPage() {
             setMailConnectMode("gmail");
           }
         }}
-        title={m.connect_mailbox()}
-        description={m.connect_mailbox_desc()}
+        title={connect_mailbox()}
+        description={connect_mailbox_desc()}
         size="lg"
         footer={
           <>
@@ -741,7 +741,7 @@ function MailPage() {
               variant="outline"
               onClick={() => setIsConnectDialogOpen(false)}
             >
-              {m.cancel()}
+              {cancel()}
             </Button>
             <Button
               type="button"
@@ -753,10 +753,10 @@ function MailPage() {
               disabled={submittingAccount}
             >
               {submittingAccount
-                ? m.loading()
+                ? loading_label()
                 : mailConnectMode === "gmail"
-                  ? m.connect_gmail()
-                  : m.connect()}
+                  ? connect_gmail()
+                  : connect()}
             </Button>
           </>
         }
@@ -788,15 +788,15 @@ function MailPage() {
 
           <p className="text-xs leading-5 text-muted-foreground">
             {mailConnectMode === "gmail"
-              ? m.gmail_connect_help()
-              : m.mail_custom_mailbox_help()}
+              ? gmail_connect_help()
+              : mail_custom_mailbox_help()}
           </p>
 
           {mailConnectMode === "gmail" ? (
             <div className="grid gap-4">
               <label className="grid gap-2 text-sm">
                 <span className="font-medium text-foreground">
-                  {m.account_label()}
+                  {account_label()}
                 </span>
                 <input
                   value={gmailForm.label}
@@ -806,12 +806,12 @@ function MailPage() {
                       label: event.target.value,
                     }))
                   }
-                  placeholder={m.gmail_account_label_placeholder()}
+                  placeholder={gmail_account_label_placeholder()}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">{m.client_id()}</span>
+                <span className="font-medium text-foreground">{client_id()}</span>
                 <input
                   value={gmailForm.clientId}
                   onChange={(event) =>
@@ -820,13 +820,13 @@ function MailPage() {
                       clientId: event.target.value,
                     }))
                   }
-                  placeholder={m.google_oauth_client_id_placeholder()}
+                  placeholder={google_oauth_client_id_placeholder()}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="grid gap-2 text-sm">
                 <span className="font-medium text-foreground">
-                  {m.client_secret()}
+                  {client_secret()}
                 </span>
                 <div className="relative">
                   <input
@@ -838,7 +838,7 @@ function MailPage() {
                         clientSecret: event.target.value,
                       }))
                     }
-                    placeholder={m.google_oauth_client_secret_placeholder()}
+                    placeholder={google_oauth_client_secret_placeholder()}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                   />
                   <button
@@ -853,7 +853,7 @@ function MailPage() {
               </label>
               <label className="grid gap-2 text-sm">
                 <span className="font-medium text-foreground">
-                  {m.refresh_token()}
+                  {refresh_token()}
                 </span>
                 <textarea
                   value={gmailForm.refreshToken}
@@ -863,7 +863,7 @@ function MailPage() {
                       refreshToken: event.target.value,
                     }))
                   }
-                  placeholder={m.gmail_refresh_token_placeholder()}
+                  placeholder={gmail_refresh_token_placeholder()}
                   className="min-h-28 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
@@ -871,7 +871,7 @@ function MailPage() {
           ) : (
             <div className="space-y-4">
               <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{m.email()}</span>
+                <span className="text-muted-foreground">{email()}</span>
                 <input
                   value={mailAccountForm.email}
                   onChange={(event) =>
@@ -881,12 +881,12 @@ function MailPage() {
                       username: current.username || event.target.value,
                     }))
                   }
-                  placeholder={m.email_placeholder()}
+                  placeholder={email_placeholder()}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{m.display_name()}</span>
+                <span className="text-muted-foreground">{display_name()}</span>
                 <input
                   value={mailAccountForm.displayName}
                   onChange={(event) =>
@@ -895,12 +895,12 @@ function MailPage() {
                       displayName: event.target.value,
                     }))
                   }
-                  placeholder={m.display_name_placeholder()}
+                  placeholder={display_name_placeholder()}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{m.username()}</span>
+                <span className="text-muted-foreground">{username()}</span>
                 <input
                   value={mailAccountForm.username}
                   onChange={(event) =>
@@ -909,12 +909,12 @@ function MailPage() {
                       username: event.target.value,
                     }))
                   }
-                  placeholder={m.username_placeholder()}
+                  placeholder={username_placeholder()}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{m.password()}</span>
+                <span className="text-muted-foreground">{password()}</span>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -925,7 +925,7 @@ function MailPage() {
                         password: event.target.value,
                       }))
                     }
-                    placeholder={m.password_placeholder()}
+                    placeholder={password_placeholder()}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                   />
                   <button
@@ -940,10 +940,10 @@ function MailPage() {
               </label>
 
               <div className="border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground mb-3">{m.smtp_configuration()}</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3">{smtp_configuration()}</p>
                 <div className="space-y-3">
                   <label className="grid gap-1.5 text-sm">
-                    <span className="text-muted-foreground">{m.host()}</span>
+                    <span className="text-muted-foreground">{host()}</span>
                     <input
                       value={mailAccountForm.smtpHost}
                       onChange={(event) =>
@@ -952,13 +952,13 @@ function MailPage() {
                           smtpHost: event.target.value,
                         }))
                       }
-                      placeholder={m.smtp_host_placeholder()}
+                      placeholder={smtp_host_placeholder()}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                     />
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{m.port()}</span>
+                      <span className="text-muted-foreground">{port()}</span>
                       <input
                         value={mailAccountForm.smtpPort}
                         onChange={(event) =>
@@ -967,7 +967,7 @@ function MailPage() {
                             smtpPort: event.target.value,
                           }))
                         }
-                        placeholder={m.smtp_port_placeholder()}
+                        placeholder={smtp_port_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
                     </label>
@@ -983,17 +983,17 @@ function MailPage() {
                         }
                         className="rounded border-border"
                       />
-                      <span className="text-muted-foreground">{m.use_tls_ssl()}</span>
+                      <span className="text-muted-foreground">{use_tls_ssl()}</span>
                     </label>
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground mb-3">{m.imap_configuration()}</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3">{imap_configuration()}</p>
                 <div className="space-y-3">
                   <label className="grid gap-1.5 text-sm">
-                    <span className="text-muted-foreground">{m.host()}</span>
+                    <span className="text-muted-foreground">{host()}</span>
                     <input
                       value={mailAccountForm.imapHost}
                       onChange={(event) =>
@@ -1002,13 +1002,13 @@ function MailPage() {
                           imapHost: event.target.value,
                         }))
                       }
-                      placeholder={m.imap_host_placeholder()}
+                      placeholder={imap_host_placeholder()}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                     />
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{m.port()}</span>
+                      <span className="text-muted-foreground">{port()}</span>
                       <input
                         value={mailAccountForm.imapPort}
                         onChange={(event) =>
@@ -1017,7 +1017,7 @@ function MailPage() {
                             imapPort: event.target.value,
                           }))
                         }
-                        placeholder={m.imap_port_placeholder()}
+                        placeholder={imap_port_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
                     </label>
@@ -1033,7 +1033,7 @@ function MailPage() {
                         }
                         className="rounded border-border"
                       />
-                      <span className="text-muted-foreground">{m.use_tls_ssl()}</span>
+                      <span className="text-muted-foreground">{use_tls_ssl()}</span>
                     </label>
                   </div>
                 </div>

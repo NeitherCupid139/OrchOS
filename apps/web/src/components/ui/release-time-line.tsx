@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { m } from "@/paraglide/messages";
+import { release_notes_desc, release_notes_title, release_v01_desc, release_v01_item_1, release_v01_item_2, release_v01_item_3, release_v01_item_4, release_v01_item_5, release_v01_subtitle, release_v01_title } from "@/paraglide/messages";
 
 export type TimeLine_01Entry = {
   icon: React.ComponentType<{ className?: string }>;
@@ -26,15 +26,15 @@ export interface TimeLine_01Props {
 export const defaultEntries: TimeLine_01Entry[] = [
   {
     icon: Package,
-    title: m.release_v01_title(),
-    subtitle: m.release_v01_subtitle(),
-    description: m.release_v01_desc(),
+    title: release_v01_title(),
+    subtitle: release_v01_subtitle(),
+    description: release_v01_desc(),
     items: [
-      m.release_v01_item_1(),
-      m.release_v01_item_2(),
-      m.release_v01_item_3(),
-      m.release_v01_item_4(),
-      m.release_v01_item_5(),
+      release_v01_item_1(),
+      release_v01_item_2(),
+      release_v01_item_3(),
+      release_v01_item_4(),
+      release_v01_item_5(),
     ],
   },
 ];
@@ -44,8 +44,8 @@ export const defaultEntries: TimeLine_01Entry[] = [
  * As you scroll, the active card expands to reveal its full content. Others stay collapsed.
  */
 export default function TimeLine_01({
-  title = m.release_notes_title(),
-  description = m.release_notes_desc(),
+  title = release_notes_title(),
+  description = release_notes_desc(),
   entries = defaultEntries,
   className,
 }: TimeLine_01Props) {

@@ -16,7 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { m } from "@/paraglide/messages";
+import { obs_active_issues, obs_activity_overview, obs_chart_critical, obs_chart_events, obs_chart_info, obs_chart_issues, obs_chart_warning, obs_event_breakdown, obs_event_timeline, obs_event_types, obs_events_and_issues, obs_issue_priority, obs_issues_needing_attention, obs_last_24h, obs_last_30d, obs_last_7d, obs_no_active_issues, obs_no_events, obs_open_issues, obs_priority_critical, obs_priority_info, obs_priority_warning, obs_recent_events, obs_resolved_issues, obs_total_events, observability, observability_desc } from "@/paraglide/messages";
 import { api, type ObservabilityMetrics, type TimeSeriesPoint } from "@/lib/api";
 import type { Problem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -98,14 +98,14 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
   const infoCount = problems.filter((p) => p.priority === "info").length;
 
   const timelineChartConfig = useMemo(() => ({
-    events: { label: m.obs_chart_events(), color: "var(--chart-1)" },
-    issues: { label: m.obs_chart_issues(), color: "var(--chart-2)" },
+    events: { label: obs_chart_events(), color: "var(--chart-1)" },
+    issues: { label: obs_chart_issues(), color: "var(--chart-2)" },
   } satisfies ChartConfig), []);
 
   const priorityChartConfig = useMemo(() => ({
-    critical: { label: m.obs_chart_critical(), color: "var(--chart-5)" },
-    warning: { label: m.obs_chart_warning(), color: "var(--chart-3)" },
-    info: { label: m.obs_chart_info(), color: "var(--chart-1)" },
+    critical: { label: obs_chart_critical(), color: "var(--chart-5)" },
+    warning: { label: obs_chart_warning(), color: "var(--chart-3)" },
+    info: { label: obs_chart_info(), color: "var(--chart-1)" },
   } satisfies ChartConfig), []);
 
   const priorityData = useMemo(
@@ -123,25 +123,25 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
         <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold text-foreground">{m.observability()}</h1>
-              <p className="text-sm text-muted-foreground">{m.observability_desc()}</p>
+              <h1 className="text-lg font-semibold text-foreground">{observability()}</h1>
+              <p className="text-sm text-muted-foreground">{observability_desc()}</p>
             </div>
             <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
               <TabsList>
-                <TabsTrigger value="24h">{m.obs_last_24h()}</TabsTrigger>
-                <TabsTrigger value="7d">{m.obs_last_7d()}</TabsTrigger>
-                <TabsTrigger value="30d">{m.obs_last_30d()}</TabsTrigger>
+                <TabsTrigger value="24h">{obs_last_24h()}</TabsTrigger>
+                <TabsTrigger value="7d">{obs_last_7d()}</TabsTrigger>
+                <TabsTrigger value="30d">{obs_last_30d()}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <MetricCard icon={FolderLibraryIcon} label={m.obs_total_events()} value={totalEvents} />
-            <MetricCard icon={Alert01Icon} label={m.obs_open_issues()} value={openIssues} />
-            <MetricCard icon={CheckmarkCircle01Icon} label={m.obs_resolved_issues()} value={resolvedIssues} />
+            <MetricCard icon={FolderLibraryIcon} label={obs_total_events()} value={totalEvents} />
+            <MetricCard icon={Alert01Icon} label={obs_open_issues()} value={openIssues} />
+            <MetricCard icon={CheckmarkCircle01Icon} label={obs_resolved_issues()} value={resolvedIssues} />
             <MetricCard
               icon={Clock01Icon}
-              label={m.obs_event_types()}
+              label={obs_event_types()}
               value={eventTypeCounts.length}
             />
           </div>
@@ -149,8 +149,8 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">{m.obs_activity_overview()}</CardTitle>
-                <CardDescription className="text-xs">{m.obs_event_breakdown()}</CardDescription>
+                <CardTitle className="text-sm">{obs_activity_overview()}</CardTitle>
+                <CardDescription className="text-xs">{obs_event_breakdown()}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {eventTypeCounts.length > 0
@@ -161,15 +161,15 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                       </div>
                     ))
                   : (
-                    <div className="text-sm text-muted-foreground">{m.obs_no_events()}</div>
+                    <div className="text-sm text-muted-foreground">{obs_no_events()}</div>
                   )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">{m.obs_active_issues()}</CardTitle>
-                <CardDescription className="text-xs">{m.obs_issues_needing_attention()}</CardDescription>
+                <CardTitle className="text-sm">{obs_active_issues()}</CardTitle>
+                <CardDescription className="text-xs">{obs_issues_needing_attention()}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {problems.slice(0, 3).map((problem) => (
@@ -187,7 +187,7 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                 ))}
                 {problems.length === 0
                   ? (
-                    <div className="text-sm text-muted-foreground">{m.obs_no_active_issues()}</div>
+                    <div className="text-sm text-muted-foreground">{obs_no_active_issues()}</div>
                   )
                   : null}
               </CardContent>
@@ -197,8 +197,8 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle className="text-sm">{m.obs_event_timeline()}</CardTitle>
-                <CardDescription className="text-xs">{m.obs_events_and_issues()}</CardDescription>
+                <CardTitle className="text-sm">{obs_event_timeline()}</CardTitle>
+                <CardDescription className="text-xs">{obs_events_and_issues()}</CardDescription>
               </CardHeader>
               <CardContent className="pb-2">
                 <ChartContainer config={timelineChartConfig} className="h-[240px] w-full">
@@ -217,7 +217,7 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">{m.obs_issue_priority()}</CardTitle>
+                <CardTitle className="text-sm">{obs_issue_priority()}</CardTitle>
               </CardHeader>
               <CardContent className="pb-2">
                 <ChartContainer config={priorityChartConfig} className="h-[200px] w-full">
@@ -243,17 +243,17 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
                 <div className="mt-2 flex flex-wrap justify-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="size-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[0] }} />
-                    {m.obs_priority_critical({ count: criticalCount })}
+                    {obs_priority_critical({ count: criticalCount })}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="size-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[1] }} />
-                    {m.obs_priority_warning({ count: warningCount })}
+                    {obs_priority_warning({ count: warningCount })}
                   </span>
                   {infoCount > 0
                     ? (
                       <span className="flex items-center gap-1">
                         <span className="size-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[2] }} />
-                        {m.obs_priority_info({ count: infoCount })}
+                        {obs_priority_info({ count: infoCount })}
                       </span>
                     )
                     : null}
@@ -266,7 +266,7 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
             ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">{m.obs_recent_events()}</CardTitle>
+                  <CardTitle className="text-sm">{obs_recent_events()}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

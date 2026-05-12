@@ -4,7 +4,7 @@ import { ScriptPreferenceProvider } from "@/components/providers/ScriptPreferenc
 import { I18nProvider } from "@/lib/i18n-provider";
 import { getPublicRuntimeConfig } from "@/lib/public-runtime-config";
 import { getLocale } from "@/paraglide/runtime";
-import { m } from "@/paraglide/messages";
+import { not_found, page_not_found } from "@/paraglide/messages";
 
 import appCss from "../styles.css?url";
 
@@ -21,7 +21,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: m.not_found() === "Not Found" ? "OrchOS" : "OrchOS",
+        title: not_found() === "Not Found" ? "OrchOS" : "OrchOS",
       },
     ],
     links: [
@@ -36,7 +36,7 @@ export const Route = createRootRoute({
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
         <h1 className="text-2xl font-semibold">404</h1>
-        <p className="text-sm text-muted-foreground mt-1">{m.page_not_found()}</p>
+        <p className="text-sm text-muted-foreground mt-1">{page_not_found()}</p>
       </div>
     </div>
   ),

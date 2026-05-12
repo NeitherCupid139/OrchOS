@@ -14,7 +14,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { m } from "@/paraglide/messages";
+import { no_inbox_selected, no_inbox_selected_desc, no_project, send_failed } from "@/paraglide/messages";
 import { cn } from "@/lib/utils";
 import type { InboxMessage, InboxThread, InboxMessageType } from "@/lib/api";
 import type { Project } from "@/lib/types";
@@ -155,7 +155,7 @@ export function InboxDetail({ thread, messages, projects, onOpenGoal, onReply }:
         toast.success(mode === "reply_all" ? "Reply sent to all recipients" : "Reply sent");
       } catch (err) {
         console.error("Failed to send inbox reply:", err);
-        toast.error(m.send_failed());
+        toast.error(send_failed());
       } finally {
         setSendingMode(null);
       }
@@ -196,7 +196,7 @@ export function InboxDetail({ thread, messages, projects, onOpenGoal, onReply }:
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Project</div>
-              <div className="mt-1 text-foreground">{projectName || (thread.projectId ? thread.projectId : m.no_project())}</div>
+              <div className="mt-1 text-foreground">{projectName || (thread.projectId ? thread.projectId : no_project())}</div>
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Command</div>
@@ -363,8 +363,8 @@ export function InboxNoSelection() {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="text-center">
-        <p className="text-sm text-muted-foreground">{m.no_inbox_selected()}</p>
-        <p className="mt-1 text-xs text-muted-foreground/60">{m.no_inbox_selected_desc()}</p>
+        <p className="text-sm text-muted-foreground">{no_inbox_selected()}</p>
+        <p className="mt-1 text-xs text-muted-foreground/60">{no_inbox_selected_desc()}</p>
       </div>
     </div>
   );

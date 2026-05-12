@@ -2,7 +2,7 @@ import { CloudIcon, CodeIcon, Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { all, model_cloud, model_local } from "@/paraglide/messages";
 
 export type AgentModelFilter = "all" | "local" | "cloud";
 
@@ -13,9 +13,9 @@ interface AgentModelTabsProps {
 }
 
 const agentModelFilterConfig: Record<AgentModelFilter, { icon: typeof Menu01Icon; label: string; iconClassName: string }> = {
-  all: { icon: Menu01Icon, label: m.all(), iconClassName: "text-muted-foreground/80" },
-  local: { icon: CodeIcon, label: m.model_local(), iconClassName: "text-emerald-500" },
-  cloud: { icon: CloudIcon, label: m.model_cloud(), iconClassName: "text-sky-500" },
+  all: { icon: Menu01Icon, label: all(), iconClassName: "text-muted-foreground/80" },
+  local: { icon: CodeIcon, label: model_local(), iconClassName: "text-emerald-500" },
+  cloud: { icon: CloudIcon, label: model_cloud(), iconClassName: "text-sky-500" },
 };
 
 export function AgentModelTabs({ value, counts, onChange }: AgentModelTabsProps) {

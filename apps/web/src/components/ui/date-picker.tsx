@@ -23,7 +23,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { date_picker_placeholder, date_picker_weekday_fri, date_picker_weekday_mon, date_picker_weekday_sat, date_picker_weekday_sun, date_picker_weekday_thu, date_picker_weekday_tue, date_picker_weekday_wed, next, previous } from "@/paraglide/messages";
 
 interface DatePickerProps {
   value?: Date | undefined;
@@ -56,7 +56,7 @@ export function DatePicker({
   value,
   onChange,
   className,
-  placeholder = m.date_picker_placeholder(),
+  placeholder = date_picker_placeholder(),
   id,
 }: DatePickerProps) {
   const [month, setMonth] = React.useState(() => value ?? new Date());
@@ -117,13 +117,13 @@ export function DatePicker({
   const goToPrevious = () => setMonth((m) => add(m, { months: -1 }));
   const goToNext = () => setMonth((m) => add(m, { months: 1 }));
   const weekdays = [
-    m.date_picker_weekday_sun(),
-    m.date_picker_weekday_mon(),
-    m.date_picker_weekday_tue(),
-    m.date_picker_weekday_wed(),
-    m.date_picker_weekday_thu(),
-    m.date_picker_weekday_fri(),
-    m.date_picker_weekday_sat(),
+    date_picker_weekday_sun(),
+    date_picker_weekday_mon(),
+    date_picker_weekday_tue(),
+    date_picker_weekday_wed(),
+    date_picker_weekday_thu(),
+    date_picker_weekday_fri(),
+    date_picker_weekday_sat(),
   ];
 
   return (
@@ -163,7 +163,7 @@ export function DatePicker({
                 variant="ghost"
                 size="icon-xs"
                 onClick={goToPrevious}
-                aria-label={m.previous()}
+                aria-label={previous()}
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
               </Button>
@@ -175,7 +175,7 @@ export function DatePicker({
                 variant="ghost"
                 size="icon-xs"
                 onClick={goToNext}
-                aria-label={m.next()}
+                aria-label={next()}
               >
                 <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
               </Button>

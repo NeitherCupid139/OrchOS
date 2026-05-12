@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useDashboard } from "@/lib/dashboard-context";
 import { useBoardStore } from "@/lib/stores/board";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { board_completed, board_delete_conversation, board_edit_task, board_in_progress, board_no_tasks, board_planning, board_today } from "@/paraglide/messages";
 import type { BoardTaskColumnId, BoardTaskFilter, BoardTaskPriority } from "@/lib/types";
 
 export type { BoardTaskColumnId, BoardTaskFilter };
@@ -99,28 +99,28 @@ export function BoardView({ boardFilter }: BoardViewProps) {
   }> = [
     {
       id: "review",
-      label: m.board_today(),
+      label: board_today(),
       icon: InformationCircleIcon,
       tone: "text-violet-600 dark:text-violet-400",
       bgAccent: "bg-violet-500/5 dark:bg-violet-500/10",
     },
     {
       id: "planning",
-      label: m.board_planning(),
+      label: board_planning(),
       icon: File02Icon,
       tone: "text-amber-600 dark:text-amber-400",
       bgAccent: "bg-amber-500/5 dark:bg-amber-500/10",
     },
     {
       id: "in_progress",
-      label: m.board_in_progress(),
+      label: board_in_progress(),
       icon: PlayCircleIcon,
       tone: "text-sky-600 dark:text-sky-400",
       bgAccent: "bg-sky-500/5 dark:bg-sky-500/10",
     },
     {
       id: "completed",
-      label: m.board_completed(),
+      label: board_completed(),
       icon: CheckmarkCircle02Icon,
       tone: "text-emerald-600 dark:text-emerald-400",
       bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
@@ -219,7 +219,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                         </Button>
                                       )}
                                     />
-                                    <TooltipContent side="top">{m.board_edit_task()}</TooltipContent>
+                                    <TooltipContent side="top">{board_edit_task()}</TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -244,7 +244,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                                         </Button>
                                       )}
                                     />
-                                    <TooltipContent side="top">{m.board_delete_conversation()}</TooltipContent>
+                                    <TooltipContent side="top">{board_delete_conversation()}</TooltipContent>
                                   </Tooltip>
                                 </div>
                               </div>
@@ -252,7 +252,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                               <div className="space-y-1">
                                 <div className="line-clamp-1 text-sm font-medium text-foreground/90">{card.title}</div>
                                 <InfoCardDescription className="line-clamp-3 text-xs leading-relaxed text-muted-foreground/60">
-                                  {card.description?.trim() || m.board_no_tasks()}
+                                  {card.description?.trim() || board_no_tasks()}
                                 </InfoCardDescription>
                               </div>
 
@@ -302,7 +302,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                     {columnCards.length === 0 ? (
                       <div className="flex w-full flex-col items-center justify-center rounded-xl px-3 py-10 text-center">
                         <HugeiconsIcon icon={column.icon} className="mb-2 size-5 text-muted-foreground/15" />
-                        <span className="text-xs text-muted-foreground/30">{m.board_no_tasks()}</span>
+                        <span className="text-xs text-muted-foreground/30">{board_no_tasks()}</span>
                       </div>
                     ) : null}
                   </div>

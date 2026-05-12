@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { m } from "@/paraglide/messages";
+import { terms_intro, terms_of_service, terms_section_accounts_body, terms_section_accounts_title, terms_section_contact_body, terms_section_contact_title, terms_section_content_body, terms_section_content_title, terms_section_use_body, terms_section_use_title } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/terms")({
   component: Terms,
 });
 
 const sections = [
-  { title: m.terms_section_use_title(), body: m.terms_section_use_body() },
-  { title: m.terms_section_accounts_title(), body: m.terms_section_accounts_body() },
-  { title: m.terms_section_content_title(), body: m.terms_section_content_body() },
-  { title: m.terms_section_contact_title(), body: m.terms_section_contact_body() },
+  { title: terms_section_use_title(), body: terms_section_use_body() },
+  { title: terms_section_accounts_title(), body: terms_section_accounts_body() },
+  { title: terms_section_content_title(), body: terms_section_content_body() },
+  { title: terms_section_contact_title(), body: terms_section_contact_body() },
 ];
 
 function Terms() {
@@ -21,10 +21,10 @@ function Terms() {
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-6 py-16">
           <h1 className="mb-2 text-4xl font-semibold text-foreground">
-            {m.terms_of_service()}
+            {terms_of_service()}
           </h1>
           <p className="mb-12 text-lg text-muted-foreground">
-            {m.terms_intro()}
+            {terms_intro()}
           </p>
 
           <div className="space-y-8">

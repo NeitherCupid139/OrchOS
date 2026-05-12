@@ -8,7 +8,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { all, archived, board_completed, unread, waiting_reply } from "@/paraglide/messages";
 
 export type MailFolderFilter =
   | "all"
@@ -29,11 +29,11 @@ const mailFolderTabs: Array<{
   tone: string;
   bgAccent?: string;
 }> = [
-  { id: "all", label: () => m.all(), icon: Menu01Icon, tone: "" },
-  { id: "unread", label: () => m.unread(), icon: Mail01Icon, tone: "text-sky-600 dark:text-sky-400", bgAccent: "bg-sky-500/5 dark:bg-sky-500/10" },
-  { id: "waiting_reply", label: () => m.waiting_reply(), icon: ReplayIcon, tone: "text-amber-600 dark:text-amber-400", bgAccent: "bg-amber-500/5 dark:bg-amber-500/10" },
-  { id: "completed", label: () => m.board_completed(), icon: CheckmarkCircle02Icon, tone: "text-emerald-600 dark:text-emerald-400", bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10" },
-  { id: "archived", label: () => m.archived(), icon: Archive01Icon, tone: "text-muted-foreground", bgAccent: "bg-muted" },
+  { id: "all", label: () => all(), icon: Menu01Icon, tone: "" },
+  { id: "unread", label: () => unread(), icon: Mail01Icon, tone: "text-sky-600 dark:text-sky-400", bgAccent: "bg-sky-500/5 dark:bg-sky-500/10" },
+  { id: "waiting_reply", label: () => waiting_reply(), icon: ReplayIcon, tone: "text-amber-600 dark:text-amber-400", bgAccent: "bg-amber-500/5 dark:bg-amber-500/10" },
+  { id: "completed", label: () => board_completed(), icon: CheckmarkCircle02Icon, tone: "text-emerald-600 dark:text-emerald-400", bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10" },
+  { id: "archived", label: () => archived(), icon: Archive01Icon, tone: "text-muted-foreground", bgAccent: "bg-muted" },
 ];
 
 export function MailFolderTabs({ value, onChange }: MailFolderTabsProps) {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { FramerCarousel, type CarouselItem } from "@/components/ui/framer-carousel";
-import { m } from "@/paraglide/messages";
+import { dismiss, welcome_to_orchos } from "@/paraglide/messages";
 
 function OnboardingPreviewImage({
   src,
@@ -83,7 +83,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
-      title={m.welcome_to_orchos()}
+      title={welcome_to_orchos()}
       size="lg"
       className="max-w-4xl"
       bodyClassName="p-5 md:p-6"
@@ -145,7 +145,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
                 );
               }}
             >
-              {isLastSlide ? m.dismiss() : "下一页"}
+              {isLastSlide ? dismiss() : "下一页"}
             </Button>
           </div>
         </div>

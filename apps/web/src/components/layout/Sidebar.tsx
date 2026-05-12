@@ -58,7 +58,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { m } from "@/paraglide/messages";
+import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, observability, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_disabled, profile_status_enabled, profile_status_unverified, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, welcome_desc, welcome_to_orchos, workspace } from "@/paraglide/messages";
 import { isClerkConfigured } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
@@ -165,59 +165,59 @@ export function Sidebar({
           id: "creation",
           to: "/dashboard/creation",
           icon: Chat01Icon,
-          label: m.creation(),
+          label: creation(),
           shortcut: "1",
         },
         {
           id: "bookmarks",
           to: "/dashboard/bookmarks",
           icon: Bookmark01Icon,
-          label: m.bookmarks(),
+          label: bookmarks(),
           shortcut: "2",
         },
       ],
     },
     {
-      label: m.workspace(),
+      label: workspace(),
       items: [
         {
           id: "board",
           to: "/dashboard/board",
           icon: DashboardCircleIcon,
-          label: m.board(),
+          label: board(),
           shortcut: "3",
         },
         {
           id: "calendar",
           to: "/dashboard/calendar",
           icon: Calendar03Icon,
-          label: m.calendar(),
+          label: calendar(),
           shortcut: "4",
         },
         {
           id: "mail",
           to: "/dashboard/mail",
           icon: Mail01Icon,
-          label: m.mail(),
+          label: mail(),
           shortcut: "5",
         },
       ],
     },
     {
-      label: m.observability(),
+      label: observability(),
       items: [
         {
           id: "agents",
           to: "/dashboard/agents",
           icon: ComputerIcon,
-          label: m.agents(),
+          label: agents(),
           shortcut: "6",
         },
         {
           id: "observability",
           to: "/dashboard/observability",
           icon: AiBrain01Icon,
-          label: m.observability(),
+          label: observability(),
           shortcut: "7",
         },
       ],
@@ -250,7 +250,7 @@ export function Sidebar({
                 </span>
                 <span className="truncate">
                   {organizations.find((o) => o.id === activeOrganizationId)
-                    ?.name || m.select_organization()}
+                    ?.name || select_organization()}
                 </span>
                 <HugeiconsIcon
                   icon={ChevronDown}
@@ -262,12 +262,12 @@ export function Sidebar({
                   <Input
                     value={orgSearch}
                     onChange={(e) => setOrgSearch(e.target.value)}
-                    placeholder={m.space_launcher_search_placeholder()}
+                    placeholder={space_launcher_search_placeholder()}
                     className="h-8 border-border/60 bg-background/80 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel>{m.space_launcher_all()}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{space_launcher_all()}</DropdownMenuLabel>
                   {filteredOrganizations.length > 0 ? (
                     filteredOrganizations.map((org) => (
                       <DropdownMenuItem
@@ -278,7 +278,7 @@ export function Sidebar({
                         <div className="mr-1 flex items-center gap-1 opacity-0 transition-opacity group-data-[highlighted]/dropdown-menu-item:opacity-100">
                           <button
                             type="button"
-                            aria-label={m.edit()}
+                            aria-label={edit()}
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -291,7 +291,7 @@ export function Sidebar({
                           </button>
                           <button
                             type="button"
-                            aria-label={m.delete()}
+                            aria-label={delete_message()}
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -316,11 +316,11 @@ export function Sidebar({
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>
-                    {m.create_space()}
+                    {create_space()}
                   </DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => setCreateOrgOpen(true)}>
                     <HugeiconsIcon icon={Add01Icon} className="size-3.5" />
-                    {m.create_space()}
+                    {create_space()}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
@@ -336,7 +336,7 @@ export function Sidebar({
                     setRenameOpen(true);
                   }}>
                     <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                    {m.rename()}
+                    {rename()}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -347,7 +347,7 @@ export function Sidebar({
                     }}
                   >
                     <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                    {m.delete()}
+                    {delete_message()}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -359,7 +359,7 @@ export function Sidebar({
                 <button
                   {...props}
                   onClick={onToggleCollapse}
-                  aria-label={collapsed ? m.expand_sidebar() : m.collapse_sidebar()}
+                  aria-label={collapsed ? expand_sidebar() : collapse_sidebar()}
                   className={cn(
                     "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
                     collapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
@@ -373,7 +373,7 @@ export function Sidebar({
               )}
             />
             <TooltipContent side="right">
-              {collapsed ? m.expand_sidebar() : m.collapse_sidebar()}
+              {collapsed ? expand_sidebar() : collapse_sidebar()}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -513,8 +513,8 @@ export function Sidebar({
         >
           <InfoCard storageKey="sidebar-welcome" dismissType="forever">
             <InfoCardContent>
-              <InfoCardTitle>{m.welcome_to_orchos()}</InfoCardTitle>
-              <InfoCardDescription>{m.welcome_desc()}</InfoCardDescription>
+              <InfoCardTitle>{welcome_to_orchos()}</InfoCardTitle>
+              <InfoCardDescription>{welcome_desc()}</InfoCardDescription>
             </InfoCardContent>
             <InfoCardMedia
               media={[
@@ -527,7 +527,7 @@ export function Sidebar({
               expandHeight={120}
             />
             <InfoCardFooter>
-              <InfoCardDismiss>{m.dismiss()}</InfoCardDismiss>
+              <InfoCardDismiss>{dismiss()}</InfoCardDismiss>
               <span
                 role="button"
                 tabIndex={0}
@@ -562,24 +562,24 @@ export function Sidebar({
 
         <RenameDialog
           open={createOrgOpen}
-          title={m.create_space()}
+          title={create_space()}
           initialValue=""
-          placeholder={m.space_name_placeholder()}
+          placeholder={space_name_placeholder()}
           onClose={() => setCreateOrgOpen(false)}
           onSubmit={async (name) => {
             await onOrganizationCreate(name);
-            toast.success(m.space_created());
+            toast.success(space_created());
             setCreateOrgOpen(false);
           }}
         />
 
         <RenameDialog
           open={renameOpen}
-          title={m.rename_space()}
+          title={rename_space()}
           initialValue={
             organizations.find((o) => o.id === targetOrganizationId)?.name ?? ""
           }
-          placeholder={m.space_name_placeholder()}
+          placeholder={space_name_placeholder()}
           onClose={() => {
             setRenameOpen(false);
             setTargetOrganizationId(null);
@@ -600,14 +600,14 @@ export function Sidebar({
               setTargetOrganizationId(null);
             }
           }}
-          title={m.delete_space()}
-          description={m.delete_space()}
+          title={delete_space()}
+          description={delete_space()}
           onConfirm={() => {
             if (targetOrganizationId)
               onOrganizationDelete(targetOrganizationId);
             setTargetOrganizationId(null);
           }}
-          confirmLabel={m.delete()}
+          confirmLabel={delete_message()}
           variant="destructive"
         />
         <OnboardingChangelogDialog
@@ -648,11 +648,11 @@ function ClerkUserProfile({
           >
             <DropdownMenuItem onClick={() => setProfileOpen(true)}>
               <HugeiconsIcon icon={UserCircleIcon} className="size-3.5" />
-              {m.profile_settings()}
+              {profile_settings()}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onOpenSettings}>
               <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-              {m.settings()}
+              {settings_label()}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -673,7 +673,7 @@ function ClerkUserProfile({
               )}
             >
               <p className="truncate text-sm font-medium text-sidebar-foreground">
-                {m.user()}
+                {user_label()}
               </p>
               <p className="truncate text-xs text-sidebar-foreground/60">
                 user@orchos.dev
@@ -696,11 +696,11 @@ function ClerkUserProfile({
           >
             <DropdownMenuItem onClick={() => setProfileOpen(true)}>
               <HugeiconsIcon icon={UserCircleIcon} className="size-3.5" />
-              {m.profile_settings()}
+              {profile_settings()}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onOpenSettings}>
               <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-              {m.settings()}
+              {settings_label()}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -708,7 +708,7 @@ function ClerkUserProfile({
         <ProfileEditDialog
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          fallbackName={m.user()}
+          fallbackName={user_label()}
           fallbackEmail="user@orchos.dev"
         />
       </>
@@ -733,7 +733,7 @@ function ClerkAuthenticatedProfile({
   collapsed: boolean;
   showExpandedContent: boolean;
 }) {
-  const { user, isLoaded } = useUser();
+  const { user: clerkUser, isLoaded } = useUser();
   const { isLoaded: isOrganizationLoaded } = useOrganization();
   const { signOut } = useClerk();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -759,7 +759,7 @@ function ClerkAuthenticatedProfile({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {m.user()}
+                  {user_label()}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   user@orchos.dev
@@ -769,7 +769,7 @@ function ClerkAuthenticatedProfile({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onOpenSettings}>
               <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-              {m.settings()}
+              {settings_label()}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -788,7 +788,7 @@ function ClerkAuthenticatedProfile({
               !showExpandedContent && "invisible",
             )}
           >
-            {m.user()}
+            {user_label()}
           </span>
           <HugeiconsIcon
             icon={ChevronUp}
@@ -810,7 +810,7 @@ function ClerkAuthenticatedProfile({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">
-                {m.user()}
+                {user_label()}
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 user@orchos.dev
@@ -820,19 +820,19 @@ function ClerkAuthenticatedProfile({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onOpenSettings}>
             <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-            {m.settings()}
+            {settings_label()}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
   }
 
-  if (!user) return null;
+  if (!clerkUser) return null;
 
-  const displayName = user.fullName || user.username || m.user();
-  const email = user.primaryEmailAddress?.emailAddress || "";
+  const displayName = clerkUser.fullName || clerkUser.username || user_label();
+  const email = clerkUser.primaryEmailAddress?.emailAddress || "";
   const initials =
-    `${user.firstName?.[0] || ""}${user.lastName?.[0] || user.username?.[0] || user.fullName?.[0] || "U"}`
+    `${clerkUser.firstName?.[0] || ""}${clerkUser.lastName?.[0] || clerkUser.username?.[0] || clerkUser.fullName?.[0] || "U"}`
       .trim()
       .slice(0, 2)
       .toUpperCase();
@@ -848,9 +848,9 @@ function ClerkAuthenticatedProfile({
               : "flex w-full items-center gap-2.5 px-2.5",
           )}
         >
-          {user.imageUrl ? (
+          {clerkUser.imageUrl ? (
             <img
-              src={user.imageUrl}
+              src={clerkUser.imageUrl}
               alt={displayName}
               className={cn(
                 "shrink-0 rounded-full object-cover",
@@ -900,9 +900,9 @@ function ClerkAuthenticatedProfile({
           {collapsed && (
             <>
               <div className="flex items-center gap-2.5 p-2">
-                {user.imageUrl ? (
+                {clerkUser.imageUrl ? (
                   <img
-                    src={user.imageUrl}
+                    src={clerkUser.imageUrl}
                     alt={displayName}
                     className="size-8 rounded-full object-cover"
                   />
@@ -926,12 +926,12 @@ function ClerkAuthenticatedProfile({
           {isOrganizationLoaded ? (
             <DropdownMenuItem onClick={() => setProfileOpen(true)}>
               <HugeiconsIcon icon={UserCircleIcon} className="size-3.5" />
-              {m.profile_settings()}
+              {profile_settings()}
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onClick={onOpenSettings}>
             <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
-            {m.settings()}
+            {settings_label()}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -939,14 +939,14 @@ function ClerkAuthenticatedProfile({
             onClick={() => signOut({ redirectUrl: "/sign-in" })}
           >
             <HugeiconsIcon icon={Logout03Icon} className="size-3.5" />
-            {m.log_out()}
+            {log_out()}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ProfileEditDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
-        clerkUser={user}
+        clerkUser={clerkUser}
         fallbackName={displayName}
         fallbackEmail={email}
       />
@@ -969,8 +969,8 @@ const profileTabDefs: {
   icon: IconSvgElement;
   label: () => string;
 }[] = [
-  { id: "profile", icon: UserCircleIcon, label: m.profile_tab_profile },
-  { id: "security", icon: Key01Icon, label: m.profile_tab_security },
+  { id: "profile", icon: UserCircleIcon, label: profile_tab_profile },
+  { id: "security", icon: Key01Icon, label: profile_tab_security },
 ];
 
 function ProfileEditDialog({
@@ -1030,7 +1030,7 @@ function ProfileEditDialog({
   const displayName = clerkUser?.fullName || fallbackName;
   const activeTabLabel =
     profileTabDefs.find((tab) => tab.id === activeTab)?.label() ||
-    m.profile_tab_profile();
+    profile_tab_profile();
   const hasPassword = clerkUser?.passwordEnabled;
   const hasTwoFactor = clerkUser?.twoFactorEnabled;
   const emailVerified =
@@ -1049,7 +1049,7 @@ function ProfileEditDialog({
                   className="mr-2 size-4 text-muted-foreground"
                 />
                 <span className="text-sm font-semibold text-foreground">
-                  {m.profile_settings()}
+                  {profile_settings()}
                 </span>
               </div>
               <nav className="flex-1 space-y-0.5 px-2 py-1">
@@ -1091,7 +1091,7 @@ function ProfileEditDialog({
                       {displayName}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {displayEmail || m.profile_no_email()}
+                      {displayEmail || profile_no_email()}
                     </p>
                   </div>
                 </div>
@@ -1108,7 +1108,7 @@ function ProfileEditDialog({
                     {activeTabLabel}
                   </DialogPrimitive.Title>
                   <DialogPrimitive.Description className="sr-only">
-                    {m.profile_basic_info_desc()}
+                    {profile_basic_info_desc()}
                   </DialogPrimitive.Description>
                 </div>
                 <button
@@ -1126,17 +1126,17 @@ function ProfileEditDialog({
                     <div className="space-y-2 rounded-lg border border-border/50 p-4">
                       <div className="mb-1">
                         <p className="text-sm font-medium text-foreground">
-                          {m.profile_basic_info()}
+                          {profile_basic_info()}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {m.profile_basic_info_desc()}
+                          {profile_basic_info_desc()}
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <label className="text-sm font-medium text-foreground">
-                            {m.profile_first_name()}
+                            {profile_first_name()}
                           </label>
                           <input
                             value={firstName}
@@ -1147,7 +1147,7 @@ function ProfileEditDialog({
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-sm font-medium text-foreground">
-                            {m.profile_last_name()}
+                            {profile_last_name()}
                           </label>
                           <input
                             value={lastName}
@@ -1160,7 +1160,7 @@ function ProfileEditDialog({
 
                       <div className="space-y-1.5">
                         <label className="text-sm font-medium text-foreground">
-                          {m.profile_username()}
+                          {profile_username()}
                         </label>
                         <input
                           value={username}
@@ -1174,10 +1174,10 @@ function ProfileEditDialog({
                     <div className="space-y-2 rounded-lg border border-border/50 p-4">
                       <div className="mb-1">
                         <p className="text-sm font-medium text-foreground">
-                          {m.profile_login_email()}
+                          {profile_login_email()}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {m.profile_login_email_desc()}
+                          {profile_login_email_desc()}
                         </p>
                       </div>
                       <input
@@ -1202,17 +1202,17 @@ function ProfileEditDialog({
                           className="size-4 text-muted-foreground"
                         />
                         <p className="text-sm font-medium text-foreground">
-                          {m.profile_security_section()}
+                          {profile_security_section()}
                         </p>
                       </div>
                       <div className="space-y-3 pt-1">
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
-                              {m.profile_email_verification()}
+                              {profile_email_verification()}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {m.profile_email_verification_desc()}
+                              {profile_email_verification_desc()}
                             </p>
                           </div>
                           <span
@@ -1224,17 +1224,17 @@ function ProfileEditDialog({
                             )}
                           >
                             {emailVerified
-                              ? m.profile_status_verified()
-                              : m.profile_status_unverified()}
+                              ? profile_status_verified()
+                              : profile_status_unverified()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
-                              {m.profile_password_signin()}
+                              {profile_password_signin()}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {m.profile_password_signin_desc()}
+                              {profile_password_signin_desc()}
                             </p>
                           </div>
                           <span
@@ -1246,17 +1246,17 @@ function ProfileEditDialog({
                             )}
                           >
                             {hasPassword
-                              ? m.profile_status_enabled()
-                              : m.profile_status_disabled()}
+                              ? profile_status_enabled()
+                              : profile_status_disabled()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
-                              {m.profile_two_factor()}
+                              {profile_two_factor()}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {m.profile_two_factor_desc()}
+                              {profile_two_factor_desc()}
                             </p>
                           </div>
                           <span
@@ -1268,8 +1268,8 @@ function ProfileEditDialog({
                             )}
                           >
                             {hasTwoFactor
-                              ? m.profile_status_enabled()
-                              : m.profile_status_disabled()}
+                              ? profile_status_enabled()
+                              : profile_status_disabled()}
                           </span>
                         </div>
                       </div>
@@ -1280,13 +1280,13 @@ function ProfileEditDialog({
 
               <div className="flex h-24 items-center justify-end gap-2 border-t border-border px-6 py-4">
                 <DialogPrimitive.Close render={<Button type="button" variant="outline" />}>
-                  {m.cancel()}
+                  {cancel()}
                 </DialogPrimitive.Close>
                 <Button
                   type="submit"
                   disabled={activeTab !== "profile" || !canEdit || saving}
                 >
-                  {saving ? m.profile_saving() : m.save()}
+                  {saving ? profile_saving() : save()}
                 </Button>
               </div>
             </form>

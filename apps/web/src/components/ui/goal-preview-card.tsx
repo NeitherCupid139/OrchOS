@@ -12,7 +12,7 @@ import {
   FolderGitIcon,
   Add01Icon,
 } from "@hugeicons/core-free-icons";
-import { m } from "@/paraglide/messages";
+import { all, constraints, create_goal, goal_active, goal_completed, goal_paused, goals, no_goal_selected, success_criteria } from "@/paraglide/messages";
 
 // --- Mock Data ---
 type GoalStatus = "active" | "completed" | "paused";
@@ -86,9 +86,9 @@ const goalStatusColor: Record<GoalStatus, string> = {
 };
 
 const goalStatusLabel: Record<GoalStatus, string> = {
-  active: m.goal_active(),
-  completed: m.goal_completed(),
-  paused: m.goal_paused(),
+  active: goal_active(),
+  completed: goal_completed(),
+  paused: goal_paused(),
 };
 
 type GoalStatusFilter = "all" | GoalStatus;
@@ -119,7 +119,7 @@ export function GoalPreviewCard() {
           <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
             <HugeiconsIcon icon={Target01Icon} className="size-3.5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground">{m.goals()}</span>
+          <span className="text-sm font-semibold text-foreground">{goals()}</span>
         </div>
 
         {/* Status Filter Tabs */}
@@ -135,7 +135,7 @@ export function GoalPreviewCard() {
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               )}
             >
-              <span>{filter === "all" ? m.all() : goalStatusLabel[filter as GoalStatus]}</span>
+              <span>{filter === "all" ? all() : goalStatusLabel[filter as GoalStatus]}</span>
               <span className="tabular-nums opacity-50">{goalCounts[filter]}</span>
             </button>
           ))}
@@ -269,7 +269,7 @@ export function GoalPreviewCard() {
               {/* Success Criteria */}
               <div className="mb-3">
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {m.success_criteria()}
+                  {success_criteria()}
                 </p>
                 <div className="space-y-1">
                   {activeGoal.successCriteria.map((c, i) => (
@@ -294,7 +294,7 @@ export function GoalPreviewCard() {
               {activeGoal.constraints.length > 0 && (
                 <div className="mb-4">
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {m.constraints()}
+                    {constraints()}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {activeGoal.constraints.map((c) => (
@@ -312,7 +312,7 @@ export function GoalPreviewCard() {
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 <HugeiconsIcon icon={Add01Icon} className="size-3" />
-                {m.create_goal()}
+                {create_goal()}
               </Link>
             </div>
           ) : (
@@ -321,7 +321,7 @@ export function GoalPreviewCard() {
                 <div className="mx-auto size-10 rounded-full bg-muted/30 flex items-center justify-center mb-2">
                   <HugeiconsIcon icon={Target01Icon} className="size-4 text-muted-foreground/50" />
                 </div>
-                <p className="text-xs text-muted-foreground">{m.no_goal_selected()}</p>
+                <p className="text-xs text-muted-foreground">{no_goal_selected()}</p>
               </div>
             </div>
           )}

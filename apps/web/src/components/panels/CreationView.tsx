@@ -42,7 +42,7 @@ import type {
 import { useUser } from "@clerk/clerk-react";
 import { useConversationStore } from "@/lib/stores/conversation";
 import { useUIStore } from "@/lib/store";
-import { m } from "@/paraglide/messages";
+import { agent, all, archive, bookmarks as bookmarks_label, bookmarks_pin_hint, chat, collapse_sidebar, conversation as conversation_label, creation, creation_active, creation_archived, creation_image_unsupported, creation_intro_desc, creation_intro_title, creation_placeholder, delete as delete_message, delete_conversation_confirm, expand_sidebar, message_agent_placeholder, message_runtime_placeholder, new_conversation, no_conversations, no_messages_yet, none, resize_creation_sidebar, search_engine_360, search_engine_baidu, search_engine_bing, search_engine_brave, search_engine_duckduckgo, search_engine_ecosia, search_engine_google, search_engine_searxng, search_engine_sogou, search_engine_startpage, search_engine_yandex, search_web_placeholder, send, send_failed, show_bookmarks, untitled_conversation, voice_input, voice_input_stop, web_search } from "@/paraglide/messages";
 import { toast } from "@/components/ui/toast";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { mapConversationMessagesToUiMessages, MessageBubble } from "@/components/chat/ConversationFlow";
@@ -74,9 +74,9 @@ export function CreationView({
   settings,
 }: CreationViewProps) {
   const creationFilterButtons = [
-    { value: "all", label: m.all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
-    { value: "active", label: m.creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
-    { value: "archived", label: m.creation_archived(), icon: Archive01Icon, iconClassName: "text-amber-500" },
+    { value: "all", label: all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
+    { value: "active", label: creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
+    { value: "archived", label: creation_archived(), icon: Archive01Icon, iconClassName: "text-amber-500" },
   ] as const;
 
   const creationArchiveFilter = useUIStore((s) => s.creationArchiveFilter);
@@ -393,7 +393,7 @@ export function CreationView({
         >
             <div className="flex h-10 items-center justify-between rounded-md px-2">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-foreground">{m.creation()}</div>
+                <div className="text-sm font-semibold text-foreground">{creation()}</div>
               </div>
               <div className="flex items-center gap-1">
                 <Tooltip>
@@ -409,7 +409,7 @@ export function CreationView({
                       </button>
                     )}
                   />
-                  <TooltipContent side="bottom">{m.new_conversation()}</TooltipContent>
+                  <TooltipContent side="bottom">{new_conversation()}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
@@ -424,7 +424,7 @@ export function CreationView({
                       </button>
                     )}
                   />
-                  <TooltipContent side="right">{m.collapse_sidebar()}</TooltipContent>
+                  <TooltipContent side="right">{collapse_sidebar()}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -464,7 +464,7 @@ export function CreationView({
                       <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
                       <button type="button" className="flex-1 text-left">
                         <div className="truncate text-xs leading-5">
-                          {conversation.title || m.untitled_conversation()}
+                          {conversation.title || untitled_conversation()}
                         </div>
                       </button>
 
@@ -488,7 +488,7 @@ export function CreationView({
                             </Button>
                           )}
                         />
-                        <TooltipContent side="bottom">{m.archive()}</TooltipContent>
+                        <TooltipContent side="bottom">{archive()}</TooltipContent>
                       </Tooltip>
 
                       <Tooltip>
@@ -510,7 +510,7 @@ export function CreationView({
                             </Button>
                           )}
                         />
-                        <TooltipContent side="bottom">{m.delete()}</TooltipContent>
+                        <TooltipContent side="bottom">{delete_message()}</TooltipContent>
                       </Tooltip>
                     </div>
                   );
@@ -519,7 +519,7 @@ export function CreationView({
                 {availableConversations.length === 0 ? (
                   <div className="py-6 text-center">
                     <HugeiconsIcon icon={Chat01Icon} className="mx-auto mb-1.5 size-5 text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground">{m.no_conversations()}</p>
+                    <p className="text-xs text-muted-foreground">{no_conversations()}</p>
                   </div>
                 ) : null}
               </div>
@@ -558,7 +558,7 @@ export function CreationView({
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label={m.resize_creation_sidebar()}
+          aria-label={resize_creation_sidebar()}
           onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
@@ -595,7 +595,7 @@ export function CreationView({
                 <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
               </Button>}
             />
-            <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+            <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
         ) : null}
         {!hasLoadedConversations && isLoadingConversations ? (
@@ -638,7 +638,7 @@ export function CreationView({
                 setPendingUserMessage(conversation.id, undefined);
                 console.error("Failed to send message:", err);
                 toast.error(
-                  err instanceof Error ? err.message : m.send_failed(),
+                  err instanceof Error ? err.message : send_failed(),
                 );
                 throw err;
               } finally {
@@ -657,10 +657,10 @@ export function CreationView({
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={handleDeleteConfirmOpenChange}
-        title={m.delete()}
-        description={m.delete_conversation_confirm()}
+        title={delete_message()}
+        description={delete_conversation_confirm()}
         onConfirm={handleDeleteConversation}
-        confirmLabel={m.delete()}
+        confirmLabel={delete_message()}
         variant="destructive"
       />
     </div>
@@ -782,17 +782,17 @@ function ChatArea({
   const searchEngines = searchEngineMeta.map((e) => ({
     ...e,
     name: ({
-      google: m.search_engine_google(),
-      bing: m.search_engine_bing(),
-      duckduckgo: m.search_engine_duckduckgo(),
-      baidu: m.search_engine_baidu(),
-      sogou: m.search_engine_sogou(),
-      ["360"]: m.search_engine_360(),
-      yandex: m.search_engine_yandex(),
-      searxng: m.search_engine_searxng(),
-      startpage: m.search_engine_startpage(),
-      brave: m.search_engine_brave(),
-      ecosia: m.search_engine_ecosia(),
+      google: search_engine_google(),
+      bing: search_engine_bing(),
+      duckduckgo: search_engine_duckduckgo(),
+      baidu: search_engine_baidu(),
+      sogou: search_engine_sogou(),
+      ["360"]: search_engine_360(),
+      yandex: search_engine_yandex(),
+      searxng: search_engine_searxng(),
+      startpage: search_engine_startpage(),
+      brave: search_engine_brave(),
+      ecosia: search_engine_ecosia(),
     })[e.id],
   }));
   const pinnedGroups = useMemo(
@@ -980,7 +980,7 @@ function ChatArea({
 
     try {
       if (filesToSend.length > 0) {
-        toast.error(m.creation_image_unsupported());
+        toast.error(creation_image_unsupported());
         return;
       }
 
@@ -993,7 +993,7 @@ function ChatArea({
       await onSendMessage(content, targetConversation, selectedCustomAgentId ?? undefined);
     } catch (err) {
       console.error("Failed to send message:", err);
-      toast.error(m.send_failed());
+      toast.error(send_failed());
     }
   }, [
     attachedFiles,
@@ -1033,10 +1033,10 @@ function ChatArea({
         {allMessages.length === 0 && (
           <div className="mb-3 px-1">
             <p className="text-sm font-medium text-foreground/85">
-              {m.creation_intro_title()}
+              {creation_intro_title()}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {m.creation_intro_desc()}
+              {creation_intro_desc()}
             </p>
           </div>
         )}
@@ -1081,12 +1081,12 @@ function ChatArea({
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 mode === "search"
-                  ? m.search_web_placeholder()
+                  ? search_web_placeholder()
                   : selectedRuntime
-                    ? m.message_runtime_placeholder({ name: selectedRuntime.name })
+                    ? message_runtime_placeholder({ name: selectedRuntime.name })
                     : selectedCustomAgent
-                      ? m.message_agent_placeholder({ name: selectedCustomAgent.name })
-                      : m.creation_placeholder()
+                      ? message_agent_placeholder({ name: selectedCustomAgent.name })
+                      : creation_placeholder()
               }
               className="min-h-[40px] w-full resize-none bg-transparent py-1 text-sm leading-6 outline-none placeholder:text-muted-foreground"
               rows={1}
@@ -1120,7 +1120,7 @@ function ChatArea({
                     )}
                   >
                     <HugeiconsIcon icon={Chat01Icon} className="size-3" />
-                    {m.chat()}
+                    {chat()}
                   </button>
                   <button
                     ref={searchBtnRef}
@@ -1134,7 +1134,7 @@ function ChatArea({
                     )}
                   >
                     <HugeiconsIcon icon={Search01Icon} className="size-3" />
-                    {m.web_search()}
+                    {web_search()}
                   </button>
                 </div>
                 {mode === "chat" ? (
@@ -1174,7 +1174,7 @@ function ChatArea({
                       />
                     </Button>}
                   />
-                  <TooltipContent side="top">{isListening ? m.voice_input_stop() : m.voice_input()}</TooltipContent>
+                  <TooltipContent side="top">{isListening ? voice_input_stop() : voice_input()}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
@@ -1198,7 +1198,7 @@ function ChatArea({
                       )}
                     </Button>}
                   />
-                  <TooltipContent side="top">{m.send()}</TooltipContent>
+                  <TooltipContent side="top">{send()}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -1225,7 +1225,7 @@ function ChatArea({
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <HugeiconsIcon icon={PinIcon} className="size-3.5" />
-                    {m.bookmarks()}
+                    {bookmarks_label()}
                   </span>
                   <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
                     {pinnedGroups.length > 0 ? (
@@ -1258,7 +1258,7 @@ function ChatArea({
                     ) : (
                       <div className="mb-2 flex flex-1 flex-col justify-center rounded-lg border border-dashed border-border/50 p-4">
                         <p className="text-center text-xs text-muted-foreground/60">
-                          {m.bookmarks_pin_hint()}
+                          {bookmarks_pin_hint()}
                         </p>
                       </div>
                     )}
@@ -1278,7 +1278,7 @@ function ChatArea({
                 <div className="flex items-center justify-between px-4 py-2 md:px-6">
                   <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <HugeiconsIcon icon={Chat01Icon} className="size-3.5" />
-                    {m.conversation()}
+                    {conversation_label()}
                   </span>
                   <Tooltip>
                     <TooltipTrigger
@@ -1290,7 +1290,7 @@ function ChatArea({
                         <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
                       </button>}
                     />
-                    <TooltipContent side="top">{m.show_bookmarks()}</TooltipContent>
+                    <TooltipContent side="top">{show_bookmarks()}</TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="flex-1 space-y-4 px-4 py-4 md:px-6">
@@ -1327,7 +1327,7 @@ function ChatArea({
                     </>
                   ) : (
                     <div className="flex h-full min-h-48 items-center justify-center">
-                      <p className="text-sm text-muted-foreground">{m.no_messages_yet()}</p>
+                      <p className="text-sm text-muted-foreground">{no_messages_yet()}</p>
                     </div>
                   )}
                 </div>
@@ -1366,7 +1366,7 @@ function CustomAgentSelector({
             <HugeiconsIcon icon={Settings01Icon} className="size-3 shrink-0" />
           </span>
           <span className="truncate">
-            {selectedAgent?.name || m.agent()}
+            {selectedAgent?.name || agent()}
           </span>
         </span>
         <HugeiconsIcon
@@ -1380,7 +1380,7 @@ function CustomAgentSelector({
           onClick={(e) => { e.stopPropagation(); onSelect(null); setOpen(false); }}
           className="text-muted-foreground"
         >
-          {m.none()}
+          {none()}
         </DropdownMenuItem>
         {agents.map((agent) => (
           <DropdownMenuItem
@@ -1422,7 +1422,7 @@ function SearchEngineSelector({
             <HugeiconsIcon icon={GlobeIcon} className="size-3 shrink-0" />
           </span>
           <span className="truncate">
-            {selectedEngine?.name || m.search_engine_google()}
+            {selectedEngine?.name || search_engine_google()}
           </span>
         </span>
         <HugeiconsIcon

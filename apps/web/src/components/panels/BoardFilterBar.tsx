@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import type { BoardTaskFilter } from "./BoardView";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { m } from "@/paraglide/messages";
+import { board_completed, board_filter_all, board_in_progress, board_planning, board_today } from "@/paraglide/messages";
 import {
   Menu01Icon,
   File02Icon,
@@ -31,34 +31,34 @@ export function BoardFilterBar({
   }> = [
     {
       id: "all",
-      label: m.board_filter_all(),
+      label: board_filter_all(),
       icon: Menu01Icon,
       tone: "",
     },
     {
       id: "review",
-      label: m.board_today(),
+      label: board_today(),
       icon: InformationCircleIcon,
       tone: "text-violet-600 dark:text-violet-400",
       bgAccent: "bg-violet-500/5 dark:bg-violet-500/10",
     },
     {
       id: "planning",
-      label: m.board_planning(),
+      label: board_planning(),
       icon: File02Icon,
       tone: "text-amber-600 dark:text-amber-400",
       bgAccent: "bg-amber-500/5 dark:bg-amber-500/10",
     },
     {
       id: "in_progress",
-      label: m.board_in_progress(),
+      label: board_in_progress(),
       icon: PlayCircleIcon,
       tone: "text-sky-600 dark:text-sky-400",
       bgAccent: "bg-sky-500/5 dark:bg-sky-500/10",
     },
     {
       id: "completed",
-      label: m.board_completed(),
+      label: board_completed(),
       icon: CheckmarkCircle02Icon,
       tone: "text-emerald-600 dark:text-emerald-400",
       bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
@@ -79,7 +79,7 @@ export function BoardFilterBar({
         )}
       >
         <HugeiconsIcon icon={Menu01Icon} className="size-3.5" />
-        {m.board_filter_all()}
+        {board_filter_all()}
         {boardCardsCount !== undefined && (
           <span className="rounded-full bg-background/15 px-1.5 py-0.5 text-[10px] tabular-nums text-inherit">
             {boardCardsCount}

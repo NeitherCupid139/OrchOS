@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { m } from "@/paraglide/messages";
+import { agent_runtime_placeholder, ai_ask, ai_placeholder } from "@/paraglide/messages";
 import { formatDuration } from "@/lib/utils";
 import type { RuntimeProfile } from "@/lib/types";
 
@@ -141,7 +141,7 @@ function DockBar() {
         className="size-9 rounded-full"
         variant="ghost"
         onClick={triggerOpen}
-        aria-label={m.ai_ask()}
+        aria-label={ai_ask()}
       >
         <HugeiconsIcon icon={Robot02Icon} className="size-4 text-primary shrink-0" />
       </Button>
@@ -241,8 +241,8 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                     onValueChange={(v: string | null) => v && setSelectedRuntimeId(v)}
                   >
                     <SelectTrigger className="h-7 w-36 min-w-0 text-xs">
-                      <SelectValue placeholder={m.agent_runtime_placeholder()}>
-                        {selectedRuntime ? selectedRuntime.name : m.agent_runtime_placeholder()}
+                      <SelectValue placeholder={agent_runtime_placeholder()}>
+                        {selectedRuntime ? selectedRuntime.name : agent_runtime_placeholder()}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +293,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
                   <HugeiconsIcon icon={Robot02Icon} className="size-6 opacity-20" />
-                  <p className="text-xs">{m.ai_placeholder()}</p>
+                  <p className="text-xs">{ai_placeholder()}</p>
                   {selectedRuntime && (
                     <p className="text-[10px] text-muted-foreground/60">{selectedRuntime.role}</p>
                   )}

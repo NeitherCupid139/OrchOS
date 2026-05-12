@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
-import { m } from "@/paraglide/messages";
+import { add, agent_removed, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, resize_agents_sidebar, save, url } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/dashboard/agents")({
   component: AgentsPage,
@@ -95,7 +95,7 @@ function AgentsPage() {
   async function handleSaveCustomAgent() {
     const { name, url, apiKey, model } = agentForm;
     if (!name.trim() || !url.trim() || !apiKey.trim() || !model.trim()) {
-      toast.error(m.all_fields_required());
+      toast.error(all_fields_required());
       return;
     }
     try {
@@ -109,9 +109,9 @@ function AgentsPage() {
       }
       setEditingAgentId(null);
       setIsConnectDialogOpen(false);
-      toast.success(editingAgentId ? m.custom_agent_updated() : m.custom_agent_created());
+      toast.success(editingAgentId ? custom_agent_updated() : custom_agent_created());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : m.failed_save_custom_agent());
+      toast.error(error instanceof Error ? error.message : failed_save_custom_agent());
     }
   }
 
@@ -119,9 +119,9 @@ function AgentsPage() {
     try {
       const nextId = await api.setDefaultCustomAgentId(agentId);
       setDefaultCustomAgentId(nextId);
-      toast.success(nextId ? m.default_agent_updated() : m.default_agent_cleared());
+      toast.success(nextId ? default_agent_updated() : default_agent_cleared());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : m.failed_update_default_agent());
+      toast.error(error instanceof Error ? error.message : failed_update_default_agent());
     }
   }
 
@@ -153,7 +153,7 @@ function AgentsPage() {
       });
     } catch (error) {
       setAvailableModels([]);
-      toast.error(error instanceof Error ? error.message : m.failed_save_custom_agent());
+      toast.error(error instanceof Error ? error.message : failed_save_custom_agent());
     } finally {
       setLoadingModels(false);
     }
@@ -252,7 +252,7 @@ function AgentsPage() {
         >
           <div className="flex h-10 items-center justify-between rounded-md px-2">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-foreground">{m.agents()} <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">{customAgents.length}</span></div>
+              <div className="text-sm font-semibold text-foreground">{agents()} <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">{customAgents.length}</span></div>
             </div>
             <div className="flex items-center gap-1">
               <Tooltip>
@@ -263,13 +263,13 @@ function AgentsPage() {
                       size="icon-sm"
                       className="active:-translate-y-0"
                       onClick={handleOpenConnect}
-                      aria-label={m.add()}
+                      aria-label={add()}
                     >
                       <HugeiconsIcon icon={Add01Icon} className="size-4" />
                     </Button>
                   }
                 />
-                <TooltipContent side="bottom">{m.add()}</TooltipContent>
+                <TooltipContent side="bottom">{add()}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -282,7 +282,7 @@ function AgentsPage() {
                     <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
                   </Button>}
                 />
-                <TooltipContent side="bottom">{m.collapse_sidebar()}</TooltipContent>
+                <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -324,7 +324,7 @@ function AgentsPage() {
                   <div className="relative h-5 shrink-0">
                     {defaultCustomAgentId === agent.id ? (
                       <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary transition-opacity group-hover:opacity-0">
-                        {m.default_agent()}
+                        {default_agent()}
                       </span>
                     ) : null}
                     <div className="absolute inset-y-0 right-0 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -332,7 +332,7 @@ function AgentsPage() {
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={m.edit()}
+                        aria-label={edit()}
                         onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onClick={(e) => {
                           e.preventDefault();
@@ -351,7 +351,7 @@ function AgentsPage() {
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={m.delete()}
+                        aria-label={delete_message()}
                         onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onClick={async (e) => {
                           e.preventDefault();
@@ -365,9 +365,9 @@ function AgentsPage() {
                             setSelectedItem((current) =>
                               current?.kind === "custom" && current.id === agent.id ? null : current,
                             );
-                            toast.success(m.agent_removed());
+                            toast.success(agent_removed());
                           } catch (error) {
-                            toast.error(error instanceof Error ? error.message : m.failed_remove_agent());
+                            toast.error(error instanceof Error ? error.message : failed_remove_agent());
                           }
                         }}
                         className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
@@ -380,7 +380,7 @@ function AgentsPage() {
               ))}
               {customAgents.length === 0 && (
                 <div className="px-2.5 py-6 text-center text-xs text-muted-foreground">
-                  {m.no_agents_available()}
+                  {no_agents_available()}
                 </div>
               )}
             </div>
@@ -390,7 +390,7 @@ function AgentsPage() {
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label={m.resize_agents_sidebar()}
+          aria-label={resize_agents_sidebar()}
           onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
@@ -431,7 +431,7 @@ function AgentsPage() {
                 </Button>
               )}
             />
-            <TooltipContent side="right">{m.expand_sidebar()}</TooltipContent>
+            <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
         ) : null}
         <LocalDevicesView
@@ -452,49 +452,49 @@ function AgentsPage() {
           }
           setIsConnectDialogOpen(open);
         }}
-        title={editingAgentId ? m.edit_agent() : m.custom_configuration()}
+        title={editingAgentId ? edit_agent() : custom_configuration()}
         size="sm"
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
-              {m.cancel()}
+              {cancel()}
             </Button>
             <Button type="button" onClick={handleSaveCustomAgent}>
-              {m.save()}
+              {save()}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.name()}</span>
+            <span className="font-medium text-foreground">{name()}</span>
             <input
               value={agentForm.name}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder={m.custom_agent_name_placeholder()}
+              placeholder={custom_agent_name_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.url()}</span>
+            <span className="font-medium text-foreground">{url()}</span>
             <input
               value={agentForm.url}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
-              placeholder={m.custom_agent_url_placeholder()}
+              placeholder={custom_agent_url_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.api_key()}</span>
+            <span className="font-medium text-foreground">{api_key()}</span>
             <input
               value={agentForm.apiKey}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
-              placeholder={m.api_key_placeholder()}
+              placeholder={api_key_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{m.model()}</span>
+            <span className="font-medium text-foreground">{model()}</span>
             <Select
               value={agentForm.model || undefined}
               onValueChange={(value) => {
@@ -504,7 +504,7 @@ function AgentsPage() {
               disabled={loadingModels || availableModels.length === 0}
             >
               <SelectTrigger className="h-10 w-full rounded-md bg-background px-3 text-sm">
-                <SelectValue placeholder={loadingModels ? m.loading() : m.model_placeholder()} />
+                <SelectValue placeholder={loadingModels ? loading_label() : model_placeholder()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

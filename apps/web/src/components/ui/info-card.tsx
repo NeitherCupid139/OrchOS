@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { m } from "@/paraglide/messages";
+import { cancel, close, dismiss_confirm_desc, dismiss_hide_desc, dismiss_prompt } from "@/paraglide/messages";
 import React from "react";
 
 const EMPTY_MEDIA: MediaItem[] = [];
@@ -182,7 +182,7 @@ function InfoCard({
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleDismissButtonClick}
-                  aria-label={m.close()}
+                  aria-label={close()}
                   className="absolute top-2 right-2 shrink-0 text-muted-foreground/60 hover:text-foreground"
                 >
                   <svg
@@ -208,11 +208,11 @@ function InfoCard({
         <ConfirmDialog
           open={dismissConfirmOpen}
           onOpenChange={setDismissConfirmOpen}
-          title={m.dismiss_prompt()}
-          description={dismissType === "forever" ? m.dismiss_confirm_desc() : m.dismiss_hide_desc()}
+          title={dismiss_prompt()}
+          description={dismissType === "forever" ? dismiss_confirm_desc() : dismiss_hide_desc()}
           onConfirm={handleDismiss}
-          confirmLabel={m.close()}
-          cancelLabel={m.cancel()}
+          confirmLabel={close()}
+          cancelLabel={cancel()}
         />
       </InfoCardImageContext.Provider>
     </InfoCardContext.Provider>

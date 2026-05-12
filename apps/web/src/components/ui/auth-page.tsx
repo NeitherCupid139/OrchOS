@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeftIcon } from "lucide-react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
-import { m } from "@/paraglide/messages";
+import { auth_legal_and, auth_legal_prefix, auth_legal_suffix, home, privacy_intro, privacy_policy, privacy_section_clerk_body, privacy_section_clerk_title, privacy_section_collect_body, privacy_section_collect_title, privacy_section_contact_body, privacy_section_contact_title, privacy_section_use_body, privacy_section_use_title, sign_in_desc, sign_in_title, sign_up_desc, sign_up_title, terms_intro, terms_of_service, terms_section_accounts_body, terms_section_accounts_title, terms_section_contact_body, terms_section_contact_title, terms_section_content_body, terms_section_content_title, terms_section_use_body, terms_section_use_title } from "@/paraglide/messages";
 
 interface AuthPageProps {
   mode: "signIn" | "signUp";
@@ -16,24 +16,24 @@ export function AuthPage({ mode, children }: AuthPageProps) {
   const legalContent = useMemo(() => {
     if (legalModal === "terms") {
       return {
-        title: m.terms_of_service(),
-        description: m.terms_intro(),
+        title: terms_of_service(),
+        description: terms_intro(),
         sections: [
           {
-            title: m.terms_section_use_title(),
-            body: m.terms_section_use_body(),
+            title: terms_section_use_title(),
+            body: terms_section_use_body(),
           },
           {
-            title: m.terms_section_accounts_title(),
-            body: m.terms_section_accounts_body(),
+            title: terms_section_accounts_title(),
+            body: terms_section_accounts_body(),
           },
           {
-            title: m.terms_section_content_title(),
-            body: m.terms_section_content_body(),
+            title: terms_section_content_title(),
+            body: terms_section_content_body(),
           },
           {
-            title: m.terms_section_contact_title(),
-            body: m.terms_section_contact_body(),
+            title: terms_section_contact_title(),
+            body: terms_section_contact_body(),
           },
         ],
       };
@@ -41,24 +41,24 @@ export function AuthPage({ mode, children }: AuthPageProps) {
 
     if (legalModal === "privacy") {
       return {
-        title: m.privacy_policy(),
-        description: m.privacy_intro(),
+        title: privacy_policy(),
+        description: privacy_intro(),
         sections: [
           {
-            title: m.privacy_section_collect_title(),
-            body: m.privacy_section_collect_body(),
+            title: privacy_section_collect_title(),
+            body: privacy_section_collect_body(),
           },
           {
-            title: m.privacy_section_use_title(),
-            body: m.privacy_section_use_body(),
+            title: privacy_section_use_title(),
+            body: privacy_section_use_body(),
           },
           {
-            title: m.privacy_section_clerk_title(),
-            body: m.privacy_section_clerk_body(),
+            title: privacy_section_clerk_title(),
+            body: privacy_section_clerk_body(),
           },
           {
-            title: m.privacy_section_contact_title(),
-            body: m.privacy_section_contact_body(),
+            title: privacy_section_contact_title(),
+            body: privacy_section_contact_body(),
           },
         ],
       };
@@ -78,7 +78,7 @@ export function AuthPage({ mode, children }: AuthPageProps) {
         <Button variant="ghost" className="absolute left-5 top-7 z-10" asChild>
           <Link to="/">
             <ChevronLeftIcon className="me-2 size-4" />
-            {m.home()}
+            {home()}
           </Link>
         </Button>
 
@@ -86,33 +86,33 @@ export function AuthPage({ mode, children }: AuthPageProps) {
           <div className="rounded-3xl border border-border/80 bg-card/95 p-6 shadow-xl shadow-primary/5 backdrop-blur-sm sm:p-8">
             <div className="mb-6 space-y-1">
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                {mode === "signIn" ? m.sign_in_title() : m.sign_up_title()}
+                {mode === "signIn" ? sign_in_title() : sign_up_title()}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {mode === "signIn" ? m.sign_in_desc() : m.sign_up_desc()}
+                {mode === "signIn" ? sign_in_desc() : sign_up_desc()}
               </p>
             </div>
             {children}
           </div>
 
           <p className="text-sm leading-6 text-muted-foreground">
-            {m.auth_legal_prefix()}{" "}
+            {auth_legal_prefix()}{" "}
             <button
               type="button"
               onClick={() => setLegalModal("terms")}
               className="underline underline-offset-4 transition-colors hover:text-white"
             >
-              {m.terms_of_service()}
+              {terms_of_service()}
             </button>{" "}
-            {m.auth_legal_and()}{" "}
+            {auth_legal_and()}{" "}
             <button
               type="button"
               onClick={() => setLegalModal("privacy")}
               className="underline underline-offset-4 transition-colors hover:text-white"
             >
-              {m.privacy_policy()}
+              {privacy_policy()}
             </button>{" "}
-            {m.auth_legal_suffix()}
+            {auth_legal_suffix()}
           </p>
         </div>
       </section>

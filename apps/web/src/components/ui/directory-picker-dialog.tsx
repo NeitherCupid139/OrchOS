@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { back, home } from "@/paraglide/messages";
 
 interface DirectoryPickerDialogProps {
   open: boolean;
@@ -164,7 +164,7 @@ export function DirectoryPickerDialog({
                     </Button>
                   )}
                 />
-                <TooltipContent side="top">{m.back()}</TooltipContent>
+                <TooltipContent side="top">{back()}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -174,7 +174,7 @@ export function DirectoryPickerDialog({
                     </Button>
                   )}
                 />
-                <TooltipContent side="top">{m.home()}</TooltipContent>
+                <TooltipContent side="top">{home()}</TooltipContent>
               </Tooltip>
               <div className="flex-1 rounded-md bg-muted px-2.5 py-1 text-xs font-mono text-foreground truncate">
                 {path}

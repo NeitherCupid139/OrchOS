@@ -6,7 +6,7 @@ import { AuthPage } from "@/components/ui/auth-page";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { SignUpForm } from "@/components/ui/auth-forms";
 import { isClerkConfigured } from "@/lib/auth";
-import { m } from "@/paraglide/messages";
+import { have_account, loading, not_configured_sign_up, not_configured_title, sign_in } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUpPage,
@@ -46,7 +46,7 @@ function SignUpPageInner() {
   if (isSignedIn) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <AsciiLoading label={m.loading()} />
+        <AsciiLoading label={loading()} />
       </div>
     );
   }
@@ -56,9 +56,9 @@ function SignUpPageInner() {
       <AuthPage mode="signUp">
         <SignUpForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {m.have_account()}{" "}
+          {have_account()}{" "}
           <Link to="/sign-in" className="font-medium text-primary hover:underline">
-            {m.sign_in()}
+            {sign_in()}
           </Link>
         </p>
       </AuthPage>
@@ -69,9 +69,9 @@ function SignUpPageInner() {
 function MissingClerkConfig() {
   return (
     <div className="rounded-[calc(var(--radius-xl)*1.2)] border border-dashed border-border bg-muted/40 p-6">
-      <p className="text-sm font-semibold text-foreground">{m.not_configured_title()}</p>
+      <p className="text-sm font-semibold text-foreground">{not_configured_title()}</p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        {m.not_configured_sign_up()}
+        {not_configured_sign_up()}
       </p>
     </div>
   );

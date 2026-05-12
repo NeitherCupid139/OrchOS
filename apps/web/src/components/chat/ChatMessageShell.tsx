@@ -3,7 +3,7 @@ import { Robot02Icon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 
 import { cn, formatDuration } from "@/lib/utils";
-import { m } from "@/paraglide/messages";
+import { assistant, user } from "@/paraglide/messages";
 
 export function ChatMessageShell({
   role,
@@ -35,7 +35,7 @@ export function ChatMessageShell({
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground/70">{isUser ? m.user() : m.assistant()}</span>
+            <span className="font-medium text-foreground/70">{isUser ? user() : assistant()}</span>
             {responseTime != null && <span>{formatDuration(responseTime)}</span>}
           </div>
           <div className="min-w-0">{children}</div>

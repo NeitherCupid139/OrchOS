@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CustomAgent, LocalAgentProfile } from "@/lib/api";
-import { m } from "@/paraglide/messages";
+import { api_key, app_version, connect_agent, connect_local_device, created, default_agent, device_id, endpoint, last_seen, loading_devices, model, no_runtimes_reported, offline, online, pair_any_machine_desc, registered, runtimes, set_as_default, unknown, unknown_platform, unset_default } from "@/paraglide/messages";
 
 type SelectedAgent =
   | { kind: "custom"; agent: CustomAgent }
@@ -36,7 +36,7 @@ export function LocalDevicesView({
   if (loading) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">{m.loading_devices()}</div>
+        <div className="text-sm text-muted-foreground">{loading_devices()}</div>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function LocalDevicesView({
                 {isDefault ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
                     <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-3.5" />
-                    {m.default_agent()}
+                    {default_agent()}
                   </span>
                 ) : null}
               </div>
@@ -69,15 +69,15 @@ export function LocalDevicesView({
               variant={isDefault ? "outline" : "default"}
               onClick={() => onSetDefaultCustomAgent?.(isDefault ? null : agent.id)}
             >
-              {isDefault ? m.unset_default() : m.set_as_default()}
+              {isDefault ? unset_default() : set_as_default()}
             </Button>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <DetailCard label={m.endpoint()} value={agent.url} mono />
-            <DetailCard label={m.model()} value={agent.model} mono />
-            <DetailCard label={m.api_key()} value={maskApiKey(agent.apiKey)} mono />
-            <DetailCard label={m.created()} value={formatDateTime(agent.createdAt)} />
+            <DetailCard label={endpoint()} value={agent.url} mono />
+            <DetailCard label={model()} value={agent.model} mono />
+            <DetailCard label={api_key()} value={maskApiKey(agent.apiKey)} mono />
+            <DetailCard label={created()} value={formatDateTime(agent.createdAt)} />
           </div>
         </section>
       </div>
@@ -105,24 +105,24 @@ export function LocalDevicesView({
                       : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {agent.status === "online" ? m.online() : m.offline()}
+                  {agent.status === "online" ? online() : offline()}
                 </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                {agent.platform || m.unknown_platform()}
+                {agent.platform || unknown_platform()}
               </p>
             </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <DetailCard label={m.device_id()} value={agent.deviceId} mono />
-            <DetailCard label={m.app_version()} value={agent.appVersion || m.unknown()} />
-            <DetailCard label={m.registered()} value={formatDateTime(agent.registeredAt)} />
-            <DetailCard label={m.last_seen()} value={formatDateTime(agent.lastSeenAt)} />
+            <DetailCard label={device_id()} value={agent.deviceId} mono />
+            <DetailCard label={app_version()} value={agent.appVersion || unknown()} />
+            <DetailCard label={registered()} value={formatDateTime(agent.registeredAt)} />
+            <DetailCard label={last_seen()} value={formatDateTime(agent.lastSeenAt)} />
           </div>
 
           <div className="mt-6">
-            <div className="mb-2 text-sm font-medium text-foreground">{m.runtimes()}</div>
+            <div className="mb-2 text-sm font-medium text-foreground">{runtimes()}</div>
             {agent.runtimes.length > 0 ? (
               <div className="grid gap-2">
                 {agent.runtimes.map((runtime) => (
@@ -139,7 +139,7 @@ export function LocalDevicesView({
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-border bg-background px-3 py-4 text-sm text-muted-foreground">
-                {m.no_runtimes_reported()}
+                {no_runtimes_reported()}
               </div>
             )}
           </div>
@@ -153,15 +153,15 @@ export function LocalDevicesView({
       <EmptyState
         variant="subtle"
         size="lg"
-        title={m.connect_local_device()}
-        description={m.pair_any_machine_desc()}
+        title={connect_local_device()}
+        description={pair_any_machine_desc()}
         icons={[
           <HugeiconsIcon key="d1" icon={ComputerIcon} className="size-6" />,
           <HugeiconsIcon key="d2" icon={LinkSquare02Icon} className="size-6" />,
           <HugeiconsIcon key="d3" icon={Add01Icon} className="size-6" />,
         ]}
         action={{
-          label: m.connect_agent(),
+          label: connect_agent(),
           icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
           onClick: onConnectClick,
         }}

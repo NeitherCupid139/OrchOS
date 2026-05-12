@@ -6,7 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import type { Problem } from "@/lib/types";
-import { m } from "@/paraglide/messages";
+import { activity_panel, needs_attention, open_items } from "@/paraglide/messages";
 
 interface ActivityPanelProps {
   problems: Problem[];
@@ -47,7 +47,7 @@ export function ActivityPanel({ problems, collapsed, expanded }: ActivityPanelPr
       )}
     >
       <div className="flex h-11 items-center gap-2 border-b border-border bg-sidebar px-4">
-        <div className="truncate text-sm font-medium text-foreground">{m.activity_panel()}</div>
+        <div className="truncate text-sm font-medium text-foreground">{activity_panel()}</div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -55,8 +55,8 @@ export function ActivityPanel({ problems, collapsed, expanded }: ActivityPanelPr
           {attentionItems.length > 0 ? (
             <section>
               <SectionHeader
-                title={m.needs_attention()}
-                meta={m.open_items({ count: attentionItems.length })}
+                title={needs_attention()}
+                meta={open_items({ count: attentionItems.length })}
               />
               <div className="space-y-2 px-3">
                 {attentionItems.map((problem) => (

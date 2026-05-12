@@ -15,7 +15,7 @@ import {
   CheckmarkBadge01Icon,
   InboxIcon,
 } from "@hugeicons/core-free-icons";
-import { m } from "@/paraglide/messages";
+import { agent_request, all, context, convert_to_goal, critical, dismiss, inbox, inbox_is_empty, issue, mention, no_inbox_selected, no_inbox_selected_desc, pull_request, suggested } from "@/paraglide/messages";
 import type { Problem, InboxSource } from "@/lib/types";
 import { isInboxItem } from "@/lib/types";
 
@@ -95,25 +95,25 @@ const sourceConfig: Record<
     icon: GitPullRequestIcon,
     colorClass: "text-purple-600 dark:text-purple-400",
     bgClass: "bg-purple-500/10",
-    label: m.pull_request(),
+    label: pull_request(),
   },
   github_issue: {
     icon: SquareIcon,
     colorClass: "text-green-600 dark:text-green-400",
     bgClass: "bg-green-500/10",
-    label: m.issue(),
+    label: issue(),
   },
   mention: {
     icon: InformationCircleIcon,
     colorClass: "text-blue-600 dark:text-blue-400",
     bgClass: "bg-blue-500/10",
-    label: m.mention(),
+    label: mention(),
   },
   agent_request: {
     icon: Robot02Icon,
     colorClass: "text-amber-600 dark:text-amber-400",
     bgClass: "bg-amber-500/10",
-    label: m.agent_request(),
+    label: agent_request(),
   },
 };
 
@@ -162,7 +162,7 @@ export function InboxPreviewCard() {
           <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
             <HugeiconsIcon icon={InboxIcon} className="size-3.5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground">{m.inbox()}</span>
+          <span className="text-sm font-semibold text-foreground">{inbox()}</span>
           {inboxCounts.all > 0 && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
               {inboxCounts.all}
@@ -187,7 +187,7 @@ export function InboxPreviewCard() {
                   )}
                 >
                   {config && <HugeiconsIcon icon={config.icon} className="size-2.5" />}
-                  <span>{filter === "all" ? m.all() : config?.label || filter}</span>
+                  <span>{filter === "all" ? all() : config?.label || filter}</span>
                   <span className="tabular-nums opacity-50">
                     {inboxCounts[filter as keyof typeof inboxCounts]}
                   </span>
@@ -245,7 +245,7 @@ export function InboxPreviewCard() {
                         </Badge>
                         {item.priority === "critical" && (
                           <Badge variant="destructive" className="text-[8px] px-1 py-0 h-3.5">
-                            {m.critical()}
+                            {critical()}
                           </Badge>
                         )}
                       </div>
@@ -262,7 +262,7 @@ export function InboxPreviewCard() {
                       className="size-4 text-emerald-500"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">{m.inbox_is_empty()}</p>
+                  <p className="text-xs text-muted-foreground">{inbox_is_empty()}</p>
                 </div>
               )}
             </div>
@@ -303,7 +303,7 @@ export function InboxPreviewCard() {
                         variant="destructive"
                         className="text-[8px] uppercase tracking-wider px-1 py-0"
                       >
-                        {m.critical()}
+                        {critical()}
                       </Badge>
                     )}
                     <span className="text-[10px] text-muted-foreground">
@@ -317,7 +317,7 @@ export function InboxPreviewCard() {
               {activeItem.context && (
                 <div className="mb-4">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {m.context()}
+                    {context()}
                   </p>
                   <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
                     <p className="text-xs text-foreground whitespace-pre-wrap">
@@ -331,7 +331,7 @@ export function InboxPreviewCard() {
               {activeItem.suggestedGoal && (
                 <div className="mb-4">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {m.suggested()}
+                    {suggested()}
                   </p>
                   <div className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
                     <HugeiconsIcon
@@ -352,7 +352,7 @@ export function InboxPreviewCard() {
                   className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
                 >
                   <HugeiconsIcon icon={Target01Icon} className="size-3" />
-                  {m.convert_to_goal()}
+                  {convert_to_goal()}
                 </Link>
                 <Button
                   variant="outline"
@@ -361,7 +361,7 @@ export function InboxPreviewCard() {
                   className="h-7 text-xs"
                 >
                   <HugeiconsIcon icon={ViewOffIcon} className="size-3" />
-                  {m.dismiss()}
+                  {dismiss()}
                 </Button>
               </div>
             </div>
@@ -371,9 +371,9 @@ export function InboxPreviewCard() {
                 <div className="mx-auto size-10 rounded-full bg-muted/30 flex items-center justify-center mb-2">
                   <HugeiconsIcon icon={InboxIcon} className="size-4 text-muted-foreground/50" />
                 </div>
-                <p className="text-xs text-muted-foreground">{m.no_inbox_selected()}</p>
+                <p className="text-xs text-muted-foreground">{no_inbox_selected()}</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                  {m.no_inbox_selected_desc()}
+                  {no_inbox_selected_desc()}
                 </p>
               </div>
             </div>

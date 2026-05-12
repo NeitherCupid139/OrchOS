@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { m } from "@/paraglide/messages";
+import { switch_language } from "@/paraglide/messages";
 import { Languages } from "lucide-react";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -31,7 +31,7 @@ export default function LocaleToggle() {
           render={(props) => (
             <DropdownMenuTrigger
               render={
-                <Button {...props} variant="ghost" size="icon" className="size-9" aria-label={m.switch_language()}>
+                <Button {...props} variant="ghost" size="icon" className="size-9" aria-label={switch_language()}>
                   <Languages className="size-4" />
                 </Button>
               }
@@ -49,7 +49,7 @@ export default function LocaleToggle() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <TooltipContent side="bottom">{m.switch_language()}</TooltipContent>
+      <TooltipContent side="bottom">{switch_language()}</TooltipContent>
     </Tooltip>
   );
 }

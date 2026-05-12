@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createClientOnlyFn } from "@tanstack/react-start";
 import { useAuth } from "@clerk/clerk-react";
 import { isClerkConfigured } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -14,13 +15,17 @@ import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
-import { AuthTransitionOverlay } from "@/components/ui/auth-transition-overlay";
 import type { SidebarView } from "@/lib/types";
 import { getCapabilityModeFromPath, getCapabilityPath, isCapabilityView } from "@/lib/capability-routing";
-import { m } from "@/paraglide/messages";
+import { checking_auth, search_bookmarks } from "@/paraglide/messages";
 
 const ACTIVITY_PANEL_TRANSITION_MS = 320;
 const ACTIVITY_PANEL_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+const loadAuthTransitionOverlay = createClientOnlyFn(async () => {
+  const mod = await import("@/components/ui/auth-transition-overlay");
+  return mod.AuthTransitionOverlay;
+});
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardWrapper,
@@ -66,7 +71,7 @@ function ClerkAuthGate({ children }: { children: React.ReactNode }) {
           <div className="relative flex h-full items-center justify-center">
             <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/20 px-4 py-2 text-white/85 shadow-lg backdrop-blur-md">
               <AsciiLoading
-                label={m.checking_auth()}
+                label={checking_auth()}
                 className="text-white/85"
                 chipClassName="bg-white/10 text-white/85"
                 textClassName="text-sm"
@@ -132,6 +137,11 @@ function DashboardContent() {
     : "mine";
   const [showAuthTransition, setShowAuthTransition] = useState(() => isAuthTransition());
   const [startDashboardReveal, setStartDashboardReveal] = useState(false);
+  const [AuthTransitionOverlay, setAuthTransitionOverlay] = useState<ComponentType<{
+    active: boolean;
+    reveal: boolean;
+    onComplete?: () => void;
+  }> | null>(null);
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<"general" | "notifications" | "mail" | "about">("general");
   const revealTriggeredRef = useRef(false);
@@ -178,6 +188,20 @@ function DashboardContent() {
     : `auto minmax(0,1fr) ${activityPanelOpen ? "300px" : "0px"}`;
 
   useEffect(() => {
+    let mounted = true;
+
+    void loadAuthTransitionOverlay().then((loaded) => {
+      if (mounted) {
+        setAuthTransitionOverlay(() => loaded);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (revealTriggeredRef.current || loading) {
       return;
     }
@@ -200,16 +224,18 @@ function DashboardContent() {
 
   return (
     <>
-      <AuthTransitionOverlay
-        active={showAuthTransition}
-        reveal={startDashboardReveal}
-        onComplete={() => {
-          setShowAuthTransition(false);
-          try {
-            sessionStorage.removeItem("orch_auth_transition");
-          } catch {}
-        }}
-      />
+      {AuthTransitionOverlay ? (
+        <AuthTransitionOverlay
+          active={showAuthTransition}
+          reveal={startDashboardReveal}
+          onComplete={() => {
+            setShowAuthTransition(false);
+            try {
+              sessionStorage.removeItem("orch_auth_transition");
+            } catch {}
+          }}
+        />
+      ) : null}
       <div className="flex h-screen flex-col overflow-hidden bg-background">
         <div
           className="grid flex-1 overflow-hidden transition-[grid-template-columns]"
@@ -291,7 +317,7 @@ function DashboardContent() {
                     <input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={m.search_bookmarks()}
+                        placeholder={search_bookmarks()}
                       className="w-full rounded-md border border-border bg-background py-1 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring/30"
                     />
                   </div>

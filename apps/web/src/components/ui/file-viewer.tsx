@@ -20,7 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "@/components/ui/toast";
-import { m } from "@/paraglide/messages";
+import { code, copy_file_content, file_content_copied, loading_code, preview, preview_markdown, show_markdown_source } from "@/paraglide/messages";
 
 export interface ApiComponent {
   author?: string;
@@ -274,7 +274,7 @@ function ShikiViewer({
       <div className={cn("shiki-viewer", className)}>
         {highlight.isLoading ? (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
-            {m.loading_code()}
+            {loading_code()}
           </div>
         ) : (
           /* react-doctor-disable-next-line react/no-danger */
@@ -349,9 +349,9 @@ function FileHeader({
             variant={isPreview ? "secondary" : "outline"}
             size="sm"
             onClick={onTogglePreview}
-            title={isPreview ? m.show_markdown_source() : m.preview_markdown()}
+            title={isPreview ? show_markdown_source() : preview_markdown()}
           >
-            {isPreview ? m.code() : m.preview()}
+            {isPreview ? code() : preview()}
           </Button>
         ) : null}
         <Button
@@ -359,7 +359,7 @@ function FileHeader({
           size="icon-sm"
           onClick={onCopy}
           className="cursor-pointer"
-          title={m.copy_file_content()}
+          title={copy_file_content()}
         >
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </Button>
@@ -733,7 +733,7 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
 
     void navigator.clipboard.writeText(selected.content);
     setCopied(true);
-    toast.success(m.file_content_copied());
+    toast.success(file_content_copied());
 
     window.setTimeout(() => setCopied(false), 2000);
   }, [selected]);

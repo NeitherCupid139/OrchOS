@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { m } from "@/paraglide/messages";
+import { about_orchos, footer_company, footer_help_center, footer_product, footer_resources, footer_rights, integration_github, nav_about, nav_changelog, nav_home, open_dashboard, privacy_policy, terms_of_service } from "@/paraglide/messages";
 
 const COPYRIGHT_YEAR = new Date().getFullYear();
 
@@ -47,31 +47,31 @@ function FooterSection({
 export default function Footer() {
   const sections = [
     {
-      title: m.footer_product(),
+      title: footer_product(),
       links: [
-        { label: m.nav_home(), to: "/" },
-        { label: m.open_dashboard(), to: "/dashboard" },
-        { label: m.nav_changelog(), to: "/changelog" },
+        { label: nav_home(), to: "/" },
+        { label: open_dashboard(), to: "/dashboard" },
+        { label: nav_changelog(), to: "/changelog" },
       ],
     },
     {
-      title: m.footer_company(),
+      title: footer_company(),
       links: [
-        { label: m.nav_about(), to: "/about" },
-        { label: m.integration_github(), to: "https://github.com/NeitherCupid139/OrchOS" },
+        { label: nav_about(), to: "/about" },
+        { label: integration_github(), to: "https://github.com/NeitherCupid139/OrchOS" },
       ],
     },
     {
-      title: m.footer_resources(),
+      title: footer_resources(),
       links: [
-        { label: m.terms_of_service(), to: "/terms" },
-        { label: m.privacy_policy(), to: "/privacy" },
-        { label: m.footer_help_center(), to: "#" },
+        { label: terms_of_service(), to: "/terms" },
+        { label: privacy_policy(), to: "/privacy" },
+        { label: footer_help_center(), to: "#" },
       ],
     },
   ];
 
-  const copyright = `©${COPYRIGHT_YEAR} ${m.about_orchos()}. ${m.footer_rights()}`;
+  const copyright = `©${COPYRIGHT_YEAR} ${about_orchos()}. ${footer_rights()}`;
 
   return (
     <footer className="bg-card py-10 md:py-16 px-4 md:px-12">
@@ -87,7 +87,7 @@ export default function Footer() {
             className="font-serif italic text-foreground leading-none"
             style={{ fontSize: "clamp(3rem, 8vw, 6rem)" }}
           >
-            {m.about_orchos()}
+            {about_orchos()}
           </h2>
           <p className="text-muted-foreground text-xs md:text-sm">
             {copyright}

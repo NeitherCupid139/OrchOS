@@ -7,7 +7,7 @@ import type { RuntimeProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { decodeNiceAvatar } from "@/lib/avatar";
-import { m } from "@/paraglide/messages";
+import { upload } from "@/paraglide/messages";
 
 interface AvatarUploadProps {
   agentId: string;
@@ -129,7 +129,7 @@ export function AvatarUpload({
           </button>
         )}
       />
-      <TooltipContent side="top">{m.upload()}</TooltipContent>
+      <TooltipContent side="top">{upload()}</TooltipContent>
     </Tooltip>
   );
 }
