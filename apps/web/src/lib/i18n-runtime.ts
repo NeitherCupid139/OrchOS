@@ -4,14 +4,20 @@ import {
   overwriteGetLocale,
   setLocale as setParaglideLocale,
 } from "@/paraglide/runtime";
+import { locales } from "@/paraglide/runtime";
+import type { Locale } from "@/paraglide/runtime";
 
 const UI_STORAGE_KEY = "orchos-ui";
 const LEGACY_LOCALE_STORAGE_KEY = "orchos-locale";
 
-let activeLocale = baseLocale;
+let activeLocale: Locale = baseLocale;
 let clientLocaleInitialized = false;
 
-function readStoredLocale() {
+function isLocale(value: string): value is Locale {
+  return (locales as readonly string[]).includes(value);
+}
+
+function readStoredLocale(): Locale | null {
   if (typeof window === "undefined") {
     return null;
   }
@@ -23,13 +29,13 @@ function readStoredLocale() {
         state?: { settings?: { locale?: string } };
       };
       const storedLocale = parsed.state?.settings?.locale;
-      if (typeof storedLocale === "string" && storedLocale.length > 0) {
+      if (typeof storedLocale === "string" && isLocale(storedLocale)) {
         return storedLocale;
       }
     }
 
     const legacyLocale = window.localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY);
-    if (legacyLocale) {
+    if (legacyLocale && isLocale(legacyLocale)) {
       writeStoredLocale(legacyLocale);
       window.localStorage.removeItem(LEGACY_LOCALE_STORAGE_KEY);
       return legacyLocale;
@@ -41,7 +47,7 @@ function readStoredLocale() {
   }
 }
 
-function writeStoredLocale(locale: string) {
+function writeStoredLocale(locale: Locale) {
   if (typeof window === "undefined") {
     return;
   }
@@ -78,7 +84,7 @@ export function initializeClientLocale() {
 
   activeLocale =
     readStoredLocale() ||
-    document.documentElement.lang ||
+    (isLocale(document.documentElement.lang) ? document.documentElement.lang : null) ||
     getParaglideLocale() ||
     baseLocale;
   overwriteGetLocale(() => activeLocale);
@@ -99,7 +105,7 @@ export function getHydratedClientLocale() {
   return activeLocale;
 }
 
-export function syncRuntimeLocale(locale: string) {
+export function syncRuntimeLocale(locale: Locale) {
   activeLocale = locale;
   writeStoredLocale(locale);
   if (typeof document !== "undefined") {

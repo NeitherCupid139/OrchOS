@@ -61,7 +61,7 @@ export function FeaturesBento() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<AskMessage[]>([]);
   const defaultInput = home_bento_mock_input();
-  const [input, setInput] = useState(defaultInput);
+  const [input, setInput] = useState<string>(defaultInput);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const selectedRuntime: RuntimeProfile | null = MOCK_RUNTIME.enabled ? MOCK_RUNTIME : null;

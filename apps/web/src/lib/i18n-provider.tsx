@@ -2,10 +2,11 @@ import { Fragment, useState, useCallback, useEffect, createContext, use, type Re
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useUIStore } from "@/lib/store";
 import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
+import type { Locale } from "@/lib/i18n";
 
 interface I18nContextValue {
-  locale: string;
-  setLocaleWithSync: (locale: string) => void;
+  locale: Locale;
+  setLocaleWithSync: (locale: Locale) => void;
 }
 
 const I18nContext = createContext<I18nContextValue>({
@@ -13,7 +14,7 @@ const I18nContext = createContext<I18nContextValue>({
   setLocaleWithSync: () => {},
 });
 
-const persistLocaleSetting = createClientOnlyFn(async (locale: string) => {
+const persistLocaleSetting = createClientOnlyFn(async (locale: Locale) => {
   const { api } = await import("./api.client");
   return api.updateSettings({ locale });
 });
@@ -42,7 +43,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [settings?.locale]);
 
   const setLocaleWithSync = useCallback(
-    async (newLocale: string) => {
+    async (newLocale: Locale) => {
       setLocaleState(newLocale);
       syncRuntimeLocale(newLocale);
       try {

@@ -1,7 +1,9 @@
 import { getLocale, setLocale } from "@/paraglide/runtime";
+import type { Locale } from "@/paraglide/runtime";
 import { m } from "@/paraglide/messages";
 
 export { getLocale, setLocale, m };
+export type { Locale };
 
 export const AVAILABLE_LOCALES = [
   { value: "en", label: "English" },
@@ -11,6 +13,6 @@ export const AVAILABLE_LOCALES = [
   { value: "ja", label: "日本語" },
 ] as const;
 
-export function changeLocale(locale: string) {
+export function changeLocale(locale: Locale) {
   setLocale(locale, { reload: false });
 }

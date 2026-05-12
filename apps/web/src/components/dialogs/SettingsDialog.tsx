@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLocale } from "@/lib/i18n-provider";
 import { AVAILABLE_LOCALES } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import { playUiSound } from "@/lib/audio";
 import { about, about_acknowledgements_desc, about_acknowledgements_title, about_project_summary_title, cancel, close, delete as delete_message, display_name, display_name_placeholder, edit, edit_mail_account, email, email_placeholder, event_calendar, event_email, event_message, event_reminder, event_social, event_sounds, event_sounds_desc, event_system, general, imap_configuration, imap_host, imap_port, language, language_desc, mail, mail_accounts, mail_accounts_desc, mail_accounts_empty_hint, no_accounts, no_mail_accounts_configured, notifications, orchos_desc, password, password_placeholder, prefer_kanji, prefer_kanji_desc, save, settings as settings_label, shortcut_hints, shortcut_hints_desc, shortcuts, shortcuts_cmd_enter, shortcuts_enter, shortcuts_send_message, shortcuts_send_message_desc, smtp_configuration, smtp_host, smtp_port, sound_bell_1, sound_bell_2, sound_bell_3, sound_error, sound_pop, sound_pong, sound_ring_1, sound_ring_2, system_notifications, system_notifications_desc, use_mixed_script, use_mixed_script_desc, use_tls_imap, use_tls_smtp, username, username_placeholder } from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
@@ -232,7 +233,7 @@ export function SettingsDialog({
     }
   };
 
-  const handleLocaleChange = async (value: string) => {
+  const handleLocaleChange = async (value: Locale) => {
     if (!currentSettings) return;
 
     try {

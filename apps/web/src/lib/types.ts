@@ -144,7 +144,7 @@ export interface ControlSettings {
   autoCommit: boolean;
   autoFix: boolean;
   modelStrategy: "local-first" | "cloud-first" | "adaptive";
-  locale: string;
+  locale: Locale;
   timezone: string;
   defaultRuntimeId?: string;
   projectChatsRequireSandbox: boolean;
@@ -266,3 +266,4 @@ export type SidebarView =
   | "mail"
   | "observability"
   | "agents";
+import type { Locale } from "@/paraglide/runtime";

@@ -158,9 +158,36 @@
   "calendar_n_more": "+{n} more",
   "calendar_new_group": "New group",
   "calendar_new_calendar": "New calendar",
-  "calendar_n_accounts": "{n, plural, one {{n} account} other {{n} accounts}}",
-  "calendar_n_calendars": "{n, plural, one {{n} calendar} other {{n} calendars}}",
-  "calendar_n_events": "{n, plural, one {{n} event} other {{n} events}}",
+  "calendar_n_accounts": [
+    {
+      "declarations": ["input n", "local nPlural = n: plural"],
+      "selectors": ["nPlural"],
+      "match": {
+        "nPlural=one": "{n} account",
+        "nPlural=other": "{n} accounts"
+      }
+    }
+  ],
+  "calendar_n_calendars": [
+    {
+      "declarations": ["input n", "local nPlural = n: plural"],
+      "selectors": ["nPlural"],
+      "match": {
+        "nPlural=one": "{n} calendar",
+        "nPlural=other": "{n} calendars"
+      }
+    }
+  ],
+  "calendar_n_events": [
+    {
+      "declarations": ["input n", "local nPlural = n: plural"],
+      "selectors": ["nPlural"],
+      "match": {
+        "nPlural=one": "{n} event",
+        "nPlural=other": "{n} events"
+      }
+    }
+  ],
   "calendar_n_scopes": "{n} scopes",
   "calendar_groups": "Groups",
   "calendar_calendars": "Calendars",
@@ -563,7 +590,16 @@
   "delete_category_desc": "This removes the category from the current bookmarks workspace view.",
   "pin_to_home": "Pin to home",
   "unpin": "Unpin",
-  "bookmark_count": "{count, plural, one {{count} bookmark} other {{count} bookmarks}}",
+  "bookmark_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} bookmark",
+        "countPlural=other": "{count} bookmarks"
+      }
+    }
+  ],
   "bookmarks_workspace": "Bookmarks workspace",
   "bookmarks_workspace_desc": "Import your bookmarks from a file...",
   "import_from_file": "Import from file",
