@@ -16,6 +16,7 @@ export const bookmarksRouter = {
     return BookmarkService.createBookmark(await getLocalDb(), input.categoryId, {
       title: input.title,
       url: input.url,
+      icon: input.icon,
     });
   }),
   updateCategory: os.bookmarks.updateCategory.handler(async ({ input }) => {
@@ -32,6 +33,7 @@ export const bookmarksRouter = {
       title: input.title,
       url: input.url,
       pinned: input.pinned,
+      icon: input.icon,
     });
   }),
   deleteItem: os.bookmarks.deleteItem.handler(async ({ input }) => {

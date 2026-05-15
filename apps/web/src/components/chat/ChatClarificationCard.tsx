@@ -35,7 +35,7 @@ export function ChatClarificationCard({
         <div className="space-y-2">
           {questions.map((question, index) => (
             <div
-              key={question}
+              key={`${index}-${question}`}
               className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 text-sm text-foreground/85"
             >
               <span className="mr-2 text-xs font-medium text-muted-foreground">{index + 1}.</span>

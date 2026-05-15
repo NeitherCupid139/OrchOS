@@ -15,6 +15,8 @@ import { InfoCard, InfoCardContent, InfoCardDescription } from "@/components/ui/
 import { CreateBoardConversationDialog, type BoardTaskEditData } from "@/components/dialogs/CreateBoardConversationDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDashboard } from "@/lib/dashboard-context";
+import type { PlannerReminder } from "@/lib/api.types";
+import { getReminderDisplayText } from "@/lib/planner-reminders";
 import { useBoardStore } from "@/lib/stores/board";
 import { cn } from "@/lib/utils";
 import { board_completed, board_delete_conversation, board_edit_task, board_in_progress, board_no_tasks, board_planning, board_today } from "@/paraglide/messages";
@@ -24,6 +26,10 @@ export type { BoardTaskColumnId, BoardTaskFilter };
 
 interface BoardViewProps {
   boardFilter: BoardTaskFilter;
+  reminders?: PlannerReminder[];
+  busyReminderId?: string | null;
+  onToggleReminderComplete?: (reminder: PlannerReminder) => void | Promise<void>;
+  onDeleteReminder?: (reminder: PlannerReminder) => void | Promise<void>;
 }
 
 const boardTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
@@ -83,7 +89,13 @@ function priorityTone(priority: BoardTaskPriority) {
   return "text-rose-600 dark:text-rose-400";
 }
 
-export function BoardView({ boardFilter }: BoardViewProps) {
+export function BoardView({
+  boardFilter,
+  reminders = [],
+  busyReminderId,
+  onToggleReminderComplete,
+  onDeleteReminder,
+}: BoardViewProps) {
   const [editingTask, setEditingTask] = useState<BoardTaskEditData | null>(null);
   const { projects } = useDashboard();
   const tasks = useBoardStore((state) => state.tasks);
@@ -131,6 +143,14 @@ export function BoardView({ boardFilter }: BoardViewProps) {
     () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
     [tasks],
   );
+  const reminderCards = useMemo(
+    () => reminders.map((reminder) => ({
+      id: `reminder-${reminder.id}`,
+      reminder,
+      column: reminder.completed ? "completed" : "review" as BoardTaskColumnId,
+    })),
+    [reminders],
+  );
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background px-4 py-4 md:px-6">
@@ -139,6 +159,8 @@ export function BoardView({ boardFilter }: BoardViewProps) {
           {boardColumns.reduce((acc: React.ReactNode[], column) => {
             if (boardFilter !== "all" && column.id !== boardFilter) return acc;
             const columnCards = boardCards.filter((card) => card.column === column.id);
+            const columnReminders = reminderCards.filter((card) => card.column === column.id);
+            const columnItems = [...columnReminders, ...columnCards];
 
             acc.push(
               <div
@@ -164,7 +186,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                 <div
                   className={cn(
                     "min-h-0 flex-1 p-3",
-                    columnCards.length === 0
+                    columnItems.length === 0
                       ? "flex items-center justify-center"
                       : cn(
                           "grid content-start auto-rows-max gap-3 overflow-y-auto",
@@ -172,6 +194,94 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                         ),
                   )}
                 >
+                  {columnReminders.map(({ reminder }) => {
+                      const reminderDisplayText = getReminderDisplayText(reminder);
+
+                      return (
+                      <div
+                        key={reminder.id}
+                        className="group/card rounded-xl text-left transition-transform duration-200 hover:-translate-y-0.5"
+                      >
+                        <InfoCard
+                          showDismissButton={false}
+                          className="border-border/40 bg-background/80 p-4 text-left transition-all duration-200 group-hover/card:border-border/80 group-hover/card:bg-background"
+                        >
+                          <InfoCardContent className="gap-3">
+                            <div className="relative min-w-0 flex-1">
+                              <div className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/card:pointer-events-auto group-hover/card:opacity-100">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  disabled={busyReminderId === reminder.id}
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                  }}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void onToggleReminderComplete?.(reminder);
+                                  }}
+                                  className={cn(
+                                    "text-muted-foreground/60 hover:text-foreground",
+                                    reminder.completed && "text-emerald-600 dark:text-emerald-400",
+                                  )}
+                                >
+                                  <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  disabled={busyReminderId === reminder.id}
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                  }}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void onDeleteReminder?.(reminder);
+                                  }}
+                                  className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className={cn("line-clamp-1 text-sm font-medium text-foreground/90", reminder.completed && "line-through")}>
+                                {reminder.title}
+                              </div>
+                              <InfoCardDescription className="line-clamp-3 text-xs leading-relaxed text-muted-foreground/60">
+                                {reminder.notes?.trim() || reminderDisplayText || board_no_tasks()}
+                              </InfoCardDescription>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 border-t border-border/15 pt-2">
+                              <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground/45">
+                                <span className="inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px] text-violet-600 dark:text-violet-400">
+                                  reminder
+                                </span>
+                                {reminderDisplayText ? (
+                                  <span className="inline-flex items-center gap-1">
+                                    <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
+                                    {reminderDisplayText}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <span className="text-[11px] tabular-nums text-muted-foreground/45">
+                                {formatBoardTime(reminder.updatedAt)}
+                              </span>
+                            </div>
+                          </InfoCardContent>
+                        </InfoCard>
+                      </div>
+                      );
+                    })}
+
                   {columnCards.map((card) => {
                       const linkedProject = projects?.find((project) => project.id === card.projectId);
 
@@ -299,7 +409,7 @@ export function BoardView({ boardFilter }: BoardViewProps) {
                       );
                     })}
 
-                    {columnCards.length === 0 ? (
+                    {columnItems.length === 0 ? (
                       <div className="flex w-full flex-col items-center justify-center rounded-xl px-3 py-10 text-center">
                         <HugeiconsIcon icon={column.icon} className="mb-2 size-5 text-muted-foreground/15" />
                         <span className="text-xs text-muted-foreground/30">{board_no_tasks()}</span>

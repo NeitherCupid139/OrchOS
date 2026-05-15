@@ -38,6 +38,9 @@ export const integrationsRouter = {
   deleteAccount: os.integrations.deleteAccount.handler(async ({ input }) => {
     return (await getService()).deleteIntegrationAccount(input.id, input.accountId);
   }),
+  listGoogleCalendarEvents: os.integrations.listGoogleCalendarEvents.handler(async ({ input }) => {
+    return (await getService()).listGoogleCalendarEvents(input);
+  }),
   disconnect: os.integrations.disconnect.handler(async ({ input }) => {
     return (await getService()).disconnectIntegration(input.id);
   }),

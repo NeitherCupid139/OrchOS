@@ -420,6 +420,34 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
     await exec("ALTER TABLE runtimes ADD COLUMN current_model TEXT");
   }
 
+  if (await hasTable("messages") && !(await hasColumn("messages", "trace"))) {
+    await exec("ALTER TABLE messages ADD COLUMN trace TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "execution_mode"))) {
+    await exec("ALTER TABLE messages ADD COLUMN execution_mode TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "sandbox_status"))) {
+    await exec("ALTER TABLE messages ADD COLUMN sandbox_status TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "sandbox_vm_id"))) {
+    await exec("ALTER TABLE messages ADD COLUMN sandbox_vm_id TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "project_id"))) {
+    await exec("ALTER TABLE messages ADD COLUMN project_id TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "project_name"))) {
+    await exec("ALTER TABLE messages ADD COLUMN project_name TEXT");
+  }
+
+  if (await hasTable("messages") && !(await hasColumn("messages", "clarification_questions"))) {
+    await exec("ALTER TABLE messages ADD COLUMN clarification_questions TEXT");
+  }
+
   if (await hasTable("local_agents") && !(await hasColumn("local_agents", "host_token"))) {
     await exec("ALTER TABLE local_agents ADD COLUMN host_token TEXT NOT NULL DEFAULT ''");
   }
@@ -430,6 +458,10 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
 
   if (await hasTable("bookmarks") && !(await hasColumn("bookmarks", "pinned"))) {
     await exec("ALTER TABLE bookmarks ADD COLUMN pinned TEXT NOT NULL DEFAULT 'false'");
+  }
+
+  if (await hasTable("bookmarks") && !(await hasColumn("bookmarks", "icon"))) {
+    await exec("ALTER TABLE bookmarks ADD COLUMN icon TEXT");
   }
 
   await ensureTable(`

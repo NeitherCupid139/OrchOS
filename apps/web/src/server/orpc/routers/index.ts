@@ -7,6 +7,7 @@ export { integrationsRouter } from "./integrations";
 export { localAgentsRouter } from "./local-agents";
 export { observabilityRouter } from "./observability";
 export { organizationsRouter } from "./organizations";
+export { plannerRouter } from "./planner";
 export { problemsRouter } from "./problems";
 export { projectsRouter } from "./projects";
 export { runtimesRouter } from "./runtimes";

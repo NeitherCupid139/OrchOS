@@ -1,7 +1,189 @@
 import { os } from "@/server/orpc/base";
-import { ConversationService } from "@/server/modules/conversation/service";
+import { AgentToolService, type AgentToolDefinition } from "@/server/modules/agent/service";
+import { requestOpenAICompatibleChatCompletion } from "@/server/modules/custom-agents/openai-compatible";
+import { ConversationService, type Message } from "@/server/modules/conversation/service";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getLocalDb } from "@/server/runtime/local-db";
+
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content?: string | null;
+  tool_call_id?: string;
+  tool_calls?: Array<{
+    id: string;
+    type: "function";
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
+};
+
+type ChatCompletionResponse = {
+  choices?: Array<{
+    message?: ChatMessage;
+    finish_reason?: string | null;
+  }>;
+};
+
+async function getCustomAgentConfig(customAgentId: string) {
+  const db = await getLocalDb();
+  const agentService = new CustomAgentService(db);
+  const agents = await agentService.list();
+  const agent = agents.find((item) => item.id === customAgentId);
+  if (!agent) {
+    throw new Error("Custom agent not found");
+  }
+
+  return {
+    db,
+    agent,
+  };
+}
+
+function conversationHistoryToChatMessages(messages: Message[]): ChatMessage[] {
+  return messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+}
+
+async function requestChatCompletion(input: {
+  url: string;
+  apiKey: string;
+  model: string;
+  messages: ChatMessage[];
+  tools?: AgentToolDefinition[];
+}) {
+  return requestOpenAICompatibleChatCompletion<ChatCompletionResponse>(fetch, {
+    url: input.url,
+    apiKey: input.apiKey,
+    body: {
+      model: input.model,
+      messages: input.messages,
+      tools: input.tools,
+      tool_choice: input.tools && input.tools.length > 0 ? "auto" : undefined,
+    },
+  });
+}
+
+async function runCustomAgentConversation(input: {
+  conversationId: string;
+  customAgentId: string;
+  userContent?: string;
+  retry?: boolean;
+}) {
+  const { db, agent } = await getCustomAgentConfig(input.customAgentId);
+  const toolService = new AgentToolService(db);
+
+  if (input.retry) {
+    await ConversationService.deleteLastAssistantMessage(db, input.conversationId);
+  } else if (input.userContent !== undefined) {
+    await ConversationService.addMessage(db, input.conversationId, "user", input.userContent);
+  }
+
+  const storedMessages = await ConversationService.getMessages(db, input.conversationId);
+  const chatMessages = conversationHistoryToChatMessages(storedMessages);
+  const tools = toolService.getToolDefinitions();
+  const trace: NonNullable<Message["trace"]> = [];
+
+  for (let step = 0; step < 6; step += 1) {
+    const completion = await requestChatCompletion({
+      url: agent.url,
+      apiKey: agent.apiKey,
+      model: agent.model,
+      messages: chatMessages,
+      tools,
+    });
+
+    const choice = completion.choices?.[0];
+    const assistantMessage = choice?.message;
+    const toolCalls = assistantMessage?.tool_calls ?? [];
+    const assistantContent = assistantMessage?.content ?? "";
+
+    if (assistantContent) {
+      trace.push({ kind: "message", text: assistantContent });
+    }
+
+    if (toolCalls.length === 0) {
+      return ConversationService.addMessage(
+        db,
+        input.conversationId,
+        "assistant",
+        assistantContent || "No response",
+        undefined,
+        undefined,
+        { trace },
+      );
+    }
+
+    chatMessages.push({
+      role: "assistant",
+      content: assistantContent,
+      tool_calls: toolCalls,
+    });
+
+    for (const toolCall of toolCalls) {
+      trace.push({
+        kind: "tool",
+        toolName: toolCall.function.name,
+        toolCallId: toolCall.id,
+        state: "started",
+        input: toolCall.function.arguments,
+      });
+
+      try {
+        const output = await toolService.executeTool(
+          toolCall.function.name,
+          toolCall.function.arguments,
+        );
+
+        trace.push({
+          kind: "tool",
+          toolName: toolCall.function.name,
+          toolCallId: toolCall.id,
+          state: "completed",
+          output,
+        });
+
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(output),
+        });
+      } catch (error) {
+        const errorText =
+          error instanceof Error ? error.message : `Tool ${toolCall.function.name} failed`;
+
+        trace.push({
+          kind: "tool",
+          toolName: toolCall.function.name,
+          toolCallId: toolCall.id,
+          state: "failed",
+          errorText,
+        });
+
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: JSON.stringify({ error: errorText }),
+        });
+      }
+    }
+  }
+
+  return ConversationService.addMessage(
+    db,
+    input.conversationId,
+    "assistant",
+    "Agent exceeded tool execution limit.",
+    "Agent exceeded tool execution limit.",
+    undefined,
+    { trace },
+  );
+}
 
 async function sendConversationMessage(
   conversationId: string,
@@ -11,47 +193,12 @@ async function sendConversationMessage(
   const db = await getLocalDb();
 
   if (customAgentId) {
-    const agentService = new CustomAgentService(db);
-    const agents = await agentService.list();
-    const agent = agents.find((item) => item.id === customAgentId);
-    if (!agent) {
-      throw new Error("Custom agent not found");
-    }
-
-    await ConversationService.addMessage(db, conversationId, "user", content);
-
     try {
-      const url = agent.url.endsWith("/chat/completions")
-        ? agent.url
-        : `${agent.url.replace(/\/+$/, "")}/chat/completions`;
-
-      const prevMessages = await ConversationService.getMessages(db, conversationId);
-      const history = prevMessages
-        .filter((message) => message.role === "user" || message.role === "assistant")
-        .slice(0, -1)
-        .map((message) => ({ role: message.role, content: message.content }));
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${agent.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: agent.model,
-          messages: [...history, { role: "user", content }],
-        }),
+      return await runCustomAgentConversation({
+        conversationId,
+        customAgentId,
+        userContent: content,
       });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(`Agent returned ${response.status}: ${errorText}`);
-      }
-
-      const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-      const replyContent = data.choices?.[0]?.message?.content ?? "No response";
-
-      return ConversationService.addMessage(db, conversationId, "assistant", replyContent);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to get response from custom agent";
@@ -81,49 +228,16 @@ async function retryConversationMessage(
   const db = await getLocalDb();
 
   if (customAgentId) {
-    const agentService = new CustomAgentService(db);
-    const agents = await agentService.list();
-    const agent = agents.find((item) => item.id === customAgentId);
-    if (!agent) {
-      throw new Error("Custom agent not found");
-    }
-
-    await ConversationService.deleteLastAssistantMessage(db, conversationId);
-
-    const prevMessages = await ConversationService.getMessages(db, conversationId);
-    const history = prevMessages
-      .filter((message) => message.role === "user" || message.role === "assistant")
-      .map((message) => ({ role: message.role, content: message.content }));
-
     try {
-      const url = agent.url.endsWith("/chat/completions")
-        ? agent.url
-        : `${agent.url.replace(/\/+$/, "")}/chat/completions`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${agent.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: agent.model,
-          messages: history,
-        }),
+      return await runCustomAgentConversation({
+        conversationId,
+        customAgentId,
+        retry: true,
       });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(`Agent returned ${response.status}: ${errorText}`);
-      }
-
-      const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-      const replyContent = data.choices?.[0]?.message?.content ?? "No response";
-
-      return ConversationService.addMessage(db, conversationId, "assistant", replyContent);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to get response from custom agent";
+
       return ConversationService.addMessage(
         db,
         conversationId,

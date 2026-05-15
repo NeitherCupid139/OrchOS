@@ -5,6 +5,7 @@ import {
   ArrowRight01Icon,
   Add01Icon,
   Bookmark01Icon,
+  Cancel01Icon,
   CodeIcon,
   Delete02Icon,
   Edit02Icon,
@@ -31,7 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { back, bookmark_count, bookmark_created, bookmark_deleted, bookmark_moved, bookmark_updated, bookmarks, bookmarks_workspace, bookmarks_workspace_desc, cancel, category_deleted, category_name, category_renamed, collapse_sidebar, create, create_or_import, delete as delete_message, delete_bookmark, delete_bookmark_desc, delete_category, delete_category_desc, edit_bookmark, edit_bookmark_desc, edit_category, expand_sidebar, failed_to_create_bookmark, failed_to_create_category, failed_to_delete_bookmark, failed_to_delete_category, failed_to_import_bookmarks, failed_to_load_bookmarks, failed_to_move_bookmark, failed_to_rename_category, failed_to_reorder_bookmarks, failed_to_reorder_categories, failed_to_toggle_pin, failed_to_update_bookmark, import as import_message, import_bookmarks_desc, import_from_file, imported_bookmarks, loading as loading_label, name, new_bookmark, new_bookmark_desc, new_category, new_category_desc, no_bookmarks_desc, no_bookmarks_in_category, no_bookmarks_to_import, no_results_desc, no_results_found, pin_to_home, resize_bookmarks_sidebar, save, select_category_first, title as title_label, title_url_required, unpin, unsupported_bookmark_format, url } from "@/paraglide/messages";
+import { back, bookmark_count, bookmark_created, bookmark_deleted, bookmark_moved, bookmark_updated, bookmarks, bookmarks_workspace, bookmarks_workspace_desc, calendar_icon, cancel, category_deleted, category_name, category_renamed, collapse_sidebar, create, create_or_import, delete as delete_message, delete_bookmark, delete_bookmark_desc, delete_category, delete_category_desc, edit_bookmark, edit_bookmark_desc, edit_category, expand_sidebar, failed_to_create_bookmark, failed_to_create_category, failed_to_delete_bookmark, failed_to_delete_category, failed_to_import_bookmarks, failed_to_load_bookmarks, failed_to_move_bookmark, failed_to_rename_category, failed_to_reorder_bookmarks, failed_to_reorder_categories, failed_to_toggle_pin, failed_to_update_bookmark, import as import_message, import_bookmarks_desc, import_from_file, imported_bookmarks, loading as loading_label, name, new_bookmark, new_bookmark_desc, new_category, new_category_desc, no_bookmarks_desc, no_bookmarks_in_category, no_bookmarks_to_import, no_results_desc, no_results_found, pin_to_home, resize_bookmarks_sidebar, save, select_category_first, title as title_label, title_url_required, unpin, unsupported_bookmark_format, upload, url } from "@/paraglide/messages";
 import { useUIStore } from "@/lib/store";
 
 export const Route = createFileRoute("/dashboard/bookmarks")({
@@ -43,14 +44,14 @@ type ImportedBookmark = {
   title: string;
   url: string;
   pinned: boolean;
+  icon?: string;
 };
 
 type BookmarkDraft = {
   title: string;
   url: string;
+  icon?: string;
 };
-
-const BOOKMARK_CATEGORY_ICONS = ["folder", "globe", "code", "star", "home", "link"] as const;
 
 function getBookmarkCategoryIcon(icon: string) {
   switch (icon) {
@@ -67,15 +68,6 @@ function getBookmarkCategoryIcon(icon: string) {
     default:
       return Folder01Icon;
   }
-}
-
-function getNextBookmarkCategoryIcon(icon: string) {
-  const currentIndex = BOOKMARK_CATEGORY_ICONS.indexOf(icon as (typeof BOOKMARK_CATEGORY_ICONS)[number]);
-  if (currentIndex === -1) {
-    return BOOKMARK_CATEGORY_ICONS[0];
-  }
-
-  return BOOKMARK_CATEGORY_ICONS[(currentIndex + 1) % BOOKMARK_CATEGORY_ICONS.length];
 }
 
 function slugify(value: string) {
@@ -313,12 +305,29 @@ function parseBookmarkCsv(text: string) {
   return Array.from(grouped.entries()).map(([name, bookmarks]) => normalizeCategory(name, bookmarks, used));
 }
 
-function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
+function Favicon({ url, pinned, icon }: { url: string; pinned: boolean; icon?: string }) {
   const failedRef = useRef(false);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
   try { domain = new URL(url).hostname; } catch {}
+
+  if (icon) {
+    return (
+      <div className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-accent">
+        <img
+          src={icon}
+          alt=""
+          className="size-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+        />
+        {pinned && (
+          <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <HugeiconsIcon icon={PinIcon} className="size-2.5" />
+          </span>
+        )}
+      </div>
+    );
+  }
 
   useEffect(() => {
     const el = ref.current;
@@ -376,6 +385,90 @@ function Favicon({ url, pinned }: { url: string; pinned: boolean }) {
   );
 }
 
+async function readBookmarkIcon(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are supported.");
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error("Icon must be smaller than 2MB.");
+  }
+
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Failed to read icon."));
+    };
+    reader.onerror = () => reject(new Error("Failed to read icon."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function BookmarkIconField({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (value?: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="grid gap-2 text-sm">
+      <span className="font-medium text-foreground">{calendar_icon()}</span>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:bg-muted"
+        >
+          {value ? (
+            <img src={value} alt="" className="size-full object-cover" />
+          ) : (
+            <HugeiconsIcon icon={Upload01Icon} className="size-5 text-muted-foreground" />
+          )}
+        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+            <HugeiconsIcon icon={Upload01Icon} className="size-4" />
+            {upload()}
+          </Button>
+          {value ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => onChange(undefined)}>
+              <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+              {delete_message()}
+            </Button>
+          ) : null}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) {
+              return;
+            }
+
+            void readBookmarkIcon(file).then((nextIcon) => {
+              onChange(nextIcon);
+            }).catch((error) => {
+              toast.error(error instanceof Error ? error.message : upload());
+            }).finally(() => {
+              event.target.value = "";
+            });
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 const BookmarkCard = memo(function BookmarkCard({
   bookmark,
   categoryId,
@@ -389,7 +482,7 @@ const BookmarkCard = memo(function BookmarkCard({
   bookmark: BookmarkCategory["bookmarks"][number];
   categoryId: string;
   onTogglePin: (categoryId: string, bookmarkId: string, currentPinned: boolean) => void;
-  onEdit: (bookmarkId: string, title: string, url: string) => void;
+  onEdit: (bookmarkId: string, title: string, url: string, icon?: string) => void;
   onDelete: (bookmarkId: string) => void;
   onDragStart: (bookmarkId: string, sourceCategoryId: string) => void;
   onDragEnd: () => void;
@@ -418,7 +511,7 @@ const BookmarkCard = memo(function BookmarkCard({
             !bookmark.pinned && "group-hover:pr-[86px]",
           )}
         >
-          <Favicon url={bookmark.url} pinned={bookmark.pinned} />
+          <Favicon url={bookmark.url} pinned={bookmark.pinned} icon={bookmark.icon} />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-sm font-medium text-foreground">{bookmark.title}</h2>
             <p className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
@@ -446,7 +539,7 @@ const BookmarkCard = memo(function BookmarkCard({
             type="button"
             variant="ghost"
             size="icon-xs"
-            onClick={() => onEdit(bookmark.id, bookmark.title, bookmark.url)}
+            onClick={() => onEdit(bookmark.id, bookmark.title, bookmark.url, bookmark.icon)}
             title={edit_bookmark()}
           >
             <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
@@ -470,7 +563,8 @@ const BookmarkCard = memo(function BookmarkCard({
   && prev.bookmark.id === next.bookmark.id
   && prev.bookmark.title === next.bookmark.title
   && prev.bookmark.url === next.bookmark.url
-  && prev.bookmark.pinned === next.bookmark.pinned,
+  && prev.bookmark.pinned === next.bookmark.pinned
+  && prev.bookmark.icon === next.bookmark.icon,
 );
 
 function BookmarksPage() {
@@ -490,7 +584,7 @@ function BookmarksPage() {
   const [draggedBookmark, setDraggedBookmark] = useState<{ bookmarkId: string; sourceCategoryId: string } | null>(null);
   const [editingBookmarkId, setEditingBookmarkId] = useState<string | null>(null);
   const [deletingBookmarkId, setDeletingBookmarkId] = useState<string | null>(null);
-  const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>({ title: "", url: "" });
+  const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>({ title: "", url: "", icon: undefined });
   const [loading, setLoading] = useState(true);
   const [isCreateBookmarkDialogOpen, setIsCreateBookmarkDialogOpen] = useState(false);
   const [isCreateOrImportDialogOpen, setIsCreateOrImportDialogOpen] = useState(false);
@@ -733,9 +827,9 @@ function BookmarksPage() {
     );
   }, [normalizedSearchQuery, selectedCategory]);
 
-  const handleEditBookmark = useCallback((bookmarkId: string, title: string, url: string) => {
+  const handleEditBookmark = useCallback((bookmarkId: string, title: string, url: string, icon?: string) => {
     setEditingBookmarkId(bookmarkId);
-    setBookmarkDraft({ title, url });
+    setBookmarkDraft({ title, url, icon });
   }, []);
 
   const handleDeleteBookmark = useCallback((bookmarkId: string) => {
@@ -900,30 +994,6 @@ function BookmarksPage() {
                                       type="button"
                                       variant="ghost"
                                       size="icon-xs"
-                                      onClick={() => {
-                                        const nextIcon = getNextBookmarkCategoryIcon(category.icon);
-                                        void api.updateBookmarkCategory(category.id, { icon: nextIcon }).then((saved) => {
-                                          setCategories(saved);
-                                          setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
-                                        }).catch((error) => {
-                                          toast.error(error instanceof Error ? error.message : failed_to_rename_category());
-                                        });
-                                      }}
-                                    >
-                                      <HugeiconsIcon icon={CategoryIcon} className="size-3.5" />
-                                    </Button>
-                                  )}
-                                />
-                                <TooltipContent side="top">{edit_category()}</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={(props) => (
-                                    <Button
-                                      {...props}
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-xs"
                                       onClick={() => setRenameCategoryId(category.id)}
                                     >
                                       <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
@@ -1037,7 +1107,7 @@ function BookmarksPage() {
                     <Button
                       type="button"
                       onClick={() => {
-                        setBookmarkDraft({ title: "", url: "" });
+                        setBookmarkDraft({ title: "", url: "", icon: undefined });
                         setIsCreateBookmarkDialogOpen(true);
                       }}
                     >
@@ -1079,7 +1149,7 @@ function BookmarksPage() {
                           label: new_bookmark(),
                           icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                           onClick: () => {
-                            setBookmarkDraft({ title: "", url: "" });
+                            setBookmarkDraft({ title: "", url: "", icon: undefined });
                             setIsCreateBookmarkDialogOpen(true);
                           },
                         }}
@@ -1164,10 +1234,11 @@ function BookmarksPage() {
                 void api.createBookmarkItem(selectedCategoryId, {
                   title: bookmarkDraft.title.trim(),
                   url: bookmarkDraft.url.trim(),
+                  icon: bookmarkDraft.icon,
                 }).then((saved) => {
                   setCategories(saved);
                   setSelectedCategoryId(selectedCategoryId);
-                  setBookmarkDraft({ title: "", url: "" });
+                  setBookmarkDraft({ title: "", url: "", icon: undefined });
                   setIsCreateBookmarkDialogOpen(false);
                   toast.success(bookmark_created());
                 }).catch((error) => {
@@ -1181,6 +1252,10 @@ function BookmarksPage() {
         }
       >
         <div className="space-y-4">
+          <BookmarkIconField
+            value={bookmarkDraft.icon}
+            onChange={(icon) => setBookmarkDraft((current) => ({ ...current, icon }))}
+          />
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-foreground">{title_label()}</span>
             <input
@@ -1257,6 +1332,7 @@ function BookmarksPage() {
                 void api.updateBookmarkItem(selectedCategoryId, editingBookmarkId, {
                   title: bookmarkDraft.title.trim(),
                   url: bookmarkDraft.url.trim(),
+                  icon: bookmarkDraft.icon ?? null,
                 }).then((saved) => {
                   setCategories(saved);
                   setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
@@ -1273,6 +1349,10 @@ function BookmarksPage() {
         }
       >
         <div className="space-y-4">
+          <BookmarkIconField
+            value={bookmarkDraft.icon}
+            onChange={(icon) => setBookmarkDraft((current) => ({ ...current, icon }))}
+          />
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-foreground">{title_label()}</span>
             <input

@@ -6,6 +6,7 @@ export const bookmarkItemSchema = z.object({
   title: z.string(),
   url: z.string(),
   pinned: z.boolean(),
+  icon: z.string().optional(),
 });
 
 export const bookmarkCategorySchema = z.object({
@@ -27,6 +28,7 @@ export const bookmarksContract = {
         categoryId: z.string(),
         title: z.string(),
         url: z.string(),
+        icon: z.string().optional(),
       }),
     )
     .output(z.array(bookmarkCategorySchema)),
@@ -42,6 +44,7 @@ export const bookmarksContract = {
         title: z.string().optional(),
         url: z.string().optional(),
         pinned: z.boolean().optional(),
+        icon: z.string().nullable().optional(),
       }),
     )
     .output(z.array(bookmarkCategorySchema)),

@@ -8,6 +8,7 @@ import { localAgentsContract } from "./local-agents";
 import { observabilityContract } from "./observability";
 import { organizationsContract } from "./organizations";
 import { problemsContract } from "./problems";
+import { plannerContract } from "./planner";
 import { projectsContract } from "./projects";
 import { runtimesContract } from "./runtimes";
 import { settingsContract } from "./settings";
@@ -17,6 +18,7 @@ export const appContract = {
   settings: settingsContract,
   organizations: organizationsContract,
   problems: problemsContract,
+  planner: plannerContract,
   inbox: inboxContract,
   bookmarks: bookmarksContract,
   customAgents: customAgentsContract,

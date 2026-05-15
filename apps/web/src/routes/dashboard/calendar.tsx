@@ -31,8 +31,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
-import { api, type Integration } from "@/lib/api";
+import {
+  api,
+  type GoogleCalendarEvent,
+  type Integration,
+  type PlannerCalendar as LocalCalendar,
+  type PlannerCalendarEvent as LocalCalendarEvent,
+  type PlannerReminder,
+  type PlannerStore as LocalCalendarStore,
+} from "@/lib/api";
 import { useBoardStore } from "@/lib/stores/board";
+import { getReminderDisplayText, getReminderNextOccurrence } from "@/lib/planner-reminders";
 import { useUIStore } from "@/lib/store";
 import type { BoardTaskColumnId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -50,40 +59,28 @@ type CalendarIntegration = Integration & {
   accounts?: CalendarIntegrationAccount[];
 };
 
-type LocalCalendarGroup = {
-  id: string;
-  name: string;
-};
-
-type LocalCalendar = {
-  id: string;
-  groupId: string;
-  name: string;
-  color: string;
-  description: string;
-  icon: string;
-};
-
-type LocalCalendarEvent = {
-  id: string;
+type GoogleRenderableEvent = GoogleCalendarEvent & {
   calendarId: string;
+  source: "calendar";
+};
+
+type ReminderRenderableEvent = {
+  id: string;
+  calendarId: "planner-reminders";
   title: string;
   description: string;
-  location: string;
+  location: "";
   startAt: string;
   endAt: string;
-  allDay: boolean;
+  allDay: false;
+  provider: "local";
+  source: "task";
+  status: string;
 };
 
-type LocalCalendarStore = {
-  groups: LocalCalendarGroup[];
-  calendars: LocalCalendar[];
-  events: LocalCalendarEvent[];
-};
-
-type CalendarRenderableEvent = LocalCalendarEvent & {
+type CalendarRenderableEvent = (LocalCalendarEvent & {
   source?: "calendar" | "task";
-};
+}) | GoogleRenderableEvent | ReminderRenderableEvent;
 
 type CalendarEventDetail = {
   event: CalendarRenderableEvent;
@@ -111,7 +108,6 @@ type LocalEventFormState = {
   allDay: boolean;
 };
 
-const LOCAL_CALENDAR_STORAGE_KEY = "orchos-local-calendars";
 const LOCAL_CALENDAR_COLORS = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#ea580c", "#dc2626", "#db2777"];
 const LOCAL_CALENDAR_ICONS: { name: string; component: typeof Calendar03Icon }[] = [
   { name: "Calendar01", component: Calendar01Icon },
@@ -134,6 +130,7 @@ export const Route = createFileRoute("/dashboard/calendar")({ component: Calenda
 
 function CalendarPage() {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [selectedSidebarItem, setSelectedSidebarItem] = useState<string>("google-overview");
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<string[]>([]);
@@ -148,7 +145,6 @@ function CalendarPage() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const localStoreLoadedRef = useRef(false);
   const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
   const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(TODAY));
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(TODAY));
@@ -183,6 +179,7 @@ function CalendarPage() {
   const activeAccount = accounts.find((account) => account.id === activeAccountId) ?? accounts[0] ?? null;
   const localCalendars = localStore.calendars;
   const localEvents = localStore.events;
+  const reminders = localStore.reminders;
   const hasSidebarCalendars = accounts.length > 0 || localCalendars.length > 0;
 
   const activeLocalCalendarIds = useMemo(() => {
@@ -212,8 +209,17 @@ function CalendarPage() {
   }, [localEventsInScope]);
 
   const renderableEvents = useMemo<CalendarRenderableEvent[]>(
-    () => [...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })), ...boardTasksToCalendarEvents(boardTasks)],
-    [boardTasks, localEventsInScope],
+    () => [
+      ...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })),
+      ...googleEvents.map((event) => ({
+        ...event,
+        calendarId: `google:${event.accountId}`,
+        source: "calendar" as const,
+      })),
+      ...boardTasksToCalendarEvents(boardTasks),
+      ...plannerRemindersToCalendarEvents(reminders),
+    ],
+    [boardTasks, googleEvents, localEventsInScope, reminders],
   );
 
   const fullScreenCalendarData = useMemo<FullScreenCalendarDay[]>(
@@ -254,7 +260,7 @@ function CalendarPage() {
     const event = renderableEvents.find((item) => String(item.id) === selectedEventDetailId);
     if (!event) return null;
 
-    if (event.source === "task") {
+    if (event.source === "task" && String(event.id).startsWith("task-")) {
       const taskId = String(event.id).replace(/^task-/, "");
       const task = boardTasks.find((item) => item.id === taskId);
       return {
@@ -270,16 +276,12 @@ function CalendarPage() {
     };
   }, [boardTasks, localCalendars, renderableEvents, selectedEventDetailId]);
 
-  useEffect(() => {
-    void loadIntegrations();
-  }, []);
+  const showLocalCalendarView = localCalendars.length > 0
+    && (selectedSidebarItem.startsWith("local") || accounts.length === 0);
 
   useEffect(() => {
-    try {
-      setLocalStore(loadLocalCalendarStore());
-    } finally {
-      localStoreLoadedRef.current = true;
-    }
+    void loadIntegrations();
+    void loadPlannerStore();
   }, []);
 
   useEffect(() => {
@@ -305,7 +307,10 @@ function CalendarPage() {
 
   useEffect(() => {
     if (accounts.length === 0) {
-      setActiveAccountId(null);
+      if (activeAccountId !== null) {
+        setActiveAccountId(null);
+      }
+      setGoogleEvents((current) => (current.length === 0 ? current : []));
       setSelectedSidebarItem((current) => (current.startsWith("google-account:") ? "google-overview" : current));
       return;
     }
@@ -316,12 +321,20 @@ function CalendarPage() {
   }, [accounts, activeAccountId]);
 
   useEffect(() => {
-    if (!localStoreLoadedRef.current) {
+    if (accounts.length === 0) {
       return;
     }
 
-    window.localStorage.setItem(LOCAL_CALENDAR_STORAGE_KEY, JSON.stringify(localStore));
-  }, [localStore]);
+    void loadGoogleEvents(activeAccountId ?? accounts[0]?.id ?? undefined);
+  }, [accounts, activeAccountId]);
+
+  useEffect(() => {
+    if (localCalendars.length === 0 || accounts.length > 0) {
+      return;
+    }
+
+    setSelectedSidebarItem((current) => (current.startsWith("local") ? current : "local-overview"));
+  }, [accounts.length, localCalendars.length]);
 
   useEffect(() => {
     const selectedDay = eventsByDay.get(selectedLocalDate);
@@ -452,6 +465,22 @@ function CalendarPage() {
     }
   }
 
+  async function loadPlannerStore() {
+    try {
+      setLocalStore(await api.getPlannerStore());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : calendar_failed_load_integrations(), { closeButton: true });
+    }
+  }
+
+  async function loadGoogleEvents(accountId?: string) {
+    try {
+      setGoogleEvents(await api.listGoogleCalendarEvents({ accountId }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : calendar_failed_load_integrations(), { closeButton: true });
+    }
+  }
+
   async function handleConnect() {
     if (!form.clientId.trim() || !form.clientSecret.trim() || !form.refreshToken.trim()) {
       toast.error(calendar_google_oauth_required());
@@ -474,6 +503,7 @@ function CalendarPage() {
         refreshToken: "",
       });
       setIsAddDialogOpen(false);
+      await loadGoogleEvents((updated as CalendarIntegration).accounts?.[0]?.id);
       toast.success(calendar_google_connected());
     } catch (error) {
       toast.error(error instanceof Error ? error.message : calendar_failed_connect_google(), { closeButton: true });
@@ -568,7 +598,7 @@ function CalendarPage() {
     setIsLocalEventDialogOpen(true);
   }
 
-  function handleSaveLocalCalendar() {
+  async function handleSaveLocalCalendar() {
     const name = localCalendarForm.name.trim();
 
     if (!name) {
@@ -576,49 +606,36 @@ function CalendarPage() {
       return;
     }
 
-    setLocalStore((current) => {
-      if (localCalendarForm.id) {
-        return {
-          ...current,
-          calendars: current.calendars.map((calendar) =>
-            calendar.id === localCalendarForm.id
-              ? {
-                  ...calendar,
-                  groupId: "",
-                  name,
-                  color: localCalendarForm.color,
-                  description: localCalendarForm.description.trim(),
-                  icon: localCalendarForm.icon,
-                }
-              : calendar,
-          ),
-        };
+    const nextStore = localCalendarForm.id
+      ? await api.updatePlannerCalendar({
+          id: localCalendarForm.id,
+          groupId: "",
+          name,
+          color: localCalendarForm.color,
+          description: localCalendarForm.description.trim(),
+          icon: localCalendarForm.icon,
+        })
+      : await api.createPlannerCalendar({
+          groupId: "",
+          name,
+          color: localCalendarForm.color,
+          description: localCalendarForm.description.trim(),
+          icon: localCalendarForm.icon,
+        });
+
+    setLocalStore(nextStore);
+    if (!localCalendarForm.id) {
+      const createdCalendar = nextStore.calendars[nextStore.calendars.length - 1];
+      if (createdCalendar) {
+        setSelectedSidebarItem(`local-calendar:${createdCalendar.id}`);
       }
-
-      const calendarId = createId("calendar");
-      setSelectedSidebarItem(`local-calendar:${calendarId}`);
-
-      return {
-        ...current,
-        calendars: [
-          ...current.calendars,
-          {
-            id: calendarId,
-            groupId: "",
-            name,
-            color: localCalendarForm.color,
-            description: localCalendarForm.description.trim(),
-            icon: localCalendarForm.icon,
-          },
-        ],
-      };
-    });
+    }
 
     setIsLocalCalendarDialogOpen(false);
     toast.success(localCalendarForm.id ? calendar_calendar_updated() : calendar_calendar_created());
   }
 
-  function handleSaveLocalEvent() {
+  async function handleSaveLocalEvent() {
     if (!localEventForm.calendarId) {
       toast.error(calendar_choose_calendar());
       return;
@@ -652,19 +669,18 @@ function CalendarPage() {
       allDay: localEventForm.allDay,
     };
 
-    setLocalStore((current) => {
-      if (localEventForm.id) {
-        return {
-          ...current,
-          events: current.events.map((event) => (event.id === localEventForm.id ? { ...event, ...payload } : event)),
-        };
-      }
+    const nextStore = localEventForm.id
+      ? await api.updatePlannerEvent({
+          id: localEventForm.id,
+          ...payload,
+          provider: "local",
+        })
+      : await api.createPlannerEvent({
+          ...payload,
+          provider: "local",
+        });
 
-      return {
-        ...current,
-        events: [...current.events, { id: createId("event"), ...payload }],
-      };
-    });
+    setLocalStore(nextStore);
 
     setSelectedLocalDate(formatDayKey(startAt));
     setVisibleMonth(startOfMonth(startAt));
@@ -676,15 +692,11 @@ function CalendarPage() {
     setCalendarPendingDelete(calendar);
   }
 
-  function confirmDeleteLocalCalendar() {
+  async function confirmDeleteLocalCalendar() {
     if (!calendarPendingDelete) return;
 
     const calendar = calendarPendingDelete;
-    setLocalStore((current) => ({
-      ...current,
-      calendars: current.calendars.filter((item) => item.id !== calendar.id),
-      events: current.events.filter((item) => item.calendarId !== calendar.id),
-    }));
+    setLocalStore(await api.deletePlannerCalendar(calendar.id));
     setHiddenCalendarIds((current) => current.filter((id) => id !== calendar.id));
     setSelectedSidebarItem((current) => current === `local-calendar:${calendar.id}` ? "local-overview" : current);
     setCalendarPendingDelete(null);
@@ -879,8 +891,18 @@ function CalendarPage() {
                           return (
                             <div
                               key={calendar.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setSelectedSidebarItem(`local-calendar:${calendar.id}`)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  setSelectedSidebarItem(`local-calendar:${calendar.id}`);
+                                }
+                              }}
                               className={cn(
-                                "group flex min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                "group flex w-full min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                                selectedSidebarItem === `local-calendar:${calendar.id}` && "bg-accent text-foreground",
                                 isHidden && "opacity-45",
                               )}
                             >
@@ -1010,7 +1032,7 @@ function CalendarPage() {
                 <div className="flex flex-1 items-center justify-center">
                   <AsciiLoading label={loading_label()} />
                 </div>
-              ) : selectedSidebarItem.startsWith("local") ? (
+              ) : showLocalCalendarView ? (
                 localCalendars.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center">
                     <EmptyState
@@ -1032,35 +1054,31 @@ function CalendarPage() {
                     />
                   </div>
                 ) : (
-                  <section className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-                    <div className="space-y-6">
-
-                      <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
-                        <div className="border-b border-border/60 px-4 py-3">
-                          <Tabs value={calendarSourceFilter} onValueChange={(value) => setCalendarSourceFilter(value as "all" | "events" | "tasks")}>
-                            <TabsList>
-                              <TabsTrigger value="all">All</TabsTrigger>
-                              <TabsTrigger value="events">Events</TabsTrigger>
-                              <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                            </TabsList>
-                          </Tabs>
-                        </div>
-                        <FullScreenCalendar
-                          data={fullScreenCalendarData}
-                          currentMonth={visibleMonth}
-                          selectedDay={parseDayKey(selectedLocalDate)}
-                          viewMode={calendarViewMode}
-                          onSelectDay={handleCalendarSelectDay}
-                          onCurrentMonthChange={handleCalendarMonthChange}
-                          onCreateEvent={() => openLocalEventDialog(selectedLocalDate)}
-                          onCreateSlot={handleCreateCalendarSlot}
-                          onUpdateTaskEvent={handleUpdateTaskEvent}
-                          onCycleTaskStatus={handleCycleTaskStatus}
-                          onOpenEvent={handleOpenCalendarEvent}
-                        />
+                  <section className="space-y-6">
+                    <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
+                      <div className="border-b border-border/60 px-4 py-3">
+                        <Tabs value={calendarSourceFilter} onValueChange={(value) => setCalendarSourceFilter(value as "all" | "events" | "tasks")}>
+                          <TabsList>
+                            <TabsTrigger value="all">All</TabsTrigger>
+                            <TabsTrigger value="events">Events</TabsTrigger>
+                            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
                       </div>
+                      <FullScreenCalendar
+                        data={fullScreenCalendarData}
+                        currentMonth={visibleMonth}
+                        selectedDay={parseDayKey(selectedLocalDate)}
+                        viewMode={calendarViewMode}
+                        onSelectDay={handleCalendarSelectDay}
+                        onCurrentMonthChange={handleCalendarMonthChange}
+                        onCreateEvent={() => openLocalEventDialog(selectedLocalDate)}
+                        onCreateSlot={handleCreateCalendarSlot}
+                        onUpdateTaskEvent={handleUpdateTaskEvent}
+                        onCycleTaskStatus={handleCycleTaskStatus}
+                        onOpenEvent={handleOpenCalendarEvent}
+                      />
                     </div>
-
                   </section>
                 )
               ) : accounts.length === 0 ? (
@@ -1624,6 +1642,7 @@ function createInitialLocalCalendarStore(): LocalCalendarStore {
     groups: [],
     calendars: [],
     events: [],
+    reminders: [],
   };
 }
 
@@ -1643,33 +1662,6 @@ function createEmptyEventForm(): LocalEventFormState {
     endAt: toDateTimeLocalValue(later),
     allDay: false,
   };
-}
-
-function loadLocalCalendarStore(): LocalCalendarStore {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_CALENDAR_STORAGE_KEY);
-    if (!raw) {
-      return createInitialLocalCalendarStore();
-    }
-
-    const parsed = JSON.parse(raw) as Partial<LocalCalendarStore>;
-    return {
-      groups: Array.isArray(parsed.groups) ? parsed.groups : [],
-      calendars: Array.isArray(parsed.calendars) ? parsed.calendars : [],
-      events: Array.isArray(parsed.events) ? parsed.events : [],
-    };
-  } catch {
-    return createInitialLocalCalendarStore();
-  }
-}
-
-function randomId() {
-  if (typeof crypto?.randomUUID === "function") return crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function createId(prefix: string) {
-  return `${prefix}-${randomId()}`;
 }
 
 function formatDayKey(date: Date) {
@@ -1742,7 +1734,46 @@ function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getSt
         startAt,
         endAt,
         allDay: false,
+        provider: "local" as const,
         source: "task" as const,
       }];
     });
+}
+
+function plannerRemindersToCalendarEvents(reminders: PlannerReminder[]): ReminderRenderableEvent[] {
+  return reminders.flatMap((reminder) => {
+    if (reminder.completed) return [];
+
+    const nextOccurrence = getReminderNextOccurrence(reminder);
+    const displayText = getReminderDisplayText(reminder);
+    const range = nextOccurrence ? reminderToDateRange(nextOccurrence) : null;
+    if (!range) return [];
+
+    return [{
+      id: `reminder-${reminder.id}`,
+      calendarId: "planner-reminders",
+      title: reminder.title,
+      description: reminder.notes || displayText || "",
+      location: "",
+      startAt: range.startAt,
+      endAt: range.endAt,
+      allDay: false,
+      provider: "local",
+      source: "task",
+      status: "reminder",
+    }];
+  });
+}
+
+function reminderToDateRange(start: Date): { startAt: string; endAt: string } | null {
+  if (Number.isNaN(start.getTime())) {
+    return null;
+  }
+
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + 30);
+  return {
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
+  };
 }

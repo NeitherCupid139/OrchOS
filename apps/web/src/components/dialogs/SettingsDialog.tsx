@@ -37,7 +37,7 @@ import { useLocale } from "@/lib/i18n-provider";
 import { AVAILABLE_LOCALES } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { playUiSound } from "@/lib/audio";
-import { about, about_acknowledgements_desc, about_acknowledgements_title, about_project_summary_title, cancel, close, delete as delete_message, display_name, display_name_placeholder, edit, edit_mail_account, email, email_placeholder, event_calendar, event_email, event_message, event_reminder, event_social, event_sounds, event_sounds_desc, event_system, general, imap_configuration, imap_host, imap_port, language, language_desc, mail, mail_accounts, mail_accounts_desc, mail_accounts_empty_hint, no_accounts, no_mail_accounts_configured, notifications, orchos_desc, password, password_placeholder, prefer_kanji, prefer_kanji_desc, save, settings as settings_label, shortcut_hints, shortcut_hints_desc, shortcuts, shortcuts_cmd_enter, shortcuts_enter, shortcuts_send_message, shortcuts_send_message_desc, smtp_configuration, smtp_host, smtp_port, sound_bell_1, sound_bell_2, sound_bell_3, sound_error, sound_pop, sound_pong, sound_ring_1, sound_ring_2, system_notifications, system_notifications_desc, use_mixed_script, use_mixed_script_desc, use_tls_imap, use_tls_smtp, username, username_placeholder } from "@/paraglide/messages";
+import { about, about_acknowledgements_desc, about_acknowledgements_title, about_project_summary_title, cancel, close, delete as delete_message, display_name, display_name_placeholder, edit, edit_mail_account, email, email_placeholder, event_calendar, event_email, event_message, event_reminder, event_social, event_sounds, event_sounds_desc, event_system, general, imap_configuration, imap_host, imap_port, language, language_desc, mail, mail_accounts, mail_accounts_desc, mail_accounts_empty_hint, no_accounts, no_mail_accounts_configured, notifications, orchos_desc, password, password_placeholder, prefer_kanji, prefer_kanji_desc, save, settings as settings_label, shortcut_hints, shortcut_hints_desc, shortcuts, shortcuts_enter, shortcuts_send_message, shortcuts_send_message_desc, smtp_configuration, smtp_host, smtp_port, sound_bell_1, sound_bell_2, sound_bell_3, sound_error, sound_pop, sound_pong, sound_ring_1, sound_ring_2, system_notifications, system_notifications_desc, use_mixed_script, use_mixed_script_desc, use_tls_imap, use_tls_smtp, username, username_placeholder } from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
 import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -153,6 +153,30 @@ const SOUND_LABELS: Record<SoundId, () => string> = {
   ring: sound_ring_1,
   ring2: sound_ring_2,
 };
+
+function ShortcutKeycaps({ value }: { value: "enter" | "cmd-enter" }) {
+  const keys = value === "cmd-enter"
+    ? [
+        { id: "cmd", display: "⌘", label: "Command" },
+        { id: "enter", display: "↵", label: shortcuts_enter() },
+      ]
+    : [{ id: "enter", display: "↵", label: shortcuts_enter() }];
+
+  return (
+    <span className="flex items-center gap-1.5">
+      {keys.map((key) => (
+        <kbd
+          key={key.id}
+          aria-label={key.label}
+          title={key.label}
+          className="inline-flex min-w-8 items-center justify-center rounded-md border border-border/80 bg-muted/60 px-2 py-1 text-[11px] font-medium leading-none text-foreground shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]"
+        >
+          {key.display}
+        </kbd>
+      ))}
+    </span>
+  );
+}
 
 interface SettingsDialogProps {
   open: boolean;
@@ -842,18 +866,16 @@ export function SettingsDialog({
                   >
                     <SelectTrigger className="w-[160px]">
                       <SelectValue>
-                        {currentSettings.sendShortcut === "cmd-enter"
-                          ? shortcuts_cmd_enter()
-                          : shortcuts_enter()}
+                        <ShortcutKeycaps value={currentSettings.sendShortcut} />
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
                         <SelectItem value="enter">
-                          {shortcuts_enter()}
+                          <ShortcutKeycaps value="enter" />
                         </SelectItem>
                         <SelectItem value="cmd-enter">
-                          {shortcuts_cmd_enter()}
+                          <ShortcutKeycaps value="cmd-enter" />
                         </SelectItem>
                       </SelectGroup>
                     </SelectContent>

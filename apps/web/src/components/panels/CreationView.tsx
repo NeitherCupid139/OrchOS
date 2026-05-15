@@ -69,10 +69,11 @@ const searchEngineMeta = [
   { id: "ecosia", url: "https://www.ecosia.org/search?q=" },
 ] as const;
 
-export function CreationView({
-  runtimes,
-  settings,
-}: CreationViewProps) {
+export function CreationView(props?: CreationViewProps | null) {
+  const {
+    runtimes = [],
+    settings = null,
+  } = props ?? {};
   const creationFilterButtons = [
     { value: "all", label: all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
     { value: "active", label: creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
@@ -462,56 +463,57 @@ export function CreationView({
                       onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
                     >
                       <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
-                      <button type="button" className="flex-1 text-left">
+                      <button type="button" className="min-w-0 flex-1 text-left">
                         <div className="truncate text-xs leading-5">
                           {conversation.title || untitled_conversation()}
                         </div>
                       </button>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={(props) => (
+                              <Button
+                                {...props}
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleUpdateConversation(conversation.id, {
+                                    archived: !conversation.archived,
+                                  });
+                                }}
+                                className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
+                              >
+                                <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
+                              </Button>
+                            )}
+                          />
+                          <TooltipContent side="bottom">{archive()}</TooltipContent>
+                        </Tooltip>
 
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={(props) => (
-                            <Button
-                              {...props}
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleUpdateConversation(conversation.id, {
-                                  archived: !conversation.archived,
-                                });
-                              }}
-                              className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
-                            >
-                              <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
-                            </Button>
-                          )}
-                        />
-                        <TooltipContent side="bottom">{archive()}</TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={(props) => (
-                            <Button
-                              {...props}
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setConvToDelete(conversation.id);
-                                setDeleteConfirmOpen(true);
-                              }}
-                              className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                            >
-                              <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                            </Button>
-                          )}
-                        />
-                        <TooltipContent side="bottom">{delete_message()}</TooltipContent>
-                      </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={(props) => (
+                              <Button
+                                {...props}
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setConvToDelete(conversation.id);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                                className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                              >
+                                <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                              </Button>
+                            )}
+                          />
+                          <TooltipContent side="bottom">{delete_message()}</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   );
                 })}
@@ -1403,6 +1405,34 @@ interface SearchEngineSelectorProps {
   onSelect: (engineId: string) => void;
 }
 
+const searchEngineIconMap: Record<string, string> = {
+  google: "/search/google.svg",
+  bing: "/search/bing.png",
+  duckduckgo: "/search/duckduckgo.svg",
+  baidu: "/search/baidu.svg",
+  sogou: "/search/sogou.svg",
+  ["360"]: "/search/360search.png",
+  yandex: "/search/yandex.svg",
+  searxng: "/search/searxng.svg",
+  startpage: "/search/startpage.svg",
+  brave: "/search/brave-search.svg",
+  ecosia: "/search/ecosia.svg",
+};
+
+function SearchEngineIcon({ engineId, className }: { engineId: string; className?: string }) {
+  const src = searchEngineIconMap[engineId];
+  if (!src) {
+    return <HugeiconsIcon icon={GlobeIcon} className={className} />;
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className={cn("shrink-0", className)}
+    />
+  );
+}
+
 function SearchEngineSelector({
   engines,
   selectedEngineId,
@@ -1418,8 +1448,8 @@ function SearchEngineSelector({
         className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
-            <HugeiconsIcon icon={GlobeIcon} className="size-3 shrink-0" />
+          <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
+            <SearchEngineIcon engineId={selectedEngineId} className="size-3.5" />
           </span>
           <span className="truncate">
             {selectedEngine?.name || search_engine_google()}
@@ -1441,7 +1471,7 @@ function SearchEngineSelector({
             }}
             className="flex items-center gap-2"
           >
-            <HugeiconsIcon icon={GlobeIcon} className="size-3.5 shrink-0 text-muted-foreground" />
+            <SearchEngineIcon engineId={engine.id} className="size-3.5" />
             <span className="truncate">{engine.name}</span>
           </DropdownMenuItem>
         ))}

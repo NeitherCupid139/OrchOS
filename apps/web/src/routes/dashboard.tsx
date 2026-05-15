@@ -28,7 +28,7 @@ const loadAuthTransitionOverlay = createClientOnlyFn(async () => {
 });
 
 export const Route = createFileRoute("/dashboard")({
-  component: DashboardWrapper,
+  component: DashboardContent,
 });
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -119,7 +119,7 @@ function DashboardWrapper() {
     <AuthProvider>
       <RequireAuth>
         <DashboardProvider>
-          <DashboardContent />
+          <DashboardContentInner />
         </DashboardProvider>
       </RequireAuth>
     </AuthProvider>
@@ -127,6 +127,10 @@ function DashboardWrapper() {
 }
 
 function DashboardContent() {
+  return <DashboardWrapper />;
+}
+
+function DashboardContentInner() {
   const location = useLocation();
   const navigate = useNavigate();
 

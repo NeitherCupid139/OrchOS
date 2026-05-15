@@ -145,6 +145,28 @@ export function MessageBubble({
     projectId?: string;
     projectName?: string;
   };
+  const getPartKey = useCallback(
+    (part: ConversationUiPart, index: number) => {
+      if ("id" in part && typeof part.id === "string" && part.id.length > 0) {
+        return part.id;
+      }
+
+      if (part.type === "text") {
+        return `${msg.id}-text-${index}-${part.text}`;
+      }
+
+      if (part.type === "reasoning") {
+        return `${msg.id}-reasoning-${index}-${part.text}`;
+      }
+
+      if (part.type === "clarification") {
+        return `${msg.id}-clarification-${index}-${part.questions.join("|")}`;
+      }
+
+      return `${msg.id}-${part.type}-${index}`;
+    },
+    [msg.id],
+  );
 
   const handleCopy = useCallback(async () => {
     const text = parts
@@ -198,23 +220,25 @@ export function MessageBubble({
             ? "bg-primary text-primary-foreground [&_a]:text-primary-foreground/80 [&_a]:underline-offset-4 [&_code]:bg-primary-foreground/15"
             : "bg-muted/50",
         )}>
-          {parts.map((part) => {
+          {parts.map((part, index) => {
+            const key = getPartKey(part, index);
+
             if (part.type === "text") {
               return (
-                <div key={part.id} className={cn("text-sm leading-7", isUser ? "text-primary-foreground" : "text-foreground/90")}>
+                <div key={key} className={cn("text-sm leading-7", isUser ? "text-primary-foreground" : "text-foreground/90")}>
                   <ChatMarkdown content={part.text} />
                 </div>
               );
             }
 
             if (part.type === "reasoning") {
-              return <ChatReasoningDrawer key={part.id} text={part.text} metadata={metadata} />;
+              return <ChatReasoningDrawer key={key} text={part.text} metadata={metadata} />;
             }
 
             if (part.type === "clarification") {
               return (
                 <ChatClarificationCard
-                  key={part.id}
+                  key={key}
                   summary={part.summary}
                   questions={part.questions}
                 />
@@ -224,7 +248,7 @@ export function MessageBubble({
             if (part.type.startsWith("tool-")) {
               return (
                 <ChatToolTimeline
-                  key={part.id}
+                  key={key}
                   part={part as Record<string, unknown> & { type: string }}
                 />
               );

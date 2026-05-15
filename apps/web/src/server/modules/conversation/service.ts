@@ -22,8 +22,27 @@ export interface Message {
   conversationId: string;
   role: "user" | "assistant";
   content: string;
+  trace?: Array<
+    | { kind: "message"; text: string }
+    | { kind: "thought"; text: string }
+    | {
+        kind: "tool";
+        toolName?: string;
+        toolCallId?: string;
+        state?: string;
+        input?: unknown;
+        output?: unknown;
+        errorText?: string;
+      }
+  >;
   error?: string;
   responseTime?: number;
+  executionMode?: "sandbox" | "local";
+  sandboxStatus?: "created" | "reused" | "fallback" | "required_failed";
+  sandboxVmId?: string;
+  projectId?: string;
+  projectName?: string;
+  clarificationQuestions?: string[];
   createdAt: string;
 }
 
@@ -149,6 +168,15 @@ export abstract class ConversationService {
     content: string,
     error?: string,
     responseTime?: number,
+    metadata?: {
+      trace?: Message["trace"];
+      executionMode?: Message["executionMode"];
+      sandboxStatus?: Message["sandboxStatus"];
+      sandboxVmId?: string;
+      projectId?: string;
+      projectName?: string;
+      clarificationQuestions?: string[];
+    },
   ): Promise<Message> {
     const id = generateId("msg");
     const now = new Date().toISOString();
@@ -160,8 +188,17 @@ export abstract class ConversationService {
         conversationId,
         role,
         content,
+        trace: metadata?.trace ? JSON.stringify(metadata.trace) : null,
         error: error || null,
         responseTime: responseTime != null ? String(responseTime) : null,
+        executionMode: metadata?.executionMode || null,
+        sandboxStatus: metadata?.sandboxStatus || null,
+        sandboxVmId: metadata?.sandboxVmId || null,
+        projectId: metadata?.projectId || null,
+        projectName: metadata?.projectName || null,
+        clarificationQuestions: metadata?.clarificationQuestions
+          ? JSON.stringify(metadata.clarificationQuestions)
+          : null,
         createdAt: now,
       })
       .run();
@@ -177,8 +214,15 @@ export abstract class ConversationService {
       conversationId,
       role,
       content,
+      trace: metadata?.trace,
       error,
       responseTime,
+      executionMode: metadata?.executionMode,
+      sandboxStatus: metadata?.sandboxStatus,
+      sandboxVmId: metadata?.sandboxVmId,
+      projectId: metadata?.projectId,
+      projectName: metadata?.projectName,
+      clarificationQuestions: metadata?.clarificationQuestions,
       createdAt: now,
     };
   }
@@ -259,6 +303,46 @@ export abstract class ConversationService {
     };
   }
 
+  static mapMessageRow(row: typeof messages.$inferSelect): Message {
+    const parseJson = <T,>(value: string | null | undefined): T | undefined => {
+      if (!value) return undefined;
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return undefined;
+      }
+    };
+
+    const responseTime =
+      row.responseTime != null ? Number.parseInt(row.responseTime, 10) : undefined;
+
+    return {
+      id: row.id,
+      conversationId: row.conversationId,
+      role: row.role === "user" ? "user" : "assistant",
+      content: row.content,
+      trace: parseJson<Message["trace"]>(row.trace),
+      error: row.error || undefined,
+      responseTime: Number.isFinite(responseTime) ? responseTime : undefined,
+      executionMode:
+        row.executionMode === "sandbox" || row.executionMode === "local"
+          ? row.executionMode
+          : undefined,
+      sandboxStatus:
+        row.sandboxStatus === "created" ||
+        row.sandboxStatus === "reused" ||
+        row.sandboxStatus === "fallback" ||
+        row.sandboxStatus === "required_failed"
+          ? row.sandboxStatus
+          : undefined,
+      sandboxVmId: row.sandboxVmId || undefined,
+      projectId: row.projectId || undefined,
+      projectName: row.projectName || undefined,
+      clarificationQuestions: parseJson<string[]>(row.clarificationQuestions),
+      createdAt: row.createdAt,
+    };
+  }
+
   static async deleteLastAssistantMessage(
     db: AppDb,
     conversationId: string,
@@ -331,15 +415,4 @@ export abstract class ConversationService {
     }
   }
 
-  static mapMessageRow(row: typeof messages.$inferSelect): Message {
-    return {
-      id: row.id,
-      conversationId: row.conversationId,
-      role: row.role as "user" | "assistant",
-      content: row.content,
-      error: row.error || undefined,
-      responseTime: row.responseTime ? Number(row.responseTime) : undefined,
-      createdAt: row.createdAt,
-    };
-  }
 }

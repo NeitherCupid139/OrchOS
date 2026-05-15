@@ -259,6 +259,73 @@ export interface ConversationMessage {
   createdAt: string;
 }
 
+export interface PlannerCalendarGroup {
+  id: string;
+  name: string;
+}
+
+export interface PlannerCalendar {
+  id: string;
+  groupId: string;
+  name: string;
+  color: string;
+  description: string;
+  icon: string;
+}
+
+export interface PlannerCalendarEvent {
+  id: string;
+  calendarId: string;
+  title: string;
+  description: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  provider: "local" | "google";
+  externalId?: string;
+  accountId?: string;
+}
+
+export interface PlannerReminder {
+  id: string;
+  title: string;
+  notes: string;
+  remindAt?: string;
+  schedule?: {
+    kind: "once";
+    at: string;
+  } | {
+    kind: "daily";
+    hour: number;
+    minute: number;
+    timezone?: string;
+  };
+  completed: boolean;
+  provider: "local";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlannerStore {
+  groups: PlannerCalendarGroup[];
+  calendars: PlannerCalendar[];
+  events: PlannerCalendarEvent[];
+  reminders: PlannerReminder[];
+}
+
+export interface GoogleCalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  accountId: string;
+  provider: "google";
+}
+
 export interface ProblemSummary {
   status: Record<ProblemStatus, number>;
   inbox: {
@@ -343,6 +410,7 @@ export interface BookmarkItem {
   title: string;
   url: string;
   pinned: boolean;
+  icon?: string;
 }
 
 export interface BookmarkCategory {

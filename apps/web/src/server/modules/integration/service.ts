@@ -1,3 +1,4 @@
+import { createTransport } from "nodemailer";
 import { eq } from "drizzle-orm";
 import type { AppDb } from "@/server/db/types";
 import { settings } from "@/server/db/schema";
@@ -45,6 +46,11 @@ interface IntegrationConfig {
   accessToken?: string;
   apiUrl?: string;
   username?: string;
+}
+
+interface GoogleTokenResult {
+  accessToken: string;
+  scopes: string[];
 }
 
 const INTEGRATION_KEY = "integrations";
@@ -204,6 +210,39 @@ export class IntegrationService {
       accessToken: payload.access_token,
       scopes: payload.scope?.split(" ").filter(Boolean) ?? [],
     };
+  }
+
+  private async getGoogleAccessToken(account: IntegrationAccount): Promise<GoogleTokenResult> {
+    if (!account.oauth) {
+      throw new Error("Google account is missing OAuth credentials");
+    }
+
+    return this.exchangeGoogleRefreshToken(account.oauth);
+  }
+
+  private requireAccount(integration: IntegrationConfig, accountId?: string) {
+    const account = accountId
+      ? integration.accounts.find((item) => item.id === accountId)
+      : integration.accounts[0];
+
+    if (!account) {
+      throw new Error(`No connected account found for ${integration.name}`);
+    }
+
+    return account;
+  }
+
+  private toBase64Url(value: string) {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+
+    return btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
   }
 
   private async fetchGoogleProfile(accessToken: string): Promise<{ email: string; label: string }> {
@@ -396,5 +435,218 @@ export class IntegrationService {
     integration.accounts = [];
     await this.saveIntegrations(integrations);
     return { success: true };
+  }
+
+  async createGoogleCalendarEvent(input: {
+    title: string;
+    description?: string;
+    location?: string;
+    startAt: string;
+    endAt: string;
+    allDay?: boolean;
+    accountId?: string;
+  }) {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "google-calendar");
+    const account = this.requireAccount(integration, input.accountId);
+    const { accessToken } = await this.getGoogleAccessToken(account);
+
+    const payload = input.allDay
+      ? {
+          summary: input.title,
+          description: input.description?.trim() || undefined,
+          location: input.location?.trim() || undefined,
+          start: { date: input.startAt.slice(0, 10) },
+          end: { date: input.endAt.slice(0, 10) },
+        }
+      : {
+          summary: input.title,
+          description: input.description?.trim() || undefined,
+          location: input.location?.trim() || undefined,
+          start: { dateTime: input.startAt },
+          end: { dateTime: input.endAt },
+        };
+
+    const response = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`Failed to create Google Calendar event: ${errorText}`);
+    }
+
+    const data = await response.json() as {
+      id?: string;
+      htmlLink?: string;
+      summary?: string;
+    };
+
+    return {
+      id: data.id ?? "",
+      url: data.htmlLink,
+      title: data.summary ?? input.title,
+      accountId: account.id,
+      provider: "google-calendar" as const,
+    };
+  }
+
+  async sendGmailMessage(input: {
+    to: string[];
+    cc?: string[];
+    subject: string;
+    body: string;
+    accountId?: string;
+  }) {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "gmail");
+    const account = this.requireAccount(integration, input.accountId);
+    const { accessToken } = await this.getGoogleAccessToken(account);
+
+    const headers = [
+      `From: ${account.email ?? account.label}`,
+      `To: ${input.to.join(", ")}`,
+      input.cc && input.cc.length > 0 ? `Cc: ${input.cc.join(", ")}` : null,
+      `Subject: ${input.subject}`,
+      "Content-Type: text/plain; charset=UTF-8",
+      "",
+      input.body,
+    ].filter((line): line is string => typeof line === "string");
+
+    const raw = this.toBase64Url(headers.join("\r\n"));
+
+    const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ raw }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`Failed to send Gmail message: ${errorText}`);
+    }
+
+    const data = await response.json() as { id?: string; threadId?: string };
+    return {
+      id: data.id ?? "",
+      threadId: data.threadId,
+      accountId: account.id,
+      provider: "gmail" as const,
+    };
+  }
+
+  async sendSmtpMessage(input: {
+    to: string[];
+    cc?: string[];
+    subject: string;
+    body: string;
+    accountId?: string;
+  }) {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "smtp-imap");
+    const account = this.requireAccount(integration, input.accountId);
+    const config = account.smtpImap;
+
+    if (!config) {
+      throw new Error("SMTP account is missing SMTP/IMAP configuration");
+    }
+
+    const transporter = createTransport({
+      host: config.smtp.host,
+      port: config.smtp.port,
+      secure: config.smtp.secure,
+      auth: {
+        user: config.username,
+        pass: config.password,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: config.displayName
+        ? `"${config.displayName}" <${config.email}>`
+        : config.email,
+      to: input.to,
+      cc: input.cc,
+      subject: input.subject,
+      text: input.body,
+    });
+
+    return {
+      id: info.messageId,
+      accountId: account.id,
+      provider: "smtp" as const,
+      accepted: info.accepted,
+      rejected: info.rejected,
+    };
+  }
+
+  async listGoogleCalendarEvents(input?: {
+    accountId?: string;
+    timeMin?: string;
+    timeMax?: string;
+    maxResults?: number;
+  }) {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "google-calendar");
+    const account = this.requireAccount(integration, input?.accountId);
+    const { accessToken } = await this.getGoogleAccessToken(account);
+
+    const params = new URLSearchParams({
+      singleEvents: "true",
+      orderBy: "startTime",
+      maxResults: String(input?.maxResults ?? 100),
+      timeMin: input?.timeMin ?? new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+      timeMax: input?.timeMax ?? new Date(Date.now() + 1000 * 60 * 60 * 24 * 180).toISOString(),
+    });
+
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`Failed to list Google Calendar events: ${errorText}`);
+    }
+
+    const data = await response.json() as {
+      items?: Array<{
+        id?: string;
+        summary?: string;
+        description?: string;
+        location?: string;
+        start?: { date?: string; dateTime?: string };
+        end?: { date?: string; dateTime?: string };
+      }>;
+    };
+
+    return (data.items ?? []).flatMap((item) => {
+      const startAt = item.start?.dateTime ?? (item.start?.date ? `${item.start.date}T00:00:00.000Z` : undefined);
+      const endAt = item.end?.dateTime ?? (item.end?.date ? `${item.end.date}T00:00:00.000Z` : undefined);
+      if (!item.id || !startAt || !endAt) {
+        return [];
+      }
+
+      return [{
+        id: item.id,
+        title: item.summary ?? "Untitled event",
+        description: item.description ?? "",
+        location: item.location ?? "",
+        startAt,
+        endAt,
+        allDay: Boolean(item.start?.date && !item.start?.dateTime),
+        accountId: account.id,
+        provider: "google" as const,
+      }];
+    });
   }
 }

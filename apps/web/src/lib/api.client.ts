@@ -15,6 +15,7 @@ import type {
   InboxThreadKind,
   InboxThreadStatus,
   Integration,
+  GoogleCalendarEvent,
   LocalAgentPairingToken,
   LocalAgentProfile,
   ObservabilityMetrics,
@@ -23,6 +24,8 @@ import type {
   ProblemPriority,
   ProblemStatus,
   ProblemSummary,
+  PlannerReminder,
+  PlannerStore,
   Project,
   RegisterRuntimesResponse,
   RuntimeModelsResponse,
@@ -58,6 +61,81 @@ export const api = {
   listIntegrations: async (): Promise<Integration[]> => {
     const payload = (await orpc.integrations.list({})) as unknown;
     return Array.isArray(payload) ? (payload as Integration[]) : [];
+  },
+  getPlannerStore: async (): Promise<PlannerStore> => {
+    return (await orpc.planner.getStore({})) as PlannerStore;
+  },
+  createPlannerCalendar: async (data: {
+    groupId?: string;
+    name: string;
+    color: string;
+    description?: string;
+    icon: string;
+  }): Promise<PlannerStore> => {
+    return (await orpc.planner.createCalendar(data)) as PlannerStore;
+  },
+  updatePlannerCalendar: async (data: {
+    id: string;
+    groupId?: string;
+    name?: string;
+    color?: string;
+    description?: string;
+    icon?: string;
+  }): Promise<PlannerStore> => {
+    return (await orpc.planner.updateCalendar(data)) as PlannerStore;
+  },
+  deletePlannerCalendar: async (id: string): Promise<PlannerStore> => {
+    return (await orpc.planner.deleteCalendar({ id })) as PlannerStore;
+  },
+  createPlannerEvent: async (data: {
+    calendarId: string;
+    title: string;
+    description?: string;
+    location?: string;
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+    provider?: "local" | "google";
+    externalId?: string;
+    accountId?: string;
+  }): Promise<PlannerStore> => {
+    return (await orpc.planner.createEvent(data)) as PlannerStore;
+  },
+  updatePlannerEvent: async (data: {
+    id: string;
+    calendarId?: string;
+    title?: string;
+    description?: string;
+    location?: string;
+    startAt?: string;
+    endAt?: string;
+    allDay?: boolean;
+    provider?: "local" | "google";
+    externalId?: string;
+    accountId?: string;
+  }): Promise<PlannerStore> => {
+    return (await orpc.planner.updateEvent(data)) as PlannerStore;
+  },
+  createPlannerReminder: async (data: {
+    title: string;
+    notes?: string;
+    remindAt?: string;
+    schedule?: PlannerReminder["schedule"];
+  }): Promise<PlannerReminder> => {
+    return (await orpc.planner.createReminder(data)) as PlannerReminder;
+  },
+  updatePlannerReminder: async (data: {
+    id: string;
+    title?: string;
+    notes?: string;
+    remindAt?: string;
+    schedule?: PlannerReminder["schedule"];
+    completed?: boolean;
+  }): Promise<PlannerStore> => {
+    return (await orpc.planner.updateReminder(data)) as PlannerStore;
+  },
+  deletePlannerReminder: async (id: string): Promise<PlannerStore> => {
+    return (await orpc.planner.deleteReminder({ id })) as PlannerStore;
   },
   connectIntegration: async (
     id: "github" | "gitlab",
@@ -114,6 +192,14 @@ export const api = {
     accountId: string,
   ): Promise<Integration> => {
     return (await orpc.integrations.deleteAccount({ id, accountId })) as Integration;
+  },
+  listGoogleCalendarEvents: async (data?: {
+    accountId?: string;
+    timeMin?: string;
+    timeMax?: string;
+    maxResults?: number;
+  }): Promise<GoogleCalendarEvent[]> => {
+    return (await orpc.integrations.listGoogleCalendarEvents(data ?? {})) as GoogleCalendarEvent[];
   },
   disconnectIntegration: async (id: string): Promise<{ success: boolean }> => {
     return (await orpc.integrations.disconnect({ id })) as { success: boolean };
@@ -343,12 +429,13 @@ export const api = {
   },
   createBookmarkItem: async (
     categoryId: string,
-    data: { title: string; url: string },
+    data: { title: string; url: string; icon?: string },
   ): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.createItem({
       categoryId,
       title: data.title,
       url: data.url,
+      icon: data.icon,
     })) as BookmarkCategory[];
   },
   updateBookmarkCategory: async (
@@ -363,7 +450,7 @@ export const api = {
   updateBookmarkItem: async (
     categoryId: string,
     itemId: string,
-    data: { title?: string; url?: string; pinned?: boolean },
+    data: { title?: string; url?: string; pinned?: boolean; icon?: string | null },
   ): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.updateItem({
       categoryId,

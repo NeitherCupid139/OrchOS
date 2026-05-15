@@ -26,6 +26,18 @@ export const integrationSchema = z.object({
   accounts: z.array(integrationAccountSchema),
 });
 
+const googleCalendarEventSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  location: z.string(),
+  startAt: z.string(),
+  endAt: z.string(),
+  allDay: z.boolean(),
+  accountId: z.string(),
+  provider: z.literal("google"),
+});
+
 const smtpImapConfigSchema = z.object({
   email: z.string(),
   displayName: z.string().optional(),
@@ -105,5 +117,15 @@ export const integrationsContract = {
       }),
     )
     .output(integrationSchema),
+  listGoogleCalendarEvents: oc
+    .input(
+      z.object({
+        accountId: z.string().optional(),
+        timeMin: z.string().optional(),
+        timeMax: z.string().optional(),
+        maxResults: z.number().optional(),
+      }).optional(),
+    )
+    .output(z.array(googleCalendarEventSchema)),
   disconnect: oc.input(z.object({ id: z.string() })).output(z.object({ success: z.boolean() })),
 };

@@ -25,7 +25,7 @@ function CreationPage() {
 
     void loadCreationView().then((loaded) => {
       if (mounted) {
-        setView(loaded);
+        setView(() => loaded);
       }
     });
 

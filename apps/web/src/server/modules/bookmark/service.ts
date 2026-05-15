@@ -8,6 +8,7 @@ type BookmarkItem = {
   title: string;
   url: string;
   pinned: boolean;
+  icon?: string;
 };
 
 export type BookmarkCategoryRecord = {
@@ -38,6 +39,7 @@ export abstract class BookmarkService {
           title: bookmark.title,
           url: bookmark.url,
           pinned: bookmark.pinned === "true",
+          icon: bookmark.icon ?? undefined,
         }] : []),
     }));
   }
@@ -70,6 +72,7 @@ export abstract class BookmarkService {
             categoryId: category.id,
             title: bookmark.title,
             url: bookmark.url,
+            icon: bookmark.icon ?? null,
             pinned: bookmark.pinned ? "true" : "false",
             sortOrder: String(bookmarkIndex),
             createdAt: now,
@@ -131,7 +134,7 @@ export abstract class BookmarkService {
     );
   }
 
-  static async updateBookmark(db: AppDb, categoryId: string, bookmarkId: string, data: { title?: string; url?: string; pinned?: boolean }) {
+  static async updateBookmark(db: AppDb, categoryId: string, bookmarkId: string, data: { title?: string; url?: string; pinned?: boolean; icon?: string | null }) {
     const categories = await BookmarkService.list(db);
     return BookmarkService.replaceAll(
       db,
@@ -140,7 +143,15 @@ export abstract class BookmarkService {
           ? {
               ...category,
               bookmarks: category.bookmarks.map((bookmark) =>
-                bookmark.id === bookmarkId ? { ...bookmark, ...data } : bookmark,
+                bookmark.id === bookmarkId
+                  ? {
+                      ...bookmark,
+                      ...(data.title !== undefined ? { title: data.title } : {}),
+                      ...(data.url !== undefined ? { url: data.url } : {}),
+                      ...(data.pinned !== undefined ? { pinned: data.pinned } : {}),
+                      ...(data.icon !== undefined ? { icon: data.icon ?? undefined } : {}),
+                    }
+                  : bookmark,
               ),
             }
           : category,
@@ -148,7 +159,7 @@ export abstract class BookmarkService {
     );
   }
 
-  static async createBookmark(db: AppDb, categoryId: string, data: { title: string; url: string }) {
+  static async createBookmark(db: AppDb, categoryId: string, data: { title: string; url: string; icon?: string }) {
     const categories = await BookmarkService.list(db);
     return BookmarkService.replaceAll(
       db,
@@ -163,6 +174,7 @@ export abstract class BookmarkService {
                   title: data.title,
                   url: data.url,
                   pinned: false,
+                  icon: data.icon,
                 },
               ],
             }
