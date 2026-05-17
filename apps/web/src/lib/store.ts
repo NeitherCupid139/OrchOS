@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ControlSettings } from "@/lib/types";
 import type { BoardTaskFilter } from "@/components/panels/BoardView";
+import type { ThemeMode } from "@/lib/theme";
+import { migrateUIStore } from "@/lib/ui-store-migrations";
 
 type SourceFilter = "all" | "github_pr" | "github_issue" | "mention" | "agent_request";
 type InboxStatusFilter = "all" | "open" | "assigned" | "fixed" | "ignored";
@@ -11,8 +13,6 @@ type CreationArchiveFilter = "all" | "active" | "archived";
 type MailFolderFilter = "all" | "unread" | "waiting_reply" | "completed" | "archived";
 type CalendarViewMode = "day" | "week" | "month";
 type CapabilityViewMode = "mine" | "market";
-type ThemeMode = "light" | "dark" | "auto";
-
 interface UIState {
   // Navigation & selection
   activeGoalId: string | null;
@@ -40,6 +40,7 @@ interface UIState {
 
   // Theme
   theme: ThemeMode;
+  themePreferenceSet: boolean;
 
   // Settings (persisted locally, also synced with server)
   settings: ControlSettings | null;
@@ -115,6 +116,7 @@ export const useUIStore = create<UIState & UIActions>()(
 
       // Theme
       theme: "auto" as ThemeMode,
+      themePreferenceSet: false,
 
       // Settings
       settings: defaultSettings,
@@ -141,19 +143,13 @@ export const useUIStore = create<UIState & UIActions>()(
       toggleCreationSidebar: () => set((s) => ({ creationSidebarCollapsed: !s.creationSidebarCollapsed })),
       setCreationSidebarWidth: (width) => set({ creationSidebarWidth: width }),
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
-      setTheme: (mode) => set({ theme: mode }),
+      setTheme: (mode) => set({ theme: mode, themePreferenceSet: true }),
       setSettings: (settings) => set({ settings }),
     }),
     {
       name: "orchos-ui",
-      version: 2,
-      migrate: (persisted, version) => {
-        if (version < 2) {
-          const state = persisted as Record<string, unknown>;
-          state.creationSidebarWidth = 280;
-        }
-        return persisted;
-      },
+      version: 3,
+      migrate: migrateUIStore,
     },
   ),
 );

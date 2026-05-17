@@ -37,7 +37,74 @@ import { useLocale } from "@/lib/i18n-provider";
 import { AVAILABLE_LOCALES } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { playUiSound } from "@/lib/audio";
-import { about, about_acknowledgements_desc, about_acknowledgements_title, about_project_summary_title, cancel, close, delete as delete_message, display_name, display_name_placeholder, edit, edit_mail_account, email, email_placeholder, event_calendar, event_email, event_message, event_reminder, event_social, event_sounds, event_sounds_desc, event_system, general, imap_configuration, imap_host, imap_port, language, language_desc, mail, mail_accounts, mail_accounts_desc, mail_accounts_empty_hint, no_accounts, no_mail_accounts_configured, notifications, orchos_desc, password, password_placeholder, prefer_kanji, prefer_kanji_desc, save, settings as settings_label, shortcut_hints, shortcut_hints_desc, shortcuts, shortcuts_enter, shortcuts_send_message, shortcuts_send_message_desc, smtp_configuration, smtp_host, smtp_port, sound_bell_1, sound_bell_2, sound_bell_3, sound_error, sound_pop, sound_pong, sound_ring_1, sound_ring_2, system_notifications, system_notifications_desc, use_mixed_script, use_mixed_script_desc, use_tls_imap, use_tls_smtp, username, username_placeholder } from "@/paraglide/messages";
+import {
+  about,
+  about_acknowledgements_desc,
+  about_acknowledgements_title,
+  about_project_summary_title,
+  cancel,
+  close,
+  delete as delete_message,
+  display_name,
+  display_name_placeholder,
+  edit,
+  edit_mail_account,
+  email,
+  email_placeholder,
+  event_calendar,
+  event_email,
+  event_message,
+  event_reminder,
+  event_social,
+  event_sounds,
+  event_sounds_desc,
+  event_system,
+  general,
+  imap_configuration,
+  imap_host,
+  imap_port,
+  language,
+  language_desc,
+  mail,
+  mail_accounts,
+  mail_accounts_desc,
+  mail_accounts_empty_hint,
+  no_accounts,
+  no_mail_accounts_configured,
+  notifications,
+  orchos_desc,
+  password,
+  password_placeholder,
+  prefer_kanji,
+  prefer_kanji_desc,
+  save,
+  settings as settings_label,
+  shortcut_hints,
+  shortcut_hints_desc,
+  shortcuts,
+  shortcuts_enter,
+  shortcuts_send_message,
+  shortcuts_send_message_desc,
+  smtp_configuration,
+  smtp_host,
+  smtp_port,
+  sound_bell_1,
+  sound_bell_2,
+  sound_bell_3,
+  sound_error,
+  sound_pop,
+  sound_pong,
+  sound_ring_1,
+  sound_ring_2,
+  system_notifications,
+  system_notifications_desc,
+  use_mixed_script,
+  use_mixed_script_desc,
+  use_tls_imap,
+  use_tls_smtp,
+  username,
+  username_placeholder,
+} from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
 import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -155,12 +222,13 @@ const SOUND_LABELS: Record<SoundId, () => string> = {
 };
 
 function ShortcutKeycaps({ value }: { value: "enter" | "cmd-enter" }) {
-  const keys = value === "cmd-enter"
-    ? [
-        { id: "cmd", display: "⌘", label: "Command" },
-        { id: "enter", display: "↵", label: shortcuts_enter() },
-      ]
-    : [{ id: "enter", display: "↵", label: shortcuts_enter() }];
+  const keys =
+    value === "cmd-enter"
+      ? [
+          { id: "cmd", display: "⌘", label: "Command" },
+          { id: "enter", display: "↵", label: shortcuts_enter() },
+        ]
+      : [{ id: "enter", display: "↵", label: shortcuts_enter() }];
 
   return (
     <span className="flex items-center gap-1.5">
@@ -200,16 +268,30 @@ export function SettingsDialog({
       setActiveTab(defaultTab);
       if (defaultTab === "mail" && !mailState.loadingMail) {
         dispatchMail({ type: "SET_LOADING" });
-        api.listIntegrations().then((result) => {
-          dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
-        }).catch(() => {
-          dispatchMail({ type: "LOAD_ERROR" });
-        });
+        api
+          .listIntegrations()
+          .then((result) => {
+            dispatchMail({
+              type: "SET_INTEGRATIONS",
+              payload: result.filter(
+                (i) => i.id === "gmail" || i.id === "smtp-imap",
+              ) as SettingsMailIntegration[],
+            });
+          })
+          .catch(() => {
+            dispatchMail({ type: "LOAD_ERROR" });
+          });
       }
     }
   }, [open, defaultTab]);
   const [mailState, dispatchMail] = useReducer(
-    (state: { mailIntegrations: SettingsMailIntegration[]; loadingMail: boolean }, action: { type: "SET_LOADING" } | { type: "SET_INTEGRATIONS"; payload: SettingsMailIntegration[] } | { type: "LOAD_ERROR" }) => {
+    (
+      state: { mailIntegrations: SettingsMailIntegration[]; loadingMail: boolean },
+      action:
+        | { type: "SET_LOADING" }
+        | { type: "SET_INTEGRATIONS"; payload: SettingsMailIntegration[] }
+        | { type: "LOAD_ERROR" },
+    ) => {
       switch (action.type) {
         case "SET_LOADING":
           return { ...state, loadingMail: true };
@@ -221,7 +303,10 @@ export function SettingsDialog({
     },
     { mailIntegrations: [], loadingMail: false },
   );
-  const [editingMailAccount, setEditingMailAccount] = useState<{ integrationId: string; account: MailIntegrationAccount } | null>(null);
+  const [editingMailAccount, setEditingMailAccount] = useState<{
+    integrationId: string;
+    account: MailIntegrationAccount;
+  } | null>(null);
   const [editMailForm, setEditMailForm] = useState<{
     label: string;
     email: string;
@@ -234,7 +319,19 @@ export function SettingsDialog({
     imapPort: string;
     imapSecure: boolean;
     password: string;
-  }>({ label: "", email: "", username: "", displayName: "", smtpHost: "smtp.gmail.com", smtpPort: "587", smtpSecure: false, imapHost: "imap.gmail.com", imapPort: "993", imapSecure: true, password: "" });
+  }>({
+    label: "",
+    email: "",
+    username: "",
+    displayName: "",
+    smtpHost: "smtp.gmail.com",
+    smtpPort: "587",
+    smtpSecure: false,
+    imapHost: "imap.gmail.com",
+    imapPort: "993",
+    imapSecure: true,
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
 
@@ -339,42 +436,60 @@ export function SettingsDialog({
     }
   };
 
-  const handleEditMailAccount = useCallback((integrationId: string, account: MailIntegrationAccount) => {
-    setEditMailForm({
-      label: account.label,
-      email: account.email || account.smtpImap?.email || "",
-      username: account.username || account.smtpImap?.username || "",
-      displayName: account.smtpImap?.displayName || "",
-      smtpHost: account.smtpImap?.smtp.host || "smtp.gmail.com",
-      smtpPort: String(account.smtpImap?.smtp.port ?? 587),
-      smtpSecure: account.smtpImap?.smtp.secure ?? false,
-      imapHost: account.smtpImap?.imap.host || "imap.gmail.com",
-      imapPort: String(account.smtpImap?.imap.port ?? 993),
-      imapSecure: account.smtpImap?.imap.secure ?? true,
-      password: account.smtpImap?.password || "",
-    });
-    setEditingMailAccount({ integrationId, account });
-  }, []);
+  const handleEditMailAccount = useCallback(
+    (integrationId: string, account: MailIntegrationAccount) => {
+      setEditMailForm({
+        label: account.label,
+        email: account.email || account.smtpImap?.email || "",
+        username: account.username || account.smtpImap?.username || "",
+        displayName: account.smtpImap?.displayName || "",
+        smtpHost: account.smtpImap?.smtp.host || "smtp.gmail.com",
+        smtpPort: String(account.smtpImap?.smtp.port ?? 587),
+        smtpSecure: account.smtpImap?.smtp.secure ?? false,
+        imapHost: account.smtpImap?.imap.host || "imap.gmail.com",
+        imapPort: String(account.smtpImap?.imap.port ?? 993),
+        imapSecure: account.smtpImap?.imap.secure ?? true,
+        password: account.smtpImap?.password || "",
+      });
+      setEditingMailAccount({ integrationId, account });
+    },
+    [],
+  );
 
   const handleSaveMailAccount = useCallback(async () => {
     if (!editingMailAccount) return;
     try {
       const smtpPort = parseInt(editMailForm.smtpPort, 10);
       const imapPort = parseInt(editMailForm.imapPort, 10);
-      const updated = await api.updateIntegrationAccount(editingMailAccount.integrationId, editingMailAccount.account.id, {
-        label: editMailForm.label,
-        email: editMailForm.email,
-        username: editMailForm.username || undefined,
-        smtpImap: {
+      const updated = await api.updateIntegrationAccount(
+        editingMailAccount.integrationId,
+        editingMailAccount.account.id,
+        {
+          label: editMailForm.label,
           email: editMailForm.email,
-          displayName: editMailForm.displayName || undefined,
-          username: editMailForm.username,
-          password: editMailForm.password,
-          smtp: { host: editMailForm.smtpHost, port: isNaN(smtpPort) ? 587 : smtpPort, secure: editMailForm.smtpSecure },
-          imap: { host: editMailForm.imapHost, port: isNaN(imapPort) ? 993 : imapPort, secure: editMailForm.imapSecure },
+          username: editMailForm.username || undefined,
+          smtpImap: {
+            email: editMailForm.email,
+            displayName: editMailForm.displayName || undefined,
+            username: editMailForm.username,
+            password: editMailForm.password,
+            smtp: {
+              host: editMailForm.smtpHost,
+              port: isNaN(smtpPort) ? 587 : smtpPort,
+              secure: editMailForm.smtpSecure,
+            },
+            imap: {
+              host: editMailForm.imapHost,
+              port: isNaN(imapPort) ? 993 : imapPort,
+              secure: editMailForm.imapSecure,
+            },
+          },
         },
+      );
+      dispatchMail({
+        type: "SET_INTEGRATIONS",
+        payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)),
       });
-      dispatchMail({ type: "SET_INTEGRATIONS", payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)) });
       setEditingMailAccount(null);
     } catch (err) {
       console.error("Failed to update mail account:", err);
@@ -384,7 +499,10 @@ export function SettingsDialog({
   const handleDeleteMailAccount = useCallback(async (integrationId: string, accountId: string) => {
     try {
       const updated = await api.deleteIntegrationAccount(integrationId, accountId);
-      dispatchMail({ type: "SET_INTEGRATIONS", payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)) });
+      dispatchMail({
+        type: "SET_INTEGRATIONS",
+        payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)),
+      });
     } catch (err) {
       console.error("Failed to delete mail account:", err);
     }
@@ -417,26 +535,34 @@ export function SettingsDialog({
             {tabDefs.map((tab) => {
               const Icon = tab.icon;
               return (
-                   <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      if (tab.id === "mail" && !mailState.loadingMail) {
-                        dispatchMail({ type: "SET_LOADING" });
-                        api.listIntegrations().then((result) => {
-                          dispatchMail({ type: "SET_INTEGRATIONS", payload: result.filter((i) => i.id === "gmail" || i.id === "smtp-imap") as SettingsMailIntegration[] });
-                        }).catch(() => {
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === "mail" && !mailState.loadingMail) {
+                      dispatchMail({ type: "SET_LOADING" });
+                      api
+                        .listIntegrations()
+                        .then((result) => {
+                          dispatchMail({
+                            type: "SET_INTEGRATIONS",
+                            payload: result.filter(
+                              (i) => i.id === "gmail" || i.id === "smtp-imap",
+                            ) as SettingsMailIntegration[],
+                          });
+                        })
+                        .catch(() => {
                           dispatchMail({ type: "LOAD_ERROR" });
                         });
-                      }
-                    }}
-                   className={cn(
-                     "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-                     activeTab === tab.id
-                       ? "bg-accent text-accent-foreground"
-                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                   )}
-                 >
+                    }
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                    activeTab === tab.id
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                  )}
+                >
                   <HugeiconsIcon icon={Icon} className="size-4" />
                   {tab.labelKey()}
                 </button>
@@ -510,7 +636,9 @@ export function SettingsDialog({
                 {currentLocale === "ko" && (
                   <div className="flex items-center justify-between">
                     <div className="max-w-[280px]">
-                      <span className="text-sm font-medium text-foreground">{use_mixed_script()}</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {use_mixed_script()}
+                      </span>
                       <p className="text-xs text-muted-foreground">{use_mixed_script_desc()}</p>
                     </div>
                     <AppleSwitch
@@ -585,10 +713,8 @@ export function SettingsDialog({
                                   "flex items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent h-7 px-2.5 text-xs min-w-[100px]",
                                   !isEnabled && "cursor-not-allowed opacity-50",
                                 )}
-                                >
-                                  <span className="truncate">
-                                  {getSoundLabel(currentSoundId)}
-                                  </span>
+                              >
+                                <span className="truncate">{getSoundLabel(currentSoundId)}</span>
                                 <HugeiconsIcon
                                   icon={UnfoldMoreIcon}
                                   className="size-3 text-muted-foreground"
@@ -625,7 +751,9 @@ export function SettingsDialog({
                                     >
                                       <HugeiconsIcon icon={VolumeHighIcon} className="size-3.5" />
                                     </button>
-                                    <span className="flex-1 select-none">{getSoundLabel(sound.id)}</span>
+                                    <span className="flex-1 select-none">
+                                      {getSoundLabel(sound.id)}
+                                    </span>
                                     {sound.id === currentSoundId && (
                                       <HugeiconsIcon
                                         icon={Tick02Icon}
@@ -666,7 +794,10 @@ export function SettingsDialog({
                   </div>
                 ) : mailState.mailIntegrations.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-border/50 py-6 text-center">
-                    <HugeiconsIcon icon={InboxIcon} className="mx-auto size-5 text-muted-foreground/30 mb-2" />
+                    <HugeiconsIcon
+                      icon={InboxIcon}
+                      className="mx-auto size-5 text-muted-foreground/30 mb-2"
+                    />
                     <p className="text-sm text-muted-foreground">{no_mail_accounts_configured()}</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       {mail_accounts_empty_hint()}
@@ -677,31 +808,57 @@ export function SettingsDialog({
                     {mailState.mailIntegrations.map((integration) => (
                       <div key={integration.id} className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                          <HugeiconsIcon icon={integration.id === "google-mail" ? GoogleIcon : InboxIcon} className="size-4" />
+                          <HugeiconsIcon
+                            icon={integration.id === "google-mail" ? GoogleIcon : InboxIcon}
+                            className="size-4"
+                          />
                           {integration.name}
                         </div>
                         {integration.accounts && integration.accounts.length > 0 ? (
                           <div className="space-y-1.5 pl-6">
                             {integration.accounts.map((account) => (
-                              <div key={account.id} className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2">
+                              <div
+                                key={account.id}
+                                className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2"
+                              >
                                 <div className="min-w-0">
-                                  <div className="text-sm text-foreground truncate">{account.label}</div>
-                                  <div className="text-xs text-muted-foreground truncate">{account.email || account.username}</div>
+                                  <div className="text-sm text-foreground truncate">
+                                    {account.label}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {account.email || account.username}
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Tooltip>
                                     <TooltipTrigger
-                                      render={<Button variant="ghost" size="icon-xs" onClick={() => handleEditMailAccount(integration.id, account)}>
-                                        <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                                      </Button>}
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onClick={() =>
+                                            handleEditMailAccount(integration.id, account)
+                                          }
+                                        >
+                                          <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                        </Button>
+                                      }
                                     />
                                     <TooltipContent side="top">{edit()}</TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
-                                      render={<Button variant="ghost" size="icon-xs" onClick={() => handleDeleteMailAccount(integration.id, account.id)}>
-                                        <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
-                                      </Button>}
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onClick={() =>
+                                            handleDeleteMailAccount(integration.id, account.id)
+                                          }
+                                        >
+                                          <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                                        </Button>
+                                      }
                                     />
                                     <TooltipContent side="top">{delete_message()}</TooltipContent>
                                   </Tooltip>
@@ -719,14 +876,24 @@ export function SettingsDialog({
 
                 <AppDialog
                   open={editingMailAccount !== null}
-                  onOpenChange={(open) => { if (!open) setEditingMailAccount(null); }}
+                  onOpenChange={(open) => {
+                    if (!open) setEditingMailAccount(null);
+                  }}
                   title={edit_mail_account()}
                   size="lg"
                   nested
                   footer={
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setEditingMailAccount(null)}>{cancel()}</Button>
-                      <Button type="button" onClick={handleSaveMailAccount}>{save()}</Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditingMailAccount(null)}
+                      >
+                        {cancel()}
+                      </Button>
+                      <Button type="button" onClick={handleSaveMailAccount}>
+                        {save()}
+                      </Button>
                     </div>
                   }
                 >
@@ -735,7 +902,13 @@ export function SettingsDialog({
                       <span className="text-muted-foreground">{email()}</span>
                       <input
                         value={editMailForm.email}
-                        onChange={(e) => setEditMailForm((f) => ({ ...f, email: e.target.value, username: f.username || e.target.value }))}
+                        onChange={(e) =>
+                          setEditMailForm((f) => ({
+                            ...f,
+                            email: e.target.value,
+                            username: f.username || e.target.value,
+                          }))
+                        }
                         placeholder={email_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
@@ -744,7 +917,9 @@ export function SettingsDialog({
                       <span className="text-muted-foreground">{display_name()}</span>
                       <input
                         value={editMailForm.displayName}
-                        onChange={(e) => setEditMailForm((f) => ({ ...f, displayName: e.target.value }))}
+                        onChange={(e) =>
+                          setEditMailForm((f) => ({ ...f, displayName: e.target.value }))
+                        }
                         placeholder={display_name_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
@@ -753,7 +928,9 @@ export function SettingsDialog({
                       <span className="text-muted-foreground">{username()}</span>
                       <input
                         value={editMailForm.username}
-                        onChange={(e) => setEditMailForm((f) => ({ ...f, username: e.target.value }))}
+                        onChange={(e) =>
+                          setEditMailForm((f) => ({ ...f, username: e.target.value }))
+                        }
                         placeholder={username_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
@@ -764,7 +941,9 @@ export function SettingsDialog({
                         <input
                           type={showPassword ? "text" : "password"}
                           value={editMailForm.password}
-                          onChange={(e) => setEditMailForm((f) => ({ ...f, password: e.target.value }))}
+                          onChange={(e) =>
+                            setEditMailForm((f) => ({ ...f, password: e.target.value }))
+                          }
                           placeholder={password_placeholder()}
                           className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
@@ -774,19 +953,26 @@ export function SettingsDialog({
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                           tabIndex={-1}
                         >
-                          <HugeiconsIcon icon={showPassword ? ViewOffSlashIcon : EyeIcon} className="size-4" />
+                          <HugeiconsIcon
+                            icon={showPassword ? ViewOffSlashIcon : EyeIcon}
+                            className="size-4"
+                          />
                         </button>
                       </div>
                     </label>
 
                     <div className="border-t border-border pt-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-3">{smtp_configuration()}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">
+                        {smtp_configuration()}
+                      </p>
                       <div className="space-y-3">
                         <label className="grid gap-1.5 text-sm">
                           <span className="text-muted-foreground">{smtp_host()}</span>
                           <input
                             value={editMailForm.smtpHost}
-                            onChange={(e) => setEditMailForm((f) => ({ ...f, smtpHost: e.target.value }))}
+                            onChange={(e) =>
+                              setEditMailForm((f) => ({ ...f, smtpHost: e.target.value }))
+                            }
                             placeholder="smtp.gmail.com"
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                           />
@@ -796,7 +982,9 @@ export function SettingsDialog({
                             <span className="text-muted-foreground">{smtp_port()}</span>
                             <input
                               value={editMailForm.smtpPort}
-                              onChange={(e) => setEditMailForm((f) => ({ ...f, smtpPort: e.target.value }))}
+                              onChange={(e) =>
+                                setEditMailForm((f) => ({ ...f, smtpPort: e.target.value }))
+                              }
                               placeholder="587"
                               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                             />
@@ -805,7 +993,9 @@ export function SettingsDialog({
                             <input
                               type="checkbox"
                               checked={editMailForm.smtpSecure}
-                              onChange={(e) => setEditMailForm((f) => ({ ...f, smtpSecure: e.target.checked }))}
+                              onChange={(e) =>
+                                setEditMailForm((f) => ({ ...f, smtpSecure: e.target.checked }))
+                              }
                               className="rounded border-border"
                             />
                             <span className="text-muted-foreground">{use_tls_smtp()}</span>
@@ -815,13 +1005,17 @@ export function SettingsDialog({
                     </div>
 
                     <div className="border-t border-border pt-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-3">{imap_configuration()}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">
+                        {imap_configuration()}
+                      </p>
                       <div className="space-y-3">
                         <label className="grid gap-1.5 text-sm">
                           <span className="text-muted-foreground">{imap_host()}</span>
                           <input
                             value={editMailForm.imapHost}
-                            onChange={(e) => setEditMailForm((f) => ({ ...f, imapHost: e.target.value }))}
+                            onChange={(e) =>
+                              setEditMailForm((f) => ({ ...f, imapHost: e.target.value }))
+                            }
                             placeholder="imap.gmail.com"
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                           />
@@ -831,7 +1025,9 @@ export function SettingsDialog({
                             <span className="text-muted-foreground">{imap_port()}</span>
                             <input
                               value={editMailForm.imapPort}
-                              onChange={(e) => setEditMailForm((f) => ({ ...f, imapPort: e.target.value }))}
+                              onChange={(e) =>
+                                setEditMailForm((f) => ({ ...f, imapPort: e.target.value }))
+                              }
                               placeholder="993"
                               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                             />
@@ -840,7 +1036,9 @@ export function SettingsDialog({
                             <input
                               type="checkbox"
                               checked={editMailForm.imapSecure}
-                              onChange={(e) => setEditMailForm((f) => ({ ...f, imapSecure: e.target.checked }))}
+                              onChange={(e) =>
+                                setEditMailForm((f) => ({ ...f, imapSecure: e.target.checked }))
+                              }
                               className="rounded border-border"
                             />
                             <span className="text-muted-foreground">{use_tls_imap()}</span>
@@ -857,12 +1055,18 @@ export function SettingsDialog({
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="max-w-[280px]">
-                    <span className="text-sm font-medium text-foreground">{shortcuts_send_message()}</span>
-                    <p className="text-xs text-muted-foreground">{shortcuts_send_message_desc()}</p>
+                    <span className="text-sm font-medium text-foreground">
+                      {shortcuts_send_message()}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {shortcuts_send_message_desc()}
+                    </p>
                   </div>
                   <Select
                     value={currentSettings.sendShortcut}
-                    onValueChange={(value) => value && handleSendShortcutChange(value as "enter" | "cmd-enter")}
+                    onValueChange={(value) =>
+                      value && handleSendShortcutChange(value as "enter" | "cmd-enter")
+                    }
                   >
                     <SelectTrigger className="w-[160px]">
                       <SelectValue>
@@ -894,11 +1098,15 @@ export function SettingsDialog({
                   </div>
                 </div>
                 <div className="rounded-lg p-4">
-                  <p className="text-sm font-medium text-foreground">{about_project_summary_title()}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {about_project_summary_title()}
+                  </p>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">{orchos_desc()}</p>
                 </div>
                 <div className="rounded-lg p-4">
-                  <p className="text-sm font-medium text-foreground">{about_acknowledgements_title()}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {about_acknowledgements_title()}
+                  </p>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
                     {about_acknowledgements_desc()}
                   </p>

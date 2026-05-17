@@ -3,24 +3,7 @@ import { Moon, Sun, Monitor } from "lucide-react";
 import { theme_dark, theme_light, theme_switch_mode, theme_system } from "@/paraglide/messages";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUIStore } from "@/lib/store";
-
-type ThemeMode = "light" | "dark" | "auto";
-
-function applyThemeMode(mode: ThemeMode) {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const resolved = mode === "auto" ? (prefersDark ? "dark" : "light") : mode;
-
-  document.documentElement.classList.remove("light", "dark");
-  document.documentElement.classList.add(resolved);
-
-  if (mode === "auto") {
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    document.documentElement.setAttribute("data-theme", mode);
-  }
-
-  document.documentElement.style.colorScheme = resolved;
-}
+import { applyThemeMode, type ThemeMode } from "@/lib/theme";
 
 function applyThemeModeWithoutTransitions(mode: ThemeMode) {
   const root = document.documentElement;

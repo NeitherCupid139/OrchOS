@@ -75,7 +75,7 @@ export function Header() {
     >
       <nav className="flex h-14 w-full items-center justify-between pl-6 pr-4">
         <Link to="/" className="hover:bg-accent flex items-center gap-2 rounded-md p-2 ml-32">
-          <OrchOSLogoIcon className="size-6" />
+          <img src="/logo.svg" alt="" className="h-6 w-auto" />
           <span className="font-serif text-sm font-semibold italic text-foreground">OrchOS</span>
         </Link>
         <div className="hidden items-center gap-2 md:flex">
@@ -184,16 +184,3 @@ function MobileMenu({ open, children, className, ...props }: MobileMenuProps) {
     document.body,
   );
 }
-
-export const OrchOSLogoIcon = (props: React.ComponentProps<"svg">) => (
-  <svg viewBox="0 0 185 185" fill="none" {...props}>
-    <rect width="185" height="185" rx="38" fill="#0048EF" />
-    <circle cx="77" cy="86" r="40" stroke="white" strokeWidth="16" />
-    <circle cx="77" cy="86" r="17.5" stroke="white" strokeWidth="15" />
-    <rect x="67" y="106" width="20" height="41" fill="white" />
-    <rect x="117" y="86" width="20" height="41" fill="white" />
-    <rect x="137" y="107" width="20" height="40" fill="white" />
-    <rect x="67" y="147" width="20" height="50" transform="rotate(-90 67 147)" fill="white" />
-    <rect x="117" y="127" width="20" height="35" transform="rotate(-90 117 127)" fill="white" />
-  </svg>
-);

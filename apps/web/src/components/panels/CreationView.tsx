@@ -34,19 +34,72 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { api, type BookmarkCategory, type Conversation, type ConversationMessage, type CustomAgent } from "@/lib/api";
-import type {
-  ControlSettings,
-  RuntimeProfile,
-} from "@/lib/types";
+import {
+  api,
+  type BookmarkCategory,
+  type Conversation,
+  type ConversationMessage,
+  type CustomAgent,
+} from "@/lib/api";
+import type { ControlSettings, RuntimeProfile } from "@/lib/types";
 import { useUser } from "@clerk/clerk-react";
 import { useConversationStore } from "@/lib/stores/conversation";
 import { useUIStore } from "@/lib/store";
-import { agent, all, archive, bookmarks as bookmarks_label, bookmarks_pin_hint, chat, collapse_sidebar, conversation as conversation_label, creation, creation_active, creation_archived, creation_image_unsupported, creation_intro_desc, creation_intro_title, creation_placeholder, delete as delete_message, delete_conversation_confirm, expand_sidebar, message_agent_placeholder, message_runtime_placeholder, new_conversation, no_conversations, no_messages_yet, none, resize_creation_sidebar, search_engine_360, search_engine_baidu, search_engine_bing, search_engine_brave, search_engine_duckduckgo, search_engine_ecosia, search_engine_google, search_engine_searxng, search_engine_sogou, search_engine_startpage, search_engine_yandex, search_web_placeholder, send, send_failed, show_bookmarks, untitled_conversation, voice_input, voice_input_stop, web_search } from "@/paraglide/messages";
+import {
+  agent,
+  all,
+  archive,
+  bookmarks as bookmarks_label,
+  bookmarks_pin_hint,
+  chat,
+  collapse_sidebar,
+  conversation as conversation_label,
+  creation,
+  creation_active,
+  creation_archived,
+  creation_image_unsupported,
+  creation_intro_desc,
+  creation_intro_title,
+  creation_placeholder,
+  delete as delete_message,
+  delete_conversation_confirm,
+  expand_sidebar,
+  message_agent_placeholder,
+  message_runtime_placeholder,
+  new_conversation,
+  no_conversations,
+  no_messages_yet,
+  none,
+  resize_creation_sidebar,
+  search_engine_360,
+  search_engine_baidu,
+  search_engine_bing,
+  search_engine_brave,
+  search_engine_duckduckgo,
+  search_engine_ecosia,
+  search_engine_google,
+  search_engine_searxng,
+  search_engine_sogou,
+  search_engine_startpage,
+  search_engine_yandex,
+  search_web_placeholder,
+  send,
+  send_failed,
+  shortcuts_send_message_preview_label,
+  show_bookmarks,
+  untitled_conversation,
+  voice_input,
+  voice_input_stop,
+  web_search,
+} from "@/paraglide/messages";
 import { toast } from "@/components/ui/toast";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import { mapConversationMessagesToUiMessages, MessageBubble } from "@/components/chat/ConversationFlow";
+import {
+  mapConversationMessagesToUiMessages,
+  MessageBubble,
+} from "@/components/chat/ConversationFlow";
 import { ChatThinkingState } from "@/components/chat/ChatThinkingState";
+import { useDashboard } from "@/lib/dashboard-context";
 
 interface CreationViewProps {
   runtimes: RuntimeProfile[];
@@ -70,14 +123,16 @@ const searchEngineMeta = [
 ] as const;
 
 export function CreationView(props?: CreationViewProps | null) {
-  const {
-    runtimes = [],
-    settings = null,
-  } = props ?? {};
+  const { runtimes = [], settings = null } = props ?? {};
   const creationFilterButtons = [
     { value: "all", label: all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
     { value: "active", label: creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
-    { value: "archived", label: creation_archived(), icon: Archive01Icon, iconClassName: "text-amber-500" },
+    {
+      value: "archived",
+      label: creation_archived(),
+      icon: Archive01Icon,
+      iconClassName: "text-amber-500",
+    },
   ] as const;
 
   const creationArchiveFilter = useUIStore((s) => s.creationArchiveFilter);
@@ -97,10 +152,7 @@ export function CreationView(props?: CreationViewProps | null) {
   const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<string | null>(null);
 
   useEffect(() => {
-    void Promise.all([
-      api.listCustomAgents(),
-      api.getDefaultCustomAgentId(),
-    ])
+    void Promise.all([api.listCustomAgents(), api.getDefaultCustomAgentId()])
       .then(([agents, defaultAgentId]) => {
         setCustomAgents(agents);
         setSelectedCustomAgentId(defaultAgentId);
@@ -138,19 +190,12 @@ export function CreationView(props?: CreationViewProps | null) {
   };
 
   const messages = activeConversationId
-    ? (messagesByConversationId[activeConversationId] ??
-      EMPTY_CONVERSATION_MESSAGES)
+    ? (messagesByConversationId[activeConversationId] ?? EMPTY_CONVERSATION_MESSAGES)
     : EMPTY_CONVERSATION_MESSAGES;
-  const uiMessages = useMemo(
-    () => mapConversationMessagesToUiMessages(messages),
-    [messages],
-  );
+  const uiMessages = useMemo(() => mapConversationMessagesToUiMessages(messages), [messages]);
 
   const [sending, setSending] = useState(false);
-  const enabledRuntimes = useMemo(
-    () => runtimes.filter((r) => r.enabled),
-    [runtimes],
-  );
+  const enabledRuntimes = useMemo(() => runtimes.filter((r) => r.enabled), [runtimes]);
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
     [conversations, activeConversationId],
@@ -174,7 +219,9 @@ export function CreationView(props?: CreationViewProps | null) {
     }
 
     if (creationArchiveFilter === "active") {
-      return conversations.filter((conversation) => !conversation.archived && !conversation.deleted);
+      return conversations.filter(
+        (conversation) => !conversation.archived && !conversation.deleted,
+      );
     }
 
     return conversations.filter((conversation) => !conversation.deleted);
@@ -338,11 +385,11 @@ export function CreationView(props?: CreationViewProps | null) {
   const handleUpdateConversation = useCallback(
     async (
       id: string,
-        data: {
-          title?: string;
-          runtimeId?: string;
-          archived?: boolean;
-          deleted?: boolean;
+      data: {
+        title?: string;
+        runtimeId?: string;
+        archived?: boolean;
+        deleted?: boolean;
       },
     ) => {
       try {
@@ -355,9 +402,7 @@ export function CreationView(props?: CreationViewProps | null) {
   );
 
   const handleCreateConversation = useCallback(
-    async (data: {
-      runtimeId?: string;
-    }) => {
+    async (data: { runtimeId?: string }) => {
       try {
         return await createConversation(data);
       } catch (err) {
@@ -392,43 +437,43 @@ export function CreationView(props?: CreationViewProps | null) {
           )}
           aria-hidden={!showExpandedContent}
         >
-            <div className="flex h-10 items-center justify-between rounded-md px-2">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-foreground">{creation()}</div>
-              </div>
-              <div className="flex items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={(props) => (
-                      <button
-                        {...props}
-                        type="button"
-                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
-                        onClick={() => void handleNewConversation()}
-                      >
-                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                      </button>
-                    )}
-                  />
-                  <TooltipContent side="bottom">{new_conversation()}</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={(props) => (
-                      <button
-                        {...props}
-                        type="button"
-                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
-                        onClick={handleCollapseSidebar}
-                      >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                      </button>
-                    )}
-                  />
-                  <TooltipContent side="right">{collapse_sidebar()}</TooltipContent>
-                </Tooltip>
-              </div>
+          <div className="flex h-10 items-center justify-between rounded-md px-2">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-foreground">{creation()}</div>
             </div>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <button
+                      {...props}
+                      type="button"
+                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
+                      onClick={() => void handleNewConversation()}
+                    >
+                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                    </button>
+                  )}
+                />
+                <TooltipContent side="bottom">{new_conversation()}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={(props) => (
+                    <button
+                      {...props}
+                      type="button"
+                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
+                      onClick={handleCollapseSidebar}
+                    >
+                      <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                    </button>
+                  )}
+                />
+                <TooltipContent side="right">{collapse_sidebar()}</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
         </div>
 
         <div
@@ -439,122 +484,127 @@ export function CreationView(props?: CreationViewProps | null) {
           aria-hidden={!showExpandedContent}
         >
           <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-0.5 p-1.5">
-                {availableConversations.map((conversation) => {
-                  const isActive = conversation.id === activeConversationId && !showBookmarks;
+            <div className="space-y-0.5 p-1.5">
+              {availableConversations.map((conversation) => {
+                const isActive = conversation.id === activeConversationId && !showBookmarks;
 
-                  return (
-                    <div
-                      key={conversation.id}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={isActive}
-                      className={cn(
-                        "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
-                        isActive
-                          ? "bg-accent font-medium text-accent-foreground"
-                          : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
-                      )}
-                      onClick={() => {
-                        setActiveConversationId(conversation.id);
-                        setShowBookmarks(false);
-                        loadMessages(conversation.id);
-                      }}
-                      onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
-                    >
-                      <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
-                      <button type="button" className="min-w-0 flex-1 text-left">
-                        <div className="truncate text-xs leading-5">
-                          {conversation.title || untitled_conversation()}
-                        </div>
-                      </button>
-                      <div className="flex shrink-0 items-center gap-0.5">
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={(props) => (
-                              <Button
-                                {...props}
-                                type="button"
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleUpdateConversation(conversation.id, {
-                                    archived: !conversation.archived,
-                                  });
-                                }}
-                                className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
-                              >
-                                <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
-                              </Button>
-                            )}
-                          />
-                          <TooltipContent side="bottom">{archive()}</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={(props) => (
-                              <Button
-                                {...props}
-                                type="button"
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setConvToDelete(conversation.id);
-                                  setDeleteConfirmOpen(true);
-                                }}
-                                className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                              >
-                                <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                              </Button>
-                            )}
-                          />
-                          <TooltipContent side="bottom">{delete_message()}</TooltipContent>
-                        </Tooltip>
+                return (
+                  <div
+                    key={conversation.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isActive}
+                    className={cn(
+                      "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-accent font-medium text-accent-foreground"
+                        : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                    )}
+                    onClick={() => {
+                      setActiveConversationId(conversation.id);
+                      setShowBookmarks(false);
+                      loadMessages(conversation.id);
+                    }}
+                    onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
+                  >
+                    <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
+                    <button type="button" className="min-w-0 flex-1 text-left">
+                      <div className="truncate text-xs leading-5">
+                        {conversation.title || untitled_conversation()}
                       </div>
-                    </div>
-                  );
-                })}
+                    </button>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(props) => (
+                            <Button
+                              {...props}
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleUpdateConversation(conversation.id, {
+                                  archived: !conversation.archived,
+                                });
+                              }}
+                              className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
+                            >
+                              <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent side="bottom">{archive()}</TooltipContent>
+                      </Tooltip>
 
-                {availableConversations.length === 0 ? (
-                  <div className="py-6 text-center">
-                    <HugeiconsIcon icon={Chat01Icon} className="mx-auto mb-1.5 size-5 text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground">{no_conversations()}</p>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(props) => (
+                            <Button
+                              {...props}
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setConvToDelete(conversation.id);
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                            >
+                              <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent side="bottom">{delete_message()}</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
-                ) : null}
-              </div>
+                );
+              })}
+
+              {availableConversations.length === 0 ? (
+                <div className="py-6 text-center">
+                  <HugeiconsIcon
+                    icon={Chat01Icon}
+                    className="mx-auto mb-1.5 size-5 text-muted-foreground/30"
+                  />
+                  <p className="text-xs text-muted-foreground">{no_conversations()}</p>
+                </div>
+              ) : null}
+            </div>
           </ScrollArea>
 
           <div className="border-t border-border p-2">
             <div className="flex h-10 items-center justify-center gap-1 rounded-md px-2">
-                {creationFilterButtons.map((filter) => (
-                  <Tooltip key={filter.value}>
-                    <TooltipTrigger
-                      render={(props) => (
-                        <button
-                          {...props}
-                          type="button"
-                          onClick={() => setCreationArchiveFilter(filter.value)}
-                          aria-pressed={creationArchiveFilter === filter.value}
-                          className={cn(
-                            "inline-flex size-8 items-center justify-center rounded-md transition-colors",
-                            creationArchiveFilter === filter.value
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                          )}
-                        >
-                          <HugeiconsIcon icon={filter.icon} className={cn("size-3.5", filter.iconClassName)} />
-                        </button>
-                      )}
-                    />
-                    <TooltipContent side="top">{filter.label}</TooltipContent>
-                  </Tooltip>
-                ))}
+              {creationFilterButtons.map((filter) => (
+                <Tooltip key={filter.value}>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <button
+                        {...props}
+                        type="button"
+                        onClick={() => setCreationArchiveFilter(filter.value)}
+                        aria-pressed={creationArchiveFilter === filter.value}
+                        className={cn(
+                          "inline-flex size-8 items-center justify-center rounded-md transition-colors",
+                          creationArchiveFilter === filter.value
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                        )}
+                      >
+                        <HugeiconsIcon
+                          icon={filter.icon}
+                          className={cn("size-3.5", filter.iconClassName)}
+                        />
+                      </button>
+                    )}
+                  />
+                  <TooltipContent side="top">{filter.label}</TooltipContent>
+                </Tooltip>
+              ))}
             </div>
           </div>
-
         </div>
 
         <div
@@ -565,7 +615,8 @@ export function CreationView(props?: CreationViewProps | null) {
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
             creationSidebarCollapsed && "hidden",
-            isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
+            isResizingSidebar &&
+              "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
@@ -588,14 +639,16 @@ export function CreationView(props?: CreationViewProps | null) {
         {creationSidebarCollapsed ? (
           <Tooltip>
             <TooltipTrigger
-              render={<Button
-                variant="ghost"
-                size="icon-sm"
-                className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
-                onClick={handleExpandSidebar}
-              >
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-              </Button>}
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
+                  onClick={handleExpandSidebar}
+                >
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                </Button>
+              }
             />
             <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
@@ -639,18 +692,14 @@ export function CreationView(props?: CreationViewProps | null) {
               } catch (err) {
                 setPendingUserMessage(conversation.id, undefined);
                 console.error("Failed to send message:", err);
-                toast.error(
-                  err instanceof Error ? err.message : send_failed(),
-                );
+                toast.error(err instanceof Error ? err.message : send_failed());
                 throw err;
               } finally {
                 setSending(false);
               }
             }}
             onReloadMessages={
-              activeConversation
-                ? () => loadMessages(activeConversation.id)
-                : undefined
+              activeConversation ? () => loadMessages(activeConversation.id) : undefined
             }
           />
         )}
@@ -680,9 +729,7 @@ interface ChatAreaProps {
   customAgents: CustomAgent[];
   selectedCustomAgentId: string | null;
   onSelectCustomAgent: (id: string | null) => void;
-  onCreateConversation: (data: {
-    runtimeId?: string;
-  }) => Promise<Conversation>;
+  onCreateConversation: (data: { runtimeId?: string }) => Promise<Conversation>;
   onUpdateConversation: (
     id: string,
     data: {
@@ -705,7 +752,9 @@ function Favicon({ url }: { url: string }) {
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
-  try { domain = new URL(url).hostname; } catch {}
+  try {
+    domain = new URL(url).hostname;
+  } catch {}
 
   useEffect(() => {
     const el = ref.current;
@@ -725,7 +774,10 @@ function Favicon({ url }: { url: string }) {
 
   if (failedRef.current || !domain) {
     return (
-      <div ref={ref} className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <div
+        ref={ref}
+        className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+      >
         <HugeiconsIcon icon={PinIcon} className="size-4" />
       </div>
     );
@@ -769,10 +821,12 @@ function ChatArea({
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const settings = useUIStore((s) => s.settings);
+  const { uiPreviewTarget } = useDashboard();
   const [isConversationUpdating, setIsConversationUpdating] = useState(false);
   const [inputCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputShellRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
   const chatBtnRef = useRef<HTMLButtonElement>(null);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
@@ -781,9 +835,10 @@ function ChatArea({
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
   const [mode, setMode] = useState<"chat" | "search">("chat");
   const [searchEngineId, setSearchEngineId] = useState<string>(searchEngineMeta[0].id);
+  const isSendShortcutPreviewing = uiPreviewTarget === "send-shortcut" && mode === "chat";
   const searchEngines = searchEngineMeta.map((e) => ({
     ...e,
-    name: ({
+    name: {
       google: search_engine_google(),
       bing: search_engine_bing(),
       duckduckgo: search_engine_duckduckgo(),
@@ -795,31 +850,34 @@ function ChatArea({
       startpage: search_engine_startpage(),
       brave: search_engine_brave(),
       ecosia: search_engine_ecosia(),
-    })[e.id],
+    }[e.id],
   }));
   const pinnedGroups = useMemo(
-    () => bookmarks.reduce<{ name: string; id: string; bookmarks: typeof bookmarks[number]["bookmarks"] }[]>((acc, category) => {
-      const pinned = category.bookmarks.filter((b) => b.pinned);
-      if (pinned.length > 0) {
-        acc.push({ name: category.name, id: category.id, bookmarks: pinned });
-      }
-      return acc;
-    }, []),
+    () =>
+      bookmarks.reduce<
+        { name: string; id: string; bookmarks: (typeof bookmarks)[number]["bookmarks"] }[]
+      >((acc, category) => {
+        const pinned = category.bookmarks.filter((b) => b.pinned);
+        if (pinned.length > 0) {
+          acc.push({ name: category.name, id: category.id, bookmarks: pinned });
+        }
+        return acc;
+      }, []),
     [bookmarks],
   );
 
   useEffect(() => {
-    api.listBookmarks()
+    api
+      .listBookmarks()
       .then((data) => setBookmarks(data.filter((c) => c.bookmarks.length > 0)))
       .catch(() => {});
   }, []);
 
   const effectiveRuntimeId = isDraftConversation
-    ? draftRuntimeId ?? conversation.runtimeId
+    ? (draftRuntimeId ?? conversation.runtimeId)
     : conversation.runtimeId;
 
-  const { isListening, transcript, isSupported, start, stop } =
-    useSpeechRecognition();
+  const { isListening, transcript, isSupported, start, stop } = useSpeechRecognition();
 
   const prevTranscriptRef = useRef("");
   useEffect(() => {
@@ -850,7 +908,8 @@ function ChatArea({
       ? null
       : (pendingUserMessageByConversationId[conversation.id] ?? null);
   const flowDraft = flowDraftByConversationId[conversation.id];
-  const showPendingAssistantReply = conversation.id !== "__draft__" && pendingConversationId === conversation.id;
+  const showPendingAssistantReply =
+    conversation.id !== "__draft__" && pendingConversationId === conversation.id;
 
   const visibleMessages = useMemo(() => {
     if (!pendingUserMessage) return messages;
@@ -881,7 +940,9 @@ function ChatArea({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.style.cssText = textarea.style.cssText.replace(/height:[^;]*;?/g, '') + `height:${Math.min(textarea.scrollHeight, 120)}px`;
+    textarea.style.cssText =
+      textarea.style.cssText.replace(/height:[^;]*;?/g, "") +
+      `height:${Math.min(textarea.scrollHeight, 120)}px`;
   }, []);
 
   const handleRemoveFile = useCallback((index: number) => {
@@ -915,9 +976,7 @@ function ChatArea({
     const hasMatchedUserMessage = messages.some(
       (message) =>
         message.role === "user" &&
-        message.parts.some(
-          (part) => part.type === "text" && part.text === pendingUserMessage,
-        ),
+        message.parts.some((part) => part.type === "text" && part.text === pendingUserMessage),
     );
 
     if (hasMatchedUserMessage && conversation.id !== "__draft__") {
@@ -929,13 +988,25 @@ function ChatArea({
     syncTextareaHeight();
   }, [attachedFiles.length, conversation.id, input, syncTextareaHeight]);
 
+  useEffect(() => {
+    if (uiPreviewTarget === "send-shortcut" && mode !== "chat") {
+      setMode("chat");
+    }
+  }, [mode, uiPreviewTarget]);
+
+  useEffect(() => {
+    if (!isSendShortcutPreviewing) {
+      return;
+    }
+
+    inputShellRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [isSendShortcutPreviewing]);
+
   const queueConversationUpdate = useCallback(
-    (data: {
-      title?: string;
-      runtimeId?: string;
-      archived?: boolean;
-      deleted?: boolean;
-    }) => {
+    (data: { title?: string; runtimeId?: string; archived?: boolean; deleted?: boolean }) => {
       if (isDraftConversation) {
         if (data.runtimeId !== undefined) setDraftRuntimeId(data.runtimeId);
         return Promise.resolve();
@@ -1034,12 +1105,8 @@ function ChatArea({
       <div className="mx-auto max-w-3xl">
         {allMessages.length === 0 && (
           <div className="mb-3 px-1">
-            <p className="text-sm font-medium text-foreground/85">
-              {creation_intro_title()}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {creation_intro_desc()}
-            </p>
+            <p className="text-sm font-medium text-foreground/85">{creation_intro_title()}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{creation_intro_desc()}</p>
           </div>
         )}
         <BorderBeam
@@ -1050,7 +1117,19 @@ function ChatArea({
           duration={2.6}
           className="rounded-xl"
         >
-          <div className="relative flex flex-col gap-2 overflow-visible rounded-xl border border-border bg-background px-3 pt-3 pb-1.5">
+          <div
+            ref={inputShellRef}
+            className={cn(
+              "relative flex flex-col gap-2 overflow-visible rounded-xl border border-border bg-background px-3 pt-3 pb-1.5 transition-[box-shadow,border-color] duration-300 ease-out",
+              isSendShortcutPreviewing &&
+                "border-primary/40 shadow-[0_0_0_1px_rgba(0,72,239,0.18),0_0_0_8px_rgba(0,72,239,0.08),0_18px_48px_-24px_rgba(0,72,239,0.55)]",
+            )}
+          >
+            {isSendShortcutPreviewing ? (
+              <div className="pointer-events-none absolute -top-3 right-3 z-30 rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
+                {shortcuts_send_message_preview_label()}
+              </div>
+            ) : null}
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {attachedFiles.map((file, index) => (
@@ -1068,10 +1147,7 @@ function ChatArea({
                       onClick={() => handleRemoveFile(index)}
                       className="absolute -right-1 -top-1 rounded-full border border-border bg-background p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:border-destructive/30 hover:bg-destructive/10"
                     >
-                      <HugeiconsIcon
-                        icon={Delete02Icon}
-                        className="size-3 text-muted-foreground"
-                      />
+                      <HugeiconsIcon icon={Delete02Icon} className="size-3 text-muted-foreground" />
                     </button>
                   </div>
                 ))}
@@ -1100,7 +1176,10 @@ function ChatArea({
             />
             <div className="relative z-20 flex items-center justify-between gap-2 pt-2 pb-0.5">
               <div className="overflow-visible flex items-center gap-1">
-                <div ref={toggleRef} className="relative flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+                <div
+                  ref={toggleRef}
+                  className="relative flex items-center gap-0.5 rounded-lg bg-muted p-0.5"
+                >
                   <div
                     className="pointer-events-none absolute inset-y-[3px] rounded-md bg-background shadow-sm transition-all dark:bg-input/30"
                     style={{
@@ -1159,46 +1238,68 @@ function ChatArea({
               <div className="flex shrink-0 items-center gap-1">
                 <Tooltip>
                   <TooltipTrigger
-                    render={<Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className={cn(
-                        "text-muted-foreground hover:text-foreground",
-                        isListening && "text-red-500 hover:text-red-600",
-                      )}
-                      onClick={isListening ? stop : start}
-                      disabled={!isSupported}
-                    >
-                      <HugeiconsIcon
-                        icon={isListening ? Cancel01Icon : Mic01Icon}
-                        className="size-4"
-                      />
-                    </Button>}
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className={cn(
+                          "text-muted-foreground hover:text-foreground",
+                          isListening && "text-red-500 hover:text-red-600",
+                        )}
+                        onClick={isListening ? stop : start}
+                        disabled={!isSupported}
+                      >
+                        <HugeiconsIcon
+                          icon={isListening ? Cancel01Icon : Mic01Icon}
+                          className="size-4"
+                        />
+                      </Button>
+                    }
                   />
-                  <TooltipContent side="top">{isListening ? voice_input_stop() : voice_input()}</TooltipContent>
+                  <TooltipContent side="top">
+                    {isListening ? voice_input_stop() : voice_input()}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
-                    render={<Button
-                      type="button"
-                      size="icon-sm"
-                      disabled={
-                        (!input.trim() && attachedFiles.length === 0) ||
-                        sending ||
-                        isConversationUpdating
-                      }
-                      onClick={handleSend}
-                    >
-                      {sending ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        <HugeiconsIcon
-                          icon={ArrowUp01Icon}
-                          className="size-3.5"
-                        />
-                      )}
-                    </Button>}
+                    render={
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        className={cn(
+                          "transition-[transform,box-shadow] duration-300 ease-out",
+                          isSendShortcutPreviewing &&
+                            "shadow-[0_0_0_1px_rgba(0,72,239,0.24),0_0_0_6px_rgba(0,72,239,0.14)]",
+                        )}
+                        disabled={
+                          (!input.trim() && attachedFiles.length === 0) ||
+                          sending ||
+                          isConversationUpdating
+                        }
+                        onClick={handleSend}
+                      >
+                        {sending ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <span className="relative flex items-center justify-center">
+                            <span
+                              className={cn(
+                                "absolute inset-[-10px] rounded-full bg-primary/12 blur-md transition-opacity duration-300",
+                                isSendShortcutPreviewing ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            <HugeiconsIcon
+                              icon={ArrowUp01Icon}
+                              className={cn(
+                                "relative size-3.5 transition-transform duration-300 ease-out",
+                                isSendShortcutPreviewing && "scale-110",
+                              )}
+                            />
+                          </span>
+                        )}
+                      </Button>
+                    }
                   />
                   <TooltipContent side="top">{send()}</TooltipContent>
                 </Tooltip>
@@ -1247,7 +1348,9 @@ function ChatArea({
                               >
                                 <Favicon url={bookmark.url} />
                                 <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-medium text-foreground">{bookmark.title}</div>
+                                  <div className="truncate text-sm font-medium text-foreground">
+                                    {bookmark.title}
+                                  </div>
                                   <div className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
                                     {bookmark.url}
                                   </div>
@@ -1284,13 +1387,15 @@ function ChatArea({
                   </span>
                   <Tooltip>
                     <TooltipTrigger
-                      render={<button
-                        type="button"
-                        onClick={() => onShowBookmarksChange(true)}
-                        className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                      >
-                        <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
-                      </button>}
+                      render={
+                        <button
+                          type="button"
+                          onClick={() => onShowBookmarksChange(true)}
+                          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
+                        </button>
+                      }
                     />
                     <TooltipContent side="top">{show_bookmarks()}</TooltipContent>
                   </Tooltip>
@@ -1300,8 +1405,7 @@ function ChatArea({
                     <>
                       {allMessages.map((message, index) => {
                         const onRetry =
-                          message.role === "assistant" &&
-                          allMessages[index - 1]?.role === "user"
+                          message.role === "assistant" && allMessages[index - 1]?.role === "user"
                             ? async () => {
                                 try {
                                   await api.retryConversationMessage(
@@ -1349,11 +1453,7 @@ interface CustomAgentSelectorProps {
   onSelect: (agentId: string | null) => void;
 }
 
-function CustomAgentSelector({
-  agents,
-  selectedAgentId,
-  onSelect,
-}: CustomAgentSelectorProps) {
+function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedAgent = agents.find((a) => a.id === selectedAgentId);
 
@@ -1367,19 +1467,18 @@ function CustomAgentSelector({
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
             <HugeiconsIcon icon={Settings01Icon} className="size-3 shrink-0" />
           </span>
-          <span className="truncate">
-            {selectedAgent?.name || agent()}
-          </span>
+          <span className="truncate">{selectedAgent?.name || agent()}</span>
         </span>
-        <HugeiconsIcon
-          icon={UnfoldMoreIcon}
-          className="size-3 shrink-0 text-muted-foreground"
-        />
+        <HugeiconsIcon icon={UnfoldMoreIcon} className="size-3 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
         <DropdownMenuItem
-          onClick={(e) => { e.stopPropagation(); onSelect(null); setOpen(false); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(null);
+            setOpen(false);
+          }}
           className="text-muted-foreground"
         >
           {none()}
@@ -1387,7 +1486,11 @@ function CustomAgentSelector({
         {agents.map((agent) => (
           <DropdownMenuItem
             key={agent.id}
-            onClick={(e) => { e.stopPropagation(); onSelect(agent.id); setOpen(false); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(agent.id);
+              setOpen(false);
+            }}
             className="flex items-center justify-between gap-2"
           >
             <span className="truncate">{agent.name}</span>
@@ -1424,20 +1527,10 @@ function SearchEngineIcon({ engineId, className }: { engineId: string; className
   if (!src) {
     return <HugeiconsIcon icon={GlobeIcon} className={className} />;
   }
-  return (
-    <img
-      src={src}
-      alt=""
-      className={cn("shrink-0", className)}
-    />
-  );
+  return <img src={src} alt="" className={cn("shrink-0", className)} />;
 }
 
-function SearchEngineSelector({
-  engines,
-  selectedEngineId,
-  onSelect,
-}: SearchEngineSelectorProps) {
+function SearchEngineSelector({ engines, selectedEngineId, onSelect }: SearchEngineSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedEngine = engines.find((e) => e.id === selectedEngineId);
 
@@ -1451,14 +1544,9 @@ function SearchEngineSelector({
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
             <SearchEngineIcon engineId={selectedEngineId} className="size-3.5" />
           </span>
-          <span className="truncate">
-            {selectedEngine?.name || search_engine_google()}
-          </span>
+          <span className="truncate">{selectedEngine?.name || search_engine_google()}</span>
         </span>
-        <HugeiconsIcon
-          icon={UnfoldMoreIcon}
-          className="size-3 shrink-0 text-muted-foreground"
-        />
+        <HugeiconsIcon icon={UnfoldMoreIcon} className="size-3 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
         {engines.map((engine) => (

@@ -1,78 +1,71 @@
-import { t, type UnwrapSchema } from "elysia";
+type RuntimeTransport = "stdio" | "tcp";
+type RuntimeStatus = "idle" | "active" | "error";
 
-export const RuntimeModel = {
-  response: t.Object({
-    id: t.String(),
-    name: t.String(),
-    command: t.String(),
-    version: t.Optional(t.String()),
-    path: t.Optional(t.String()),
-    role: t.String(),
-    capabilities: t.Array(t.String()),
-    model: t.String(),
-    transport: t.Union([t.Literal("stdio"), t.Literal("tcp")]),
-    enabled: t.Boolean(),
-    currentModel: t.Optional(t.String()),
-    status: t.Union([t.Literal("idle"), t.Literal("active"), t.Literal("error")]),
-    registryId: t.Optional(t.String()),
-  }),
-  detectResponse: t.Object({
-    available: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-        command: t.String(),
-        version: t.Optional(t.String()),
-        path: t.Optional(t.String()),
-        role: t.String(),
-        capabilities: t.Array(t.String()),
-        model: t.String(),
-        transport: t.Union([t.Literal("stdio"), t.Literal("tcp")]),
-        error: t.Optional(t.String()),
-      }),
-    ),
-    unavailable: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-        command: t.String(),
-        role: t.String(),
-        capabilities: t.Array(t.String()),
-        model: t.String(),
-        transport: t.Union([t.Literal("stdio"), t.Literal("tcp")]),
-        version: t.Optional(t.String()),
-        path: t.Optional(t.String()),
-        error: t.Optional(t.String()),
-      }),
-    ),
-  }),
-  healthResponse: t.Object({
-    healthy: t.Boolean(),
-    level: t.Union([t.Literal("basic"), t.Literal("ping"), t.Literal("full")]),
-    output: t.String(),
-    error: t.Optional(t.String()),
-    responseTime: t.Number(),
-    agentName: t.String(),
-    agentCommand: t.String(),
-    authRequired: t.Optional(t.Boolean()),
-  }),
-  modelResponse: t.Object({
-    model: t.Optional(t.String()),
-    source: t.Union([t.Literal("cli"), t.Literal("registry")]),
-    rawOutput: t.Optional(t.String()),
-  }),
-  chatBody: t.Object({
-    prompt: t.String(),
-  }),
-  chatResponse: t.Object({
-    success: t.Boolean(),
-    output: t.String(),
-    error: t.Optional(t.String()),
-    agentName: t.String(),
-    responseTime: t.Number(),
-  }),
-} as const;
-
-export type RuntimeModel = {
-  [k in keyof typeof RuntimeModel]: UnwrapSchema<(typeof RuntimeModel)[k]>;
-};
+export interface RuntimeModel {
+  response: {
+    id: string;
+    name: string;
+    command: string;
+    version?: string;
+    path?: string;
+    role: string;
+    capabilities: string[];
+    model: string;
+    transport: RuntimeTransport;
+    enabled: boolean;
+    currentModel?: string;
+    status: RuntimeStatus;
+    registryId?: string;
+  };
+  detectResponse: {
+    available: Array<{
+      id: string;
+      name: string;
+      command: string;
+      version?: string;
+      path?: string;
+      role: string;
+      capabilities: string[];
+      model: string;
+      transport: RuntimeTransport;
+      error?: string;
+    }>;
+    unavailable: Array<{
+      id: string;
+      name: string;
+      command: string;
+      role: string;
+      capabilities: string[];
+      model: string;
+      transport: RuntimeTransport;
+      version?: string;
+      path?: string;
+      error?: string;
+    }>;
+  };
+  healthResponse: {
+    healthy: boolean;
+    level: "basic" | "ping" | "full";
+    output: string;
+    error?: string;
+    responseTime: number;
+    agentName: string;
+    agentCommand: string;
+    authRequired?: boolean;
+  };
+  modelResponse: {
+    model?: string;
+    source: "cli" | "registry";
+    rawOutput?: string;
+  };
+  chatBody: {
+    prompt: string;
+  };
+  chatResponse: {
+    success: boolean;
+    output: string;
+    error?: string;
+    agentName: string;
+    responseTime: number;
+  };
+}

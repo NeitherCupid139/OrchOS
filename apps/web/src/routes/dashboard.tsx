@@ -16,7 +16,11 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
 import type { SidebarView } from "@/lib/types";
-import { getCapabilityModeFromPath, getCapabilityPath, isCapabilityView } from "@/lib/capability-routing";
+import {
+  getCapabilityModeFromPath,
+  getCapabilityPath,
+  isCapabilityView,
+} from "@/lib/capability-routing";
 import { checking_auth, search_bookmarks } from "@/paraglide/messages";
 
 const ACTIVITY_PANEL_TRANSITION_MS = 320;
@@ -147,7 +151,9 @@ function DashboardContentInner() {
     onComplete?: () => void;
   }> | null>(null);
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
-  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"general" | "notifications" | "mail" | "about">("general");
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<
+    "general" | "notifications" | "mail" | "about"
+  >("general");
   const revealTriggeredRef = useRef(false);
   const createBoardTask = useBoardStore((state) => state.createTask);
 
@@ -161,6 +167,8 @@ function DashboardContentInner() {
     handleOrganizationDelete,
     showSettingsDialog,
     setShowSettingsDialog,
+    uiPreviewTarget,
+    setUiPreviewTarget,
     searchQuery,
     setSearchQuery,
     inboxCounts,
@@ -226,6 +234,16 @@ function DashboardContentInner() {
     return () => window.clearTimeout(timeoutId);
   }, [loading, showAuthTransition]);
 
+  useEffect(() => {
+    if (uiPreviewTarget !== "send-shortcut") {
+      return;
+    }
+
+    if (activeView !== "creation") {
+      void navigate({ to: "/dashboard/creation" });
+    }
+  }, [activeView, navigate, uiPreviewTarget]);
+
   return (
     <>
       {AuthTransitionOverlay ? (
@@ -285,13 +303,13 @@ function DashboardContentInner() {
                 sourceFilter={sourceFilter}
                 onSourceFilterChange={setSourceFilter}
                 inboxStatusFilter={inboxStatusFilter}
-                 onInboxStatusFilterChange={setInboxStatusFilter}
-                 mailFolderFilter={mailFolderFilter}
-                 onMailFolderFilterChange={setMailFolderFilter}
-                 calendarViewMode={calendarViewMode}
-                 onCalendarViewModeChange={setCalendarViewMode}
-                 boardFilter={boardFilter}
-                 onBoardFilterChange={setBoardFilter}
+                onInboxStatusFilterChange={setInboxStatusFilter}
+                mailFolderFilter={mailFolderFilter}
+                onMailFolderFilterChange={setMailFolderFilter}
+                calendarViewMode={calendarViewMode}
+                onCalendarViewModeChange={setCalendarViewMode}
+                boardFilter={boardFilter}
+                onBoardFilterChange={setBoardFilter}
                 inboxCounts={inboxCounts}
                 agentModelFilter="all"
                 onAgentModelFilterChange={() => {}}
@@ -302,26 +320,29 @@ function DashboardContentInner() {
                     void navigate({ to: getCapabilityPath(activeView, mode) });
                   }
                 }}
-                 onOpenCreateGoal={
-                   activeView === "board"
-                     ? () => {
-                         setCreateBoardDialogOpen(true);
-                       }
-                     : undefined
-                 }
-                  onOpenMailAccounts={() => {
-                    setSettingsDefaultTab("mail");
-                    setShowSettingsDialog(true);
-                  }}
-                  onRefresh={refreshAll}
+                onOpenCreateGoal={
+                  activeView === "board"
+                    ? () => {
+                        setCreateBoardDialogOpen(true);
+                      }
+                    : undefined
+                }
+                onOpenMailAccounts={() => {
+                  setSettingsDefaultTab("mail");
+                  setShowSettingsDialog(true);
+                }}
+                onRefresh={refreshAll}
               >
                 {activeView === "bookmarks" && (
                   <div className="relative mx-auto w-full max-w-md">
-                    <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <HugeiconsIcon
+                      icon={Search01Icon}
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    />
                     <input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={search_bookmarks()}
+                      placeholder={search_bookmarks()}
                       className="w-full rounded-md border border-border bg-background py-1 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring/30"
                     />
                   </div>
@@ -330,10 +351,7 @@ function DashboardContentInner() {
               <Outlet />
             </div>
           </div>
-          <ActivityPanel
-            problems={problems}
-            collapsed={!activityPanelOpen}
-          />
+          <ActivityPanel problems={problems} collapsed={!activityPanelOpen} />
         </div>
         {showSettingsDialog && (
           <SettingsDialog
@@ -341,6 +359,7 @@ function DashboardContentInner() {
             onClose={() => {
               setShowSettingsDialog(false);
               setSettingsDefaultTab("general");
+              setUiPreviewTarget(null);
             }}
             settings={settings}
             onSettingsChange={useUIStore.getState().setSettings}

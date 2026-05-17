@@ -3,12 +3,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScriptPreferenceProvider } from "@/components/providers/ScriptPreferenceProvider";
 import { I18nProvider } from "@/lib/i18n-provider";
 import { getPublicRuntimeConfig } from "@/lib/public-runtime-config";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { getLocale } from "@/paraglide/runtime";
 import { not_found, page_not_found } from "@/paraglide/messages";
 
 import appCss from "../styles.css?url";
-
-const THEME_INIT_SCRIPT = `(function(){try{var raw=window.localStorage.getItem('orchos-ui');var mode='auto';if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.state&&parsed.state.theme){mode=parsed.state.theme}}var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
 
 export const Route = createRootRoute({
   head: () => ({

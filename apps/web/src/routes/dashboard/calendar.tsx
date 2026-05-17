@@ -1495,8 +1495,10 @@ function CalendarPage() {
                     type="button"
                     onClick={() => setLocalCalendarForm((current) => ({ ...current, color }))}
                     className={cn(
-                      "size-10 rounded-full border-2 transition-transform active:scale-[0.96]",
-                      localCalendarForm.color === color ? "border-foreground" : "border-transparent",
+                      "size-10 rounded-full border border-transparent bg-background/60 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.96]",
+                      localCalendarForm.color === color
+                        ? "border-border/50 bg-background shadow-[0_0_0_2px_rgba(15,23,42,0.04)] dark:shadow-[0_0_0_2px_rgba(255,255,255,0.07)]"
+                        : "hover:border-border/35 hover:bg-background/80",
                     )}
                     style={{ backgroundColor: color }}
                     aria-label={calendar_use_color({ color })}
@@ -1514,10 +1516,10 @@ function CalendarPage() {
                     type="button"
                     onClick={() => setLocalCalendarForm((current) => ({ ...current, icon: iconEntry.name }))}
                     className={cn(
-                      "flex size-10 items-center justify-center rounded-lg border-2 transition-colors",
+                      "flex size-10 items-center justify-center rounded-lg border transition-[border-color,background-color,color,box-shadow]",
                       localCalendarForm.icon === iconEntry.name
-                        ? "border-foreground bg-accent"
-                        : "border-border hover:border-foreground/40",
+                        ? "border-slate-300 bg-slate-100/80 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+                        : "border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-accent/35 hover:text-foreground",
                     )}
                     aria-label={iconEntry.name}
                   >

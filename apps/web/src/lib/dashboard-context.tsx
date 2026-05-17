@@ -9,22 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "@tanstack/react-router";
-import {
-  api,
-  type LocalAgentProfile,
-  type ProblemSummary,
-  type RuntimeProfile,
-} from "@/lib/api";
+import { api, type LocalAgentProfile, type ProblemSummary, type RuntimeProfile } from "@/lib/api";
 import type { AgentModelFilter } from "@/components/layout/Toolbar";
 import { useUIStore } from "@/lib/store";
 import { useDashboardCache } from "@/lib/dashboard-cache";
-import type {
-  Project,
-  Organization,
-  Problem,
-  ProblemStatus,
-  ControlSettings,
-} from "@/lib/types";
+import type { Project, Organization, Problem, ProblemStatus, ControlSettings } from "@/lib/types";
 
 type RefreshResults = {
   localAgents?: LocalAgentProfile[];
@@ -45,6 +34,8 @@ type DashboardView =
   | "mail"
   | "observability"
   | "agents";
+
+export type DashboardUiPreviewTarget = "send-shortcut";
 
 function getViewFromPath(pathname: string): DashboardView {
   const segment = pathname.replace("/dashboard/", "").replace("/dashboard", "");
@@ -105,6 +96,8 @@ interface DashboardContextType {
   handleOrganizationDelete: (orgId: string) => Promise<void>;
   showSettingsDialog: boolean;
   setShowSettingsDialog: (open: boolean) => void;
+  uiPreviewTarget: DashboardUiPreviewTarget | null;
+  setUiPreviewTarget: (target: DashboardUiPreviewTarget | null) => void;
 
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -139,20 +132,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [runtimes, setRuntimes] = useState<RuntimeProfile[]>(() => initialCache.runtimes);
   const [localAgents, setLocalAgents] = useState<LocalAgentProfile[]>([]);
   const [projects, setProjects] = useState<Project[]>(() => initialCache.projects);
-  const [organizations, setOrganizations] = useState<Organization[]>(() => initialCache.organizations);
+  const [organizations, setOrganizations] = useState<Organization[]>(
+    () => initialCache.organizations,
+  );
   const [problems, setProblems] = useState<Problem[]>(() => initialCache.problems);
-  const [problemSummary, setProblemSummary] = useState<ProblemSummary>(() => initialCache.problemSummary);
+  const [problemSummary, setProblemSummary] = useState<ProblemSummary>(
+    () => initialCache.problemSummary,
+  );
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [uiPreviewTarget, setUiPreviewTarget] = useState<DashboardUiPreviewTarget | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const refreshQueuedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedViewsRef = useRef<Set<DashboardView>>(new Set());
   const [loading, setLoading] = useState(() => {
-    return (
-      initialCache.runtimes.length === 0 &&
-      initialCache.organizations.length === 0
-    );
+    return initialCache.runtimes.length === 0 && initialCache.organizations.length === 0;
   });
 
   const inboxCounts = useMemo<InboxCounts>(() => {
@@ -326,9 +321,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
 
-      void Promise.allSettled([
-        api.getProblemSummary(),
-      ]).then((backgroundResults) => {
+      void Promise.allSettled([api.getProblemSummary()]).then((backgroundResults) => {
         if (backgroundResults[0].status === "fulfilled") {
           applyRefreshResults({ problemSummary: backgroundResults[0].value });
         } else {
@@ -365,13 +358,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
 
     await refreshAll();
-  }, [
-    activeView,
-    applyRefreshResults,
-    refreshAll,
-    shouldLoadProjects,
-    shouldLoadProblems,
-  ]);
+  }, [activeView, applyRefreshResults, refreshAll, shouldLoadProjects, shouldLoadProblems]);
 
   useEffect(() => {
     void initializeViewData();
@@ -472,6 +459,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleOrganizationDelete,
     showSettingsDialog,
     setShowSettingsDialog,
+    uiPreviewTarget,
+    setUiPreviewTarget,
     searchQuery,
     setSearchQuery,
     agentModelFilter: "all",
