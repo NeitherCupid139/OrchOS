@@ -422,6 +422,7 @@ export function Sidebar({
                       <Link
                         key={id}
                         to={to}
+                        preload="intent"
                         className={cn(
                           "flex h-10 items-center rounded-md transition-colors",
                           collapsed

@@ -103,9 +103,9 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
       }
       size="lg"
       className="max-w-4xl"
-      bodyClassName="p-5 md:p-6"
+      bodyClassName="p-3 md:p-4"
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <FramerCarousel
           items={ONBOARDING_SECTIONS}
           index={index}

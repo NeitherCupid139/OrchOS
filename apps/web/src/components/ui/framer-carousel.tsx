@@ -38,7 +38,7 @@ export function FramerCarousel({
     <div className="relative overflow-hidden" ref={containerRef}>
       <motion.div className="flex" style={{ x }}>
         {items.map((item) => (
-          <div key={item.id} className="w-full shrink-0 px-1">
+          <div key={item.id} className="w-full shrink-0 px-0.5">
             <div
               className={
                 flush

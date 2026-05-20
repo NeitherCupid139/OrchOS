@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Google, Bing, Baidu, Yandex, Ai360 } from "@lobehub/icons";
+import { Google, Bing, Baidu, Yandex, Ai360, Claude, DeepSeek, Gemini, OpenAI, OpenCode, OpenRouter } from "@lobehub/icons";
 import {
   Add01Icon, Archive01Icon, ArrowLeft01Icon, ArrowRight01Icon,
   Chat01Icon, Clock01Icon, ArrowUp01Icon, Mic01Icon, Cancel01Icon,
@@ -1216,7 +1216,13 @@ function ChatArea({
                   <button
                     ref={searchBtnRef}
                     type="button"
-                    onClick={() => setMode("search")}
+                    onClick={() => {
+                      if (mode === "search") {
+                        handleSend();
+                      } else {
+                        setMode("search");
+                      }
+                    }}
                     className={cn(
                       "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors",
                       mode === "search"
@@ -1348,23 +1354,18 @@ function ChatArea({
                             <HugeiconsIcon icon={Folder01Icon} className="size-3" />
                             {group.name}
                           </span>
-                          <div className="grid gap-3 md:grid-cols-2">
+                          <div className="grid grid-cols-4 gap-2 md:grid-cols-5 lg:grid-cols-6">
                             {group.bookmarks.map((bookmark) => (
                               <button
                                 key={bookmark.id}
                                 type="button"
-                                onClick={() => setInput(bookmark.url)}
-                                className="group flex h-[108px] items-start gap-3 rounded-2xl bg-card p-5 text-left shadow-sm ring-1 ring-black/[0.06] transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 hover:ring-black/[0.08] active:scale-[0.96] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]"
+                                onClick={() => window.open(bookmark.url, "_blank")}
+                                className="flex flex-col items-center gap-1.5 rounded-2xl p-2 transition-colors hover:bg-accent/40 active:scale-[0.93]"
                               >
                                 <Favicon url={bookmark.url} />
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-medium text-foreground">
-                                    {bookmark.title}
-                                  </div>
-                                  <div className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
-                                    {bookmark.url}
-                                  </div>
-                                </div>
+                                <span className="max-w-[72px] truncate text-center text-[11px] leading-tight text-foreground">
+                                  {bookmark.title}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -1475,7 +1476,7 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentS
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
-            <HugeiconsIcon icon={Settings01Icon} className="size-3 shrink-0" />
+            <ProviderIcon url={selectedAgent?.url} className="size-3 shrink-0" />
           </span>
           <span className="truncate">{selectedAgent?.name || agent()}</span>
         </span>
@@ -1505,6 +1506,9 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentS
             }}
             className="flex items-center gap-2"
           >
+            <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
+              <ProviderIcon url={agent.url} className="size-3.5" />
+            </span>
             <span className="truncate">{agent.name}</span>
           </DropdownMenuItem>
         ))}
@@ -1541,6 +1545,44 @@ const searchEngineIconComponent: Record<string, (props: { className?: string }) 
     return <Icon size={14} className={props.className} />;
   },
 };
+
+const providerIconComponent: Record<string, (props: { className?: string }) => ReactNode> = {
+  "opencode-go": (props) => <OpenCode size={14} className={props.className} />,
+  "opencode-zen": (props) => <OpenCode size={14} className={props.className} />,
+  openai: (props) => <OpenAI size={14} className={props.className} />,
+  gemini: (props) => {
+    const Icon = (Gemini as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+  anthropic: (props) => {
+    const Icon = (Claude as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+  openrouter: (props) => <OpenRouter size={14} className={props.className} />,
+  deepseek: (props) => {
+    const Icon = (DeepSeek as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+};
+
+const PROVIDER_META = [
+  { id: "opencode-go", urlPrefix: "https://opencode.ai/zen/go" },
+  { id: "opencode-zen", urlPrefix: "https://opencode.ai/zen" },
+  { id: "openai", urlPrefix: "https://api.openai.com" },
+  { id: "gemini", urlPrefix: "https://generativelanguage.googleapis.com" },
+  { id: "anthropic", urlPrefix: "https://api.anthropic.com" },
+  { id: "openrouter", urlPrefix: "https://openrouter.ai" },
+  { id: "deepseek", urlPrefix: "https://api.deepseek.com" },
+];
+
+function ProviderIcon({ url, className }: { url?: string; className?: string }) {
+  const provider = PROVIDER_META.find((p) => url?.startsWith(p.urlPrefix));
+  if (provider) {
+    const IconComponent = providerIconComponent[provider.id];
+    if (IconComponent) return IconComponent({ className });
+  }
+  return <HugeiconsIcon icon={Settings01Icon} className={className} />;
+}
 
 function SearchEngineIcon({ engineId, className }: { engineId: string; className?: string }) {
   const IconComponent = searchEngineIconComponent[engineId];

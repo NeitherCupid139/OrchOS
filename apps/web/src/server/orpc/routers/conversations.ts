@@ -1,6 +1,9 @@
 import { os } from "@/server/orpc/base";
 import { AgentToolService, type AgentToolDefinition } from "@/server/modules/agent/service";
-import { requestOpenAICompatibleChatCompletion } from "@/server/modules/custom-agents/openai-compatible";
+import {
+  inferOpenAICompatibleOperationForModel,
+  requestOpenAICompatibleChatCompletion,
+} from "@/server/modules/custom-agents/openai-compatible";
 import { ConversationService, type Message } from "@/server/modules/conversation/service";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getLocalDb } from "@/server/runtime/local-db";
@@ -57,15 +60,52 @@ async function requestChatCompletion(input: {
   messages: ChatMessage[];
   tools?: AgentToolDefinition[];
 }) {
+  const operation = inferOpenAICompatibleOperationForModel(input.model);
+  const chatBody = {
+    model: input.model,
+    messages: input.messages,
+    tools: input.tools,
+    tool_choice: input.tools && input.tools.length > 0 ? "auto" : undefined,
+  };
+
+  const anthropicMessages = input.messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => ({
+      role: message.role,
+      content: message.content ?? "",
+    }));
+
+  const anthropicBody = {
+    model: input.model,
+    max_tokens: 4096,
+    messages: anthropicMessages,
+  };
+
+  const responsesInput = input.messages.map((message) => ({
+    role: message.role,
+    content: [
+      {
+        type: "input_text",
+        text: message.content ?? "",
+      },
+    ],
+  }));
+
+  const responsesBody = {
+    model: input.model,
+    input: responsesInput,
+  };
+
   return requestOpenAICompatibleChatCompletion<ChatCompletionResponse>(fetch, {
     url: input.url,
     apiKey: input.apiKey,
-    body: {
-      model: input.model,
-      messages: input.messages,
-      tools: input.tools,
-      tool_choice: input.tools && input.tools.length > 0 ? "auto" : undefined,
-    },
+    model: input.model,
+    body:
+      operation === "messages"
+        ? anthropicBody
+        : operation === "responses"
+          ? responsesBody
+          : chatBody,
   });
 }
 

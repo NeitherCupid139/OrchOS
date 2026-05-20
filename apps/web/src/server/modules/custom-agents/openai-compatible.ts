@@ -6,6 +6,8 @@ export type UpstreamAttempt = {
   status?: number;
 };
 
+type OpenAICompatibleOperation = "chat/completions" | "messages" | "responses";
+
 function trimUrl(url: string) {
   return url.trim().replace(/\/+$/, "");
 }
@@ -113,6 +115,52 @@ export function buildOpenAICompatibleChatUrls(url: string) {
   return candidates;
 }
 
+function buildOpenAICompatibleOperationUrls(url: string, operation: OpenAICompatibleOperation) {
+  const normalized = trimUrl(url);
+  const suffix = `/${operation}`;
+  const candidates: string[] = [];
+
+  if (!normalized) return candidates;
+  if (normalized.endsWith(suffix)) return [normalized];
+  if (normalized.endsWith("/v1")) return [`${normalized}${suffix}`];
+
+  const ollamaBase = stripLikelyOllamaNativeSuffix(normalized);
+  if (ollamaBase) {
+    return operation === "chat/completions" ? [`${ollamaBase}/v1/chat/completions`] : [];
+  }
+
+  addCandidate(candidates, `${normalized}/v1${suffix}`);
+
+  if (operation === "chat/completions") {
+    addCandidate(candidates, `${normalized}${suffix}`);
+  }
+
+  return candidates;
+}
+
+export function inferOpenAICompatibleOperationForModel(model: string): OpenAICompatibleOperation {
+  const normalized = model.trim().toLowerCase();
+
+  if (
+    normalized.startsWith("claude") ||
+    normalized.startsWith("anthropic/")
+  ) {
+    return "messages";
+  }
+
+  if (
+    normalized.startsWith("gpt-") ||
+    normalized.startsWith("o1") ||
+    normalized.startsWith("o3") ||
+    normalized.startsWith("o4") ||
+    normalized.startsWith("openai/")
+  ) {
+    return "responses";
+  }
+
+  return "chat/completions";
+}
+
 export async function fetchOpenAICompatibleModels(
   fetchImpl: typeof fetch,
   input: {
@@ -166,12 +214,15 @@ export async function requestOpenAICompatibleChatCompletion<T>(
   input: {
     url: string;
     apiKey: string;
+    model: string;
     body: unknown;
   },
 ) {
   const attempts: UpstreamAttempt[] = [];
+  const operation = inferOpenAICompatibleOperationForModel(input.model);
+  const candidates = buildOpenAICompatibleOperationUrls(input.url, operation);
 
-  for (const candidate of buildOpenAICompatibleChatUrls(input.url)) {
+  for (const candidate of candidates) {
     try {
       const response = await fetchImpl(candidate, {
         method: "POST",
@@ -191,7 +242,53 @@ export async function requestOpenAICompatibleChatCompletion<T>(
         continue;
       }
 
-      return await response.json() as T;
+      const data = await response.json() as Record<string, unknown>;
+
+      if (operation === "messages") {
+        const contentParts = Array.isArray(data.content) ? data.content : [];
+        const assistantContent = contentParts
+          .filter((part): part is { type?: unknown; text?: unknown } => !!part && typeof part === "object")
+          .filter((part) => part.type === "text" && typeof part.text === "string")
+          .map((part) => part.text)
+          .join("\n");
+
+        return {
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: assistantContent,
+              },
+              finish_reason: typeof data.stop_reason === "string" ? data.stop_reason : null,
+            },
+          ],
+        } as T;
+      }
+
+      if (operation === "responses") {
+        const output = Array.isArray(data.output) ? data.output : [];
+        const assistantContent = output
+          .filter((item): item is { type?: unknown; content?: unknown } => !!item && typeof item === "object")
+          .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
+          .filter((part): part is { type?: unknown; text?: unknown } => !!part && typeof part === "object")
+          .filter((part) => part.type === "output_text" && typeof part.text === "string")
+          .map((part) => part.text)
+          .join("\n");
+
+        return {
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: assistantContent,
+              },
+              finish_reason: typeof data.status === "string" ? data.status : null,
+            },
+          ],
+        } as T;
+      }
+
+      return data as T;
     } catch (error) {
       attempts.push({
         url: candidate,
