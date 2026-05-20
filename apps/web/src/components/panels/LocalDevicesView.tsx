@@ -47,7 +47,7 @@ export function LocalDevicesView({
 
     return (
       <div className="flex min-h-0 flex-1 bg-background p-6">
-        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6">
+        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export function LocalDevicesView({
 
     return (
       <div className="flex min-h-0 flex-1 bg-background p-6">
-        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6">
+        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <HugeiconsIcon icon={ComputerIcon} className="size-5" />
@@ -128,7 +128,7 @@ export function LocalDevicesView({
                 {agent.runtimes.map((runtime) => (
                   <div
                     key={`${runtime.name}-${runtime.path ?? runtime.command}`}
-                    className="rounded-xl border border-border bg-background px-3 py-2"
+                    className="rounded-xl border border-border/70 bg-background px-3 py-2"
                   >
                     <div className="text-sm font-medium text-foreground">{runtime.name}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -138,7 +138,7 @@ export function LocalDevicesView({
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-border bg-background px-3 py-4 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border/60 bg-background px-3 py-4 text-sm text-muted-foreground">
                 {no_runtimes_reported()}
               </div>
             )}
@@ -181,7 +181,7 @@ function DetailCard({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-background px-4 py-3">
+    <div className="rounded-xl border border-border/70 bg-background px-4 py-3">
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
         {label}
       </div>

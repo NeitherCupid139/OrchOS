@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { FramerCarousel, type CarouselItem } from "@/components/ui/framer-carousel";
-import { dismiss, welcome_to_orchos } from "@/paraglide/messages";
+import { dismiss, next, previous, welcome_to_orchos } from "@/paraglide/messages";
 
 function OnboardingPreviewImage({
   src,
@@ -84,6 +84,23 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
         if (!nextOpen) onClose();
       }}
       title={welcome_to_orchos()}
+      description={
+        <div className="flex items-center gap-2 pt-1">
+          {ONBOARDING_SECTIONS.map((section, sectionIndex) => (
+            <button
+              key={section.id}
+              type="button"
+              aria-label={`Go to ${section.title}`}
+              onClick={() => setIndex(sectionIndex)}
+              className={`h-1.5 rounded-full transition-[width,background-color,opacity] ${
+                sectionIndex === index
+                  ? "w-6 bg-primary"
+                  : "w-2.5 bg-muted-foreground/20 hover:bg-muted-foreground/35"
+              }`}
+            />
+          ))}
+        </div>
+      }
       size="lg"
       className="max-w-4xl"
       bodyClassName="p-5 md:p-6"
@@ -105,21 +122,6 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
                 {currentSection.desc}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {ONBOARDING_SECTIONS.map((section, sectionIndex) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  aria-label={`Go to ${section.title}`}
-                  onClick={() => setIndex(sectionIndex)}
-                  className={`h-1.5 rounded-full transition-[width,background-color,opacity] ${
-                    sectionIndex === index
-                      ? "w-6 bg-primary"
-                      : "w-2.5 bg-muted-foreground/20 hover:bg-muted-foreground/35"
-                  }`}
-                />
-              ))}
-            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -129,7 +131,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
               disabled={isFirstSlide}
               onClick={() => setIndex((current) => Math.max(0, current - 1))}
             >
-              上一页
+              {previous()}
             </Button>
             <Button
               size="sm"
@@ -145,7 +147,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
                 );
               }}
             >
-              {isLastSlide ? dismiss() : "下一页"}
+              {isLastSlide ? dismiss() : next()}
             </Button>
           </div>
         </div>

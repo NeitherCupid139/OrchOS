@@ -840,5 +840,6 @@
   "planner_reminders_unscheduled": "No schedule set",
   "resize_calendar_sidebar": "캘린더 사이드바 크기 조절",
   "resize_mail_sidebar": "메일 사이드바 크기 조절",
-  "resize_bookmarks_sidebar": "북마크 사이드바 크기 조절"
+  "resize_bookmarks_sidebar": "북마크 사이드바 크기 조절",
+  "view": "보기"
 }

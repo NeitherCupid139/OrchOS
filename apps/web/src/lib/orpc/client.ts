@@ -5,6 +5,8 @@ import { onError } from "@orpc/client";
 
 import type { AppContract } from "@/lib/orpc/contracts";
 
+const RPC_REQUEST_TIMEOUT_MS = 15000;
+
 function getRpcBaseUrl() {
   if (typeof window === "undefined") {
     return "http://127.0.0.1:3000/api/rpc";
@@ -33,9 +35,15 @@ export const orpc: ContractRouterClient<AppContract> = createORPCClient(
       }
     },
     fetch(input, init) {
+      const controller = new AbortController();
+      const timeoutId = globalThis.setTimeout(() => controller.abort(), RPC_REQUEST_TIMEOUT_MS);
+
       return fetch(input, {
         ...init,
         credentials: "include",
+        signal: init?.signal ?? controller.signal,
+      }).finally(() => {
+        globalThis.clearTimeout(timeoutId);
       });
     },
     interceptors: [

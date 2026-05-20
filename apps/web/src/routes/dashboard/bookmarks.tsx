@@ -472,6 +472,7 @@ function BookmarkIconField({
 const BookmarkCard = memo(function BookmarkCard({
   bookmark,
   categoryId,
+  pinPending,
   onTogglePin,
   onEdit,
   onDelete,
@@ -481,6 +482,7 @@ const BookmarkCard = memo(function BookmarkCard({
 }: {
   bookmark: BookmarkCategory["bookmarks"][number];
   categoryId: string;
+  pinPending: boolean;
   onTogglePin: (categoryId: string, bookmarkId: string, currentPinned: boolean) => void;
   onEdit: (bookmarkId: string, title: string, url: string, icon?: string) => void;
   onDelete: (bookmarkId: string) => void;
@@ -497,8 +499,8 @@ const BookmarkCard = memo(function BookmarkCard({
       onDrop={() => onDropReorder(bookmark.id)}
       className={cn(
         "group h-[108px] rounded-2xl bg-card p-5 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] [contain-intrinsic-size:108px] [content-visibility:auto]",
-        !bookmark.pinned && "ring-1 ring-black/[0.06] shadow-sm hover:ring-black/[0.08] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]",
-        bookmark.pinned && "border border-primary/30 bg-primary/[0.02] shadow-sm",
+        !bookmark.pinned && "ring-1 ring-black/[0.06] hover:ring-black/[0.08] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]",
+        bookmark.pinned && "border border-primary/30 bg-primary/[0.02]",
       )}
     >
       <div className="relative flex items-start gap-3">
@@ -529,8 +531,9 @@ const BookmarkCard = memo(function BookmarkCard({
             type="button"
             variant="ghost"
             size="icon-xs"
+            disabled={pinPending}
             onClick={() => onTogglePin(categoryId, bookmark.id, bookmark.pinned)}
-            className={cn(bookmark.pinned && "text-primary")}
+            className={cn(bookmark.pinned && "text-primary", pinPending && "opacity-70")}
             title={bookmark.pinned ? unpin() : pin_to_home()}
           >
             <HugeiconsIcon icon={PinIcon} className={cn("size-3.5", bookmark.pinned && "fill-primary")} />
@@ -564,8 +567,27 @@ const BookmarkCard = memo(function BookmarkCard({
   && prev.bookmark.title === next.bookmark.title
   && prev.bookmark.url === next.bookmark.url
   && prev.bookmark.pinned === next.bookmark.pinned
-  && prev.bookmark.icon === next.bookmark.icon,
+  && prev.bookmark.icon === next.bookmark.icon
+  && prev.pinPending === next.pinPending,
 );
+
+function updateBookmarkPinnedState(
+  categories: BookmarkCategory[],
+  categoryId: string,
+  bookmarkId: string,
+  pinned: boolean,
+) {
+  return categories.map((category) =>
+    category.id === categoryId
+      ? {
+          ...category,
+          bookmarks: category.bookmarks.map((bookmark) =>
+            bookmark.id === bookmarkId ? { ...bookmark, pinned } : bookmark,
+          ),
+        }
+      : category,
+  );
+}
 
 function BookmarksPage() {
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -586,6 +608,7 @@ function BookmarksPage() {
   const [deletingBookmarkId, setDeletingBookmarkId] = useState<string | null>(null);
   const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>({ title: "", url: "", icon: undefined });
   const [loading, setLoading] = useState(true);
+  const [pendingPinBookmarkIds, setPendingPinBookmarkIds] = useState<string[]>([]);
   const [isCreateBookmarkDialogOpen, setIsCreateBookmarkDialogOpen] = useState(false);
   const [isCreateOrImportDialogOpen, setIsCreateOrImportDialogOpen] = useState(false);
   const [createOrImportStep, setCreateOrImportStep] = useState<"choose" | "create" | "import">("choose");
@@ -800,12 +823,27 @@ function BookmarksPage() {
   }
 
   const handleTogglePin = useCallback(async (categoryId: string, bookmarkId: string, currentPinned: boolean) => {
+    let previousCategories: BookmarkCategory[] | null = null;
+
+    setPendingPinBookmarkIds((current) =>
+      current.includes(bookmarkId) ? current : [...current, bookmarkId],
+    );
+    setCategories((current) => {
+      previousCategories = current;
+      return updateBookmarkPinnedState(current, categoryId, bookmarkId, !currentPinned);
+    });
+
     try {
       const saved = await api.updateBookmarkItem(categoryId, bookmarkId, { pinned: !currentPinned });
       setCategories(saved);
     } catch (error) {
+      if (previousCategories) {
+        setCategories(previousCategories);
+      }
       console.error("Failed to toggle pin:", error);
       toast.error(error instanceof Error ? error.message : failed_to_toggle_pin());
+    } finally {
+      setPendingPinBookmarkIds((current) => current.filter((id) => id !== bookmarkId));
     }
   }, []);
 
@@ -1125,6 +1163,7 @@ function BookmarksPage() {
                         key={bookmark.id}
                         bookmark={bookmark}
                         categoryId={selectedCategory.id}
+                        pinPending={pendingPinBookmarkIds.includes(bookmark.id)}
                         onTogglePin={handleTogglePin}
                         onEdit={handleEditBookmark}
                         onDelete={handleDeleteBookmark}

@@ -1,24 +1,12 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Google, Bing, Baidu, Yandex, Ai360 } from "@lobehub/icons";
 import {
-  Add01Icon,
-  Archive01Icon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-  Chat01Icon,
-  Clock01Icon,
-  ArrowUp01Icon,
-  Mic01Icon,
-  Cancel01Icon,
-  UnfoldMoreIcon,
-  Delete02Icon,
-  Folder01Icon,
-  Search01Icon,
-  GlobeIcon,
-  PinIcon,
-  Settings01Icon,
-  Bookmark01Icon,
+  Add01Icon, Archive01Icon, ArrowLeft01Icon, ArrowRight01Icon,
+  Chat01Icon, Clock01Icon, ArrowUp01Icon, Mic01Icon, Cancel01Icon,
+  UnfoldMoreIcon, Delete02Icon, Folder01Icon, Search01Icon, GlobeIcon,
+  PinIcon, Settings01Icon, Bookmark01Icon,
 } from "@hugeicons/core-free-icons";
 import { type UIMessage } from "ai";
 import { Button } from "@/components/ui/button";
@@ -74,13 +62,7 @@ import {
   search_engine_360,
   search_engine_baidu,
   search_engine_bing,
-  search_engine_brave,
-  search_engine_duckduckgo,
-  search_engine_ecosia,
   search_engine_google,
-  search_engine_searxng,
-  search_engine_sogou,
-  search_engine_startpage,
   search_engine_yandex,
   search_web_placeholder,
   send,
@@ -111,15 +93,9 @@ const EMPTY_CONVERSATION_MESSAGES: ConversationMessage[] = [];
 const searchEngineMeta = [
   { id: "google", url: "https://www.google.com/search?q=" },
   { id: "bing", url: "https://www.bing.com/search?q=" },
-  { id: "duckduckgo", url: "https://duckduckgo.com/?q=" },
   { id: "baidu", url: "https://www.baidu.com/s?wd=" },
-  { id: "sogou", url: "https://www.sogou.com/web?query=" },
   { id: "360", url: "https://www.so.com/s?q=" },
   { id: "yandex", url: "https://yandex.com/search/?text=" },
-  { id: "searxng", url: "https://searx.be/search?q=" },
-  { id: "startpage", url: "https://www.startpage.com/do/dsearch?query=" },
-  { id: "brave", url: "https://search.brave.com/search?q=" },
-  { id: "ecosia", url: "https://www.ecosia.org/search?q=" },
 ] as const;
 
 export function CreationView(props?: CreationViewProps | null) {
@@ -563,7 +539,13 @@ export function CreationView(props?: CreationViewProps | null) {
                 );
               })}
 
-              {availableConversations.length === 0 ? (
+              {isLoadingConversations && availableConversations.length === 0 ? (
+                <div className="flex items-center justify-center py-6">
+                  <Spinner className="text-muted-foreground/50" />
+                </div>
+              ) : null}
+
+              {availableConversations.length === 0 && !isLoadingConversations ? (
                 <div className="py-6 text-center">
                   <HugeiconsIcon
                     icon={Chat01Icon}
@@ -653,56 +635,50 @@ export function CreationView(props?: CreationViewProps | null) {
             <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
         ) : null}
-        {!hasLoadedConversations && isLoadingConversations ? (
-          <div className="flex h-full items-center justify-center">
-            <Spinner className="text-muted-foreground/50" />
-          </div>
-        ) : (
-          <ChatArea
-            conversation={displayConversation}
-            isDraftConversation={!activeConversation}
-            messages={uiMessages}
-            sending={sending}
-            showBookmarks={showBookmarks}
-            onShowBookmarksChange={setShowBookmarks}
-            runtimes={enabledRuntimes}
-            customAgents={customAgents}
-            selectedCustomAgentId={selectedCustomAgentId}
-            onSelectCustomAgent={setSelectedCustomAgentId}
-            onCreateConversation={handleCreateConversation}
-            onUpdateConversation={handleUpdateConversation}
-            onSendMessage={async (content, targetConversation, customAgentId) => {
-              const conversation = targetConversation ?? activeConversation;
-              if (!conversation) return;
+        <ChatArea
+          conversation={displayConversation}
+          isDraftConversation={!activeConversation}
+          messages={uiMessages}
+          sending={sending}
+          showBookmarks={showBookmarks}
+          onShowBookmarksChange={setShowBookmarks}
+          runtimes={enabledRuntimes}
+          customAgents={customAgents}
+          selectedCustomAgentId={selectedCustomAgentId}
+          onSelectCustomAgent={setSelectedCustomAgentId}
+          onCreateConversation={handleCreateConversation}
+          onUpdateConversation={handleUpdateConversation}
+          onSendMessage={async (content, targetConversation, customAgentId) => {
+            const conversation = targetConversation ?? activeConversation;
+            if (!conversation) return;
 
-              setSending(true);
-              if (content) {
-                setPendingUserMessage(conversation.id, content);
-              }
-              try {
-                await api.sendConversationMessage(conversation.id, content, customAgentId);
-                await loadMessages(conversation.id, { force: true });
-                setPendingUserMessage(conversation.id, undefined);
-                if (!conversation.title && messages.length === 0) {
-                  await handleUpdateConversation(conversation.id, {
-                    title: content.slice(0, 60),
-                  });
-                }
-                return;
-              } catch (err) {
-                setPendingUserMessage(conversation.id, undefined);
-                console.error("Failed to send message:", err);
-                toast.error(err instanceof Error ? err.message : send_failed());
-                throw err;
-              } finally {
-                setSending(false);
-              }
-            }}
-            onReloadMessages={
-              activeConversation ? () => loadMessages(activeConversation.id) : undefined
+            setSending(true);
+            if (content) {
+              setPendingUserMessage(conversation.id, content);
             }
-          />
-        )}
+            try {
+              await api.sendConversationMessage(conversation.id, content, customAgentId);
+              await loadMessages(conversation.id, { force: true });
+              setPendingUserMessage(conversation.id, undefined);
+              if (!conversation.title && messages.length === 0) {
+                await handleUpdateConversation(conversation.id, {
+                  title: content.slice(0, 60),
+                });
+              }
+              return;
+            } catch (err) {
+              setPendingUserMessage(conversation.id, undefined);
+              console.error("Failed to send message:", err);
+              toast.error(err instanceof Error ? err.message : send_failed());
+              throw err;
+            } finally {
+              setSending(false);
+            }
+          }}
+          onReloadMessages={
+            activeConversation ? () => loadMessages(activeConversation.id) : undefined
+          }
+        />
       </div>
 
       <ConfirmDialog
@@ -831,6 +807,7 @@ function ChatArea({
   const chatBtnRef = useRef<HTMLButtonElement>(null);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
   const pendingConversationUpdateRef = useRef<Promise<void> | null>(null);
+  const [modeIndicator, setModeIndicator] = useState({ left: 4, width: 0, ready: false });
   const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(undefined);
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
   const [mode, setMode] = useState<"chat" | "search">("chat");
@@ -841,15 +818,9 @@ function ChatArea({
     name: {
       google: search_engine_google(),
       bing: search_engine_bing(),
-      duckduckgo: search_engine_duckduckgo(),
       baidu: search_engine_baidu(),
-      sogou: search_engine_sogou(),
       ["360"]: search_engine_360(),
       yandex: search_engine_yandex(),
-      searxng: search_engine_searxng(),
-      startpage: search_engine_startpage(),
-      brave: search_engine_brave(),
-      ecosia: search_engine_ecosia(),
     }[e.id],
   }));
   const pinnedGroups = useMemo(
@@ -959,17 +930,57 @@ function ChatArea({
     textareaRef.current?.focus();
   }, [conversation.id]);
 
-  useEffect(() => {
+  const syncModeIndicator = useCallback(() => {
     const container = toggleRef.current;
     const activeBtn = mode === "chat" ? chatBtnRef.current : searchBtnRef.current;
     if (!container || !activeBtn) return;
 
     const containerRect = container.getBoundingClientRect();
     const activeRect = activeBtn.getBoundingClientRect();
+    const nextLeft = Math.max(4, activeRect.left - containerRect.left);
+    const nextWidth = Math.max(0, activeRect.width);
 
-    container.style.setProperty("--active-left", `${activeRect.left - containerRect.left}px`);
-    container.style.setProperty("--active-width", `${activeRect.width}px`);
+    setModeIndicator((current) => {
+      if (
+        current.ready &&
+        Math.abs(current.left - nextLeft) < 0.5 &&
+        Math.abs(current.width - nextWidth) < 0.5
+      ) {
+        return current;
+      }
+
+      return { left: nextLeft, width: nextWidth, ready: true };
+    });
   }, [mode]);
+
+  useLayoutEffect(() => {
+    syncModeIndicator();
+
+    const container = toggleRef.current;
+    const chatBtn = chatBtnRef.current;
+    const searchBtn = searchBtnRef.current;
+    if (!container || !chatBtn || !searchBtn) return;
+
+    let frameId = window.requestAnimationFrame(() => {
+      syncModeIndicator();
+      frameId = window.requestAnimationFrame(syncModeIndicator);
+    });
+
+    const observer = new ResizeObserver(() => {
+      syncModeIndicator();
+    });
+
+    observer.observe(container);
+    observer.observe(chatBtn);
+    observer.observe(searchBtn);
+    window.addEventListener("resize", syncModeIndicator);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer.disconnect();
+      window.removeEventListener("resize", syncModeIndicator);
+    };
+  }, [syncModeIndicator]);
 
   useEffect(() => {
     if (!pendingUserMessage) return;
@@ -1175,18 +1186,17 @@ function ChatArea({
               onInput={syncTextareaHeight}
             />
             <div className="relative z-20 flex items-center justify-between gap-2 pt-2 pb-0.5">
-              <div className="overflow-visible flex items-center gap-1">
+              <div className="flex min-w-0 items-center gap-1 overflow-visible">
                 <div
                   ref={toggleRef}
-                  className="relative flex items-center gap-0.5 rounded-lg bg-muted p-0.5"
+                  className="relative shrink-0 flex items-center gap-0.5 rounded-lg bg-muted p-0.5"
                 >
                   <div
-                    className="pointer-events-none absolute inset-y-[3px] rounded-md bg-background shadow-sm transition-all dark:bg-input/30"
+                    className="pointer-events-none absolute inset-y-[3px] rounded-md bg-background shadow-sm transition-[left,width,opacity] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] dark:bg-input/30"
                     style={{
-                      left: "var(--active-left, 4px)",
-                      width: "var(--active-width, 50%)",
-                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-                      transitionDuration: "400ms",
+                      left: modeIndicator.left,
+                      width: modeIndicator.width,
+                      opacity: modeIndicator.ready ? 1 : 0,
                     }}
                   />
                   <button
@@ -1473,16 +1483,18 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentS
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect(null);
-            setOpen(false);
-          }}
-          className="text-muted-foreground"
-        >
-          {none()}
-        </DropdownMenuItem>
+        {agents.length === 0 ? (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(null);
+              setOpen(false);
+            }}
+            className="text-muted-foreground"
+          >
+            {none()}
+          </DropdownMenuItem>
+        ) : null}
         {agents.map((agent) => (
           <DropdownMenuItem
             key={agent.id}
@@ -1491,10 +1503,9 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentS
               onSelect(agent.id);
               setOpen(false);
             }}
-            className="flex items-center justify-between gap-2"
+            className="flex items-center gap-2"
           >
             <span className="truncate">{agent.name}</span>
-            <span className="text-[10px] text-muted-foreground">{agent.model}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -1508,26 +1519,36 @@ interface SearchEngineSelectorProps {
   onSelect: (engineId: string) => void;
 }
 
-const searchEngineIconMap: Record<string, string> = {
-  google: "/search/google.svg",
-  bing: "/search/bing.png",
-  duckduckgo: "/search/duckduckgo.svg",
-  baidu: "/search/baidu.svg",
-  sogou: "/search/sogou.svg",
-  ["360"]: "/search/360search.png",
-  yandex: "/search/yandex.svg",
-  searxng: "/search/searxng.svg",
-  startpage: "/search/startpage.svg",
-  brave: "/search/brave-search.svg",
-  ecosia: "/search/ecosia.svg",
+const searchEngineIconComponent: Record<string, (props: { className?: string }) => ReactNode> = {
+  google: (props) => {
+    const Icon = (Google as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+  bing: (props) => {
+    const Icon = (Bing as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+  baidu: (props) => {
+    const Icon = (Baidu as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
+  yandex: (props) => {
+    const Icon = (Yandex as unknown as { Avatar: React.ElementType }).Avatar;
+    return <Icon size={14} className={props.className} />;
+  },
+  ["360"]: (props) => {
+    const Icon = (Ai360 as unknown as { Color: React.ElementType }).Color;
+    return <Icon size={14} className={props.className} />;
+  },
 };
 
 function SearchEngineIcon({ engineId, className }: { engineId: string; className?: string }) {
-  const src = searchEngineIconMap[engineId];
-  if (!src) {
-    return <HugeiconsIcon icon={GlobeIcon} className={className} />;
+  const IconComponent = searchEngineIconComponent[engineId];
+  if (IconComponent) {
+    return IconComponent({ className });
   }
-  return <img src={src} alt="" className={cn("shrink-0", className)} />;
+
+  return <HugeiconsIcon icon={GlobeIcon} className={className} />;
 }
 
 function SearchEngineSelector({ engines, selectedEngineId, onSelect }: SearchEngineSelectorProps) {

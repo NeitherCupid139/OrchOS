@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { RuntimeProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
+import { Claude, DeepSeek, Gemini, OpenAI, OpenCode, OpenRouter } from "@lobehub/icons";
 
 const MOCK_RUNTIME: RuntimeProfile = {
   id: "mock-runtime-01",
@@ -230,22 +231,22 @@ export function FeaturesBento() {
               <CardContent className="relative px-5 md:px-8">
                 <div className="grid grid-cols-4 gap-2 md:grid-cols-6">
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border p-3">
-                    <img className="m-auto size-6 md:size-7" src="/runtimes/opencode.svg" alt="OpenCode" width={32} height={32} loading="lazy" decoding="async" />
+                    <OpenCode className="m-auto" size={32} />
                   </div>
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border p-3">
-                    <img className="m-auto size-6 md:size-7" src="/runtimes/gemini-color.svg" alt="Gemini" width={32} height={32} loading="lazy" decoding="async" />
+                    <Gemini.Color className="m-auto" size={32} />
                   </div>
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border p-3">
-                    <img className="m-auto size-6 md:size-7" src="/runtimes/codex-color.svg" alt="Codex" width={32} height={32} loading="lazy" decoding="async" />
+                    <OpenAI className="m-auto" size={32} />
                   </div>
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border p-3">
-                    <img className="m-auto size-6 md:size-7" src="/runtimes/claudecode-color.svg" alt="Claude Code" width={32} height={32} loading="lazy" decoding="async" />
+                    <Claude.Color className="m-auto" size={32} />
                   </div>
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border border-dashed p-3">
-                    <img className="m-auto size-6 md:size-7 opacity-30" src="/runtimes/pi.svg" alt="Pi" width={32} height={32} loading="lazy" decoding="async" />
+                    <OpenRouter className="m-auto" size={32} />
                   </div>
                   <div className="rounded-[var(--radius)] bg-muted/50 flex aspect-square items-center justify-center border border-dashed p-3">
-                    <img className="m-auto size-6 md:size-7 opacity-30" src="/runtimes/amp-color.svg" alt="AMP" width={32} height={32} loading="lazy" decoding="async" />
+                    <DeepSeek.Color className="m-auto" size={32} />
                   </div>
                 </div>
               </CardContent>

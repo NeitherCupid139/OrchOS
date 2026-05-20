@@ -116,7 +116,6 @@
   "auto_mode_off_desc": "Manual mode — you approve each action",
   "auto_mode_on_desc": "System will auto-fix problems as they arise",
   "automation_rules": "Automation Rules",
-  "agents": "Agents",
   "available": "Available",
   "build_failed": "Build failed",
   "build_success": "Build success",
@@ -160,8 +159,13 @@
   "calendar_new_calendar": "New calendar",
   "calendar_n_accounts": [
     {
-      "declarations": ["input n", "local nPlural = n: plural"],
-      "selectors": ["nPlural"],
+      "declarations": [
+        "input n",
+        "local nPlural = n: plural"
+      ],
+      "selectors": [
+        "nPlural"
+      ],
       "match": {
         "nPlural=one": "{n} account",
         "nPlural=other": "{n} accounts"
@@ -170,8 +174,13 @@
   ],
   "calendar_n_calendars": [
     {
-      "declarations": ["input n", "local nPlural = n: plural"],
-      "selectors": ["nPlural"],
+      "declarations": [
+        "input n",
+        "local nPlural = n: plural"
+      ],
+      "selectors": [
+        "nPlural"
+      ],
       "match": {
         "nPlural=one": "{n} calendar",
         "nPlural=other": "{n} calendars"
@@ -180,8 +189,13 @@
   ],
   "calendar_n_events": [
     {
-      "declarations": ["input n", "local nPlural = n: plural"],
-      "selectors": ["nPlural"],
+      "declarations": [
+        "input n",
+        "local nPlural = n: plural"
+      ],
+      "selectors": [
+        "nPlural"
+      ],
       "match": {
         "nPlural=one": "{n} event",
         "nPlural=other": "{n} events"
@@ -230,7 +244,7 @@
   "calendar_group_deleted": "Group deleted",
   "calendar_calendar_deleted": "Calendar deleted",
   "calendar_event_deleted": "Event deleted",
-  "calendar_delete_calendar_confirm": "Delete \"{name}\" and all events inside it?",
+  "calendar_delete_calendar_confirm": "Delete \"{name}\" and all events in it?",
   "calendar_account_removed": "Calendar account removed",
   "calendar_failed_remove_account": "Failed to remove calendar account",
   "calendar_create_local_first": "Create a local calendar before adding events",
@@ -260,7 +274,6 @@
   "calendar_local_event_desc": "Store an event inside one of your local calendars without relying on an external provider.",
   "calendar_all_day_event": "All-day event",
   "calendar_delete_group_confirm": "Delete \"{name}\" and all calendars and events inside it?",
-  "calendar_delete_calendar_confirm": "Delete \"{name}\" and all events in it?",
   "calendar_delete_event_confirm": "Delete \"{title}\"?",
   "calendar_group_name_placeholder": "Product planning",
   "calendar_save_changes": "Save changes",
@@ -281,7 +294,6 @@
   "calendar_description_placeholder": "Track launches, milestones, and team rituals.",
   "calendar_use_color": "Use color {color}",
   "calendar_create_local_first_alt": "Create a local group first, then add calendars inside it.",
-  "cancel": "Cancel",
   "cancel": "Cancel",
   "cap_commit": "Commit",
   "cap_fix_bug": "Fix Bug",
@@ -592,8 +604,13 @@
   "unpin": "Unpin",
   "bookmark_count": [
     {
-      "declarations": ["input count", "local countPlural = count: plural"],
-      "selectors": ["countPlural"],
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
       "match": {
         "countPlural=one": "{count} bookmark",
         "countPlural=other": "{count} bookmarks"
@@ -601,7 +618,7 @@
     }
   ],
   "bookmarks_workspace": "Bookmarks workspace",
-  "bookmarks_workspace_desc": "Import your bookmarks from a file...",
+  "bookmarks_workspace_desc": "Import your bookmarks from a file, then organize them by category in this dedicated workspace.",
   "import_from_file": "Import from file",
   "import_bookmarks_desc": "Import bookmarks from an HTML, JSON, or CSV file.",
   "imported_bookmarks": "Imported {count} bookmarks",
@@ -954,9 +971,6 @@
   "voice_input_stop": "Stop voice input",
   "set_as_default": "Set as default",
   "workspace": "Workspace",
-  "bookmarks_workspace": "Bookmarks workspace",
-  "bookmarks_workspace_desc": "Import your bookmarks from a file, then organize them by category in this dedicated workspace.",
-  "import_from_file": "Import from file",
   "todo_list": "To-do List",
   "collapse_sidebar": "Collapse sidebar",
   "expand_sidebar": "Expand sidebar",
@@ -987,7 +1001,6 @@
   "online": "Online",
   "offline": "Offline",
   "registered": "Registered",
-  "runtimes": "Runtimes",
   "generate_pairing_token": "Generate pairing token",
   "regenerate_pairing_token": "Regenerate pairing token",
   "generating_token": "Generating token...",
@@ -1006,7 +1019,6 @@
   "token_copied": "Copied!",
   "done": "Done",
   "token_expires_in": "Token expires in {minutes} minutes",
-  "all": "All",
   "unread": "Unread",
   "waiting_reply": "Waiting reply",
   "archived": "Archived",
@@ -1157,8 +1169,8 @@
   "message_runtime_placeholder": "Message {name}...",
   "message_agent_placeholder": "Message {name}...",
   "agent": "Agent",
-  "none": "None"
-  ,"creation_intro_title": "Let's start creating",
+  "none": "None",
+  "creation_intro_title": "Let's start creating",
   "creation_intro_desc": "Describe your goal. I'll break it into a plan first, then move through execution and review.",
   "creation_image_unsupported": "The current model does not support image input. Remove the image and try again.",
   "resize_creation_sidebar": "Resize creation sidebar",
@@ -1166,5 +1178,6 @@
   "toggle_menu": "Toggle menu",
   "resize_calendar_sidebar": "Resize calendar sidebar",
   "resize_mail_sidebar": "Resize mail sidebar",
-  "resize_bookmarks_sidebar": "Resize bookmarks sidebar"
+  "resize_bookmarks_sidebar": "Resize bookmarks sidebar",
+  "view": "View"
 }

@@ -32,20 +32,19 @@ interface BoardViewProps {
   onDeleteReminder?: (reminder: PlannerReminder) => void | Promise<void>;
 }
 
-const boardTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
-  month: "numeric",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+function parseBoardDate(value?: string) {
+  if (!value) return null;
 
-function formatBoardTime(value?: string) {
-  if (!value) return "";
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day), 12);
+  }
 
   const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) return "";
+  if (Number.isNaN(timestamp)) return null;
 
-  return boardTimeFormatter.format(new Date(timestamp));
+  return new Date(timestamp);
 }
 
 function SubtaskList({ subtasks }: { subtasks: string[] }) {
@@ -97,10 +96,31 @@ export function BoardView({
   onDeleteReminder,
 }: BoardViewProps) {
   const [editingTask, setEditingTask] = useState<BoardTaskEditData | null>(null);
-  const { projects } = useDashboard();
+  const { projects, settings } = useDashboard();
   const tasks = useBoardStore((state) => state.tasks);
   const updateTask = useBoardStore((state) => state.updateTask);
   const deleteTask = useBoardStore((state) => state.deleteTask);
+  const locale = settings?.locale;
+  const timezone = settings?.timezone;
+
+  const boardDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: timezone,
+      }),
+    [locale, timezone],
+  );
+
+  const formatBoardDate = useMemo(
+    () => (value?: string) => {
+      const date = parseBoardDate(value);
+      return date ? boardDateFormatter.format(date) : "";
+    },
+    [boardDateFormatter],
+  );
 
   const boardColumns: Array<{
     id: BoardTaskColumnId;
@@ -195,7 +215,10 @@ export function BoardView({
                   )}
                 >
                   {columnReminders.map(({ reminder }) => {
-                      const reminderDisplayText = getReminderDisplayText(reminder);
+                      const reminderDisplayText = getReminderDisplayText(reminder, {
+                        locale,
+                        timezone,
+                      });
 
                       return (
                       <div
@@ -265,16 +288,13 @@ export function BoardView({
                                 <span className="inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px] text-violet-600 dark:text-violet-400">
                                   reminder
                                 </span>
-                                {reminderDisplayText ? (
-                                  <span className="inline-flex items-center gap-1">
-                                    <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
-                                    {reminderDisplayText}
-                                  </span>
-                                ) : null}
                               </div>
-                              <span className="text-[11px] tabular-nums text-muted-foreground/45">
-                                {formatBoardTime(reminder.updatedAt)}
-                              </span>
+                              {reminderDisplayText ? (
+                                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-muted-foreground/45">
+                                  <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
+                                  {reminderDisplayText}
+                                </span>
+                              ) : null}
                             </div>
                           </InfoCardContent>
                         </InfoCard>
@@ -392,16 +412,13 @@ export function BoardView({
                                   <span className={cn("inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[11px]", priorityTone(card.priority))}>
                                     {card.priority}
                                   </span>
-                                  {card.dueDate ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
-                                      {card.dueDate}
-                                    </span>
-                                  ) : null}
                                 </div>
-                                <span className="text-[11px] tabular-nums text-muted-foreground/45">
-                                  {formatBoardTime(card.updatedAt)}
-                                </span>
+                                {card.dueDate ? (
+                                  <span className="inline-flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-muted-foreground/45">
+                                    <HugeiconsIcon icon={Calendar03Icon} className="size-3" />
+                                    {formatBoardDate(card.dueDate)}
+                                  </span>
+                                ) : null}
                               </div>
                             </InfoCardContent>
                           </InfoCard>

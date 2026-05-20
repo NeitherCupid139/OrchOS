@@ -15,6 +15,11 @@ export interface PlannerReminderLike {
   schedule?: PlannerReminderSchedule;
 }
 
+interface ReminderDateFormatOptions {
+  locale?: string;
+  timezone?: string;
+}
+
 export function parseReminderSchedule(input: string): PlannerReminderSchedule | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
@@ -44,13 +49,16 @@ export function getReminderSchedule(reminder: PlannerReminderLike): PlannerRemin
   return reminder.schedule ?? (reminder.remindAt ? parseReminderSchedule(reminder.remindAt) : undefined);
 }
 
-export function getReminderDisplayText(reminder: PlannerReminderLike): string | undefined {
+export function getReminderDisplayText(
+  reminder: PlannerReminderLike,
+  options?: ReminderDateFormatOptions,
+): string | undefined {
   if (reminder.schedule) {
     if (reminder.schedule.kind === "daily") {
       return `每天 ${String(reminder.schedule.hour).padStart(2, "0")}:${String(reminder.schedule.minute).padStart(2, "0")}`;
     }
 
-    return formatScheduleDate(reminder.schedule.at);
+    return formatScheduleDate(reminder.schedule.at, options);
   }
 
   return reminder.remindAt?.trim() || undefined;
@@ -73,15 +81,16 @@ export function getReminderNextOccurrence(reminder: PlannerReminderLike): Date |
   return Number.isNaN(at.getTime()) ? null : at;
 }
 
-function formatScheduleDate(value: string) {
+function formatScheduleDate(value: string, options?: ReminderDateFormatOptions) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(options?.locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: options?.timezone,
   }).format(parsed);
 }

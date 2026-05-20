@@ -1112,5 +1112,6 @@
   "toggle_menu": "切换菜单",
   "resize_calendar_sidebar": "调整日历侧边栏大小",
   "resize_mail_sidebar": "调整邮件侧边栏大小",
-  "resize_bookmarks_sidebar": "调整书签侧边栏大小"
+  "resize_bookmarks_sidebar": "调整书签侧边栏大小",
+  "view": "查看"
 }

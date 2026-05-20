@@ -24,6 +24,7 @@
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "@inlang/paraglide-js": "^2.15.3",
+    "@lobehub/icons": "^5.8.0",
     "@orpc/client": "^1.14.2",
     "@orpc/contract": "^1.14.2",
     "@orpc/server": "^1.14.2",

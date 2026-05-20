@@ -33,6 +33,7 @@ function AgentsPage() {
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
+  const [modelFetchError, setModelFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadCustomAgents();
@@ -89,6 +90,7 @@ function AgentsPage() {
     setAgentForm({ name: "", url: "", apiKey: "", model: "" });
     setAvailableModels([]);
     setLoadingModels(false);
+    setModelFetchError(null);
     setIsConnectDialogOpen(true);
   }
 
@@ -133,6 +135,7 @@ function AgentsPage() {
     }
 
     setLoadingModels(true);
+    setModelFetchError(null);
     try {
       const result = await api.listCustomAgentModels({
         url: url.trim(),
@@ -140,6 +143,7 @@ function AgentsPage() {
       });
 
       setAvailableModels(result.models);
+      setModelFetchError(null);
       setAgentForm((prev) => {
         if (currentModel && result.models.includes(currentModel)) {
           return prev.model === currentModel ? prev : { ...prev, model: currentModel };
@@ -153,6 +157,7 @@ function AgentsPage() {
       });
     } catch (error) {
       setAvailableModels([]);
+      setModelFetchError(error instanceof Error ? error.message : failed_save_custom_agent());
       toast.error(error instanceof Error ? error.message : failed_save_custom_agent());
     } finally {
       setLoadingModels(false);
@@ -167,9 +172,11 @@ function AgentsPage() {
     if (!url || !apiKey) {
       setAvailableModels([]);
       setLoadingModels(false);
+      setModelFetchError(null);
       return;
     }
 
+    setModelFetchError(null);
     const timer = window.setTimeout(() => {
       void loadCustomAgentModels(url, apiKey, agentForm.model.trim());
     }, 300);
@@ -341,6 +348,7 @@ function AgentsPage() {
                           setAgentForm({ name: agent.name, url: agent.url, apiKey: agent.apiKey, model: agent.model });
                           setAvailableModels([]);
                           setLoadingModels(false);
+                          setModelFetchError(null);
                           setIsConnectDialogOpen(true);
                         }}
                         className="text-muted-foreground/60 hover:text-foreground"
@@ -449,6 +457,7 @@ function AgentsPage() {
           if (!open) {
             setAvailableModels([]);
             setLoadingModels(false);
+            setModelFetchError(null);
           }
           setIsConnectDialogOpen(open);
         }}
@@ -483,6 +492,9 @@ function AgentsPage() {
               placeholder={custom_agent_url_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
+            <span className="text-[11px] text-muted-foreground/70">
+              Point to an OpenAI-compatible API endpoint, e.g. <code className="text-[10px]">https://api.example.com/v1</code>
+            </span>
           </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-foreground">{api_key()}</span>
@@ -516,6 +528,9 @@ function AgentsPage() {
                 </SelectGroup>
               </SelectContent>
             </Select>
+            {modelFetchError ? (
+              <span className="text-[11px] text-destructive/80 leading-tight">{modelFetchError}</span>
+            ) : null}
           </label>
         </div>
       </AppDialog>

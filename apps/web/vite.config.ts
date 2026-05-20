@@ -27,6 +27,7 @@ const config = defineConfig(({ isSsrBuild }) => ({
       : undefined,
   },
   server: {
+    allowedHosts: true,
     host: "0.0.0.0",
     proxy: {
       "/ws": {

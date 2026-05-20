@@ -955,5 +955,6 @@
   "planner_reminders_unscheduled": "No schedule set",
   "resize_calendar_sidebar": "調整行事曆側邊欄大小",
   "resize_mail_sidebar": "調整郵件側邊欄大小",
-  "resize_bookmarks_sidebar": "調整書籤側邊欄大小"
+  "resize_bookmarks_sidebar": "調整書籤側邊欄大小",
+  "view": "查看"
 }

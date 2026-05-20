@@ -840,5 +840,6 @@
   "planner_reminders_unscheduled": "No schedule set",
   "resize_calendar_sidebar": "カレンダーのサイドバーのサイズを変更",
   "resize_mail_sidebar": "メールのサイドバーのサイズを変更",
-  "resize_bookmarks_sidebar": "ブックマークのサイドバーのサイズを変更"
+  "resize_bookmarks_sidebar": "ブックマークのサイドバーのサイズを変更",
+  "view": "表示"
 }
