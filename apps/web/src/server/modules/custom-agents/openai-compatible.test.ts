@@ -113,6 +113,51 @@ describe("requestOpenAICompatibleChatCompletion", () => {
     }));
   });
 
+  it("preserves Anthropic tool calls in chat completion shape", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      content: [
+        { type: "text", text: "Looking that up." },
+        {
+          type: "tool_use",
+          id: "toolu_123",
+          name: "web_search",
+          input: { query: "latest bun release" },
+        },
+      ],
+      stop_reason: "tool_use",
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+
+    await expect(requestOpenAICompatibleChatCompletion(fetchMock, {
+      url: "https://opencode.ai/zen/v1",
+      apiKey: "test",
+      model: "claude-sonnet-4-6",
+      body: { model: "claude-sonnet-4-6", messages: [{ role: "user", content: "hi" }] },
+    })).resolves.toEqual({
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: "Looking that up.",
+            tool_calls: [
+              {
+                id: "toolu_123",
+                type: "function",
+                function: {
+                  name: "web_search",
+                  arguments: "{\"query\":\"latest bun release\"}",
+                },
+              },
+            ],
+          },
+          finish_reason: "tool_use",
+        },
+      ],
+    });
+  });
+
   it("normalizes OpenAI responses API responses into chat completion shape", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       output: [
@@ -148,5 +193,49 @@ describe("requestOpenAICompatibleChatCompletion", () => {
     expect(fetchMock).toHaveBeenCalledWith("https://api.openai.com/v1/responses", expect.objectContaining({
       method: "POST",
     }));
+  });
+
+  it("preserves Responses API tool calls in chat completion shape", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      output: [
+        {
+          type: "function_call",
+          call_id: "call_123",
+          name: "web_search",
+          arguments: "{\"query\":\"latest bun release\"}",
+        },
+      ],
+      status: "completed",
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+
+    await expect(requestOpenAICompatibleChatCompletion(fetchMock, {
+      url: "https://api.openai.com/v1",
+      apiKey: "test",
+      model: "gpt-5.5",
+      body: { model: "gpt-5.5", input: [] },
+    })).resolves.toEqual({
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              {
+                id: "call_123",
+                type: "function",
+                function: {
+                  name: "web_search",
+                  arguments: "{\"query\":\"latest bun release\"}",
+                },
+              },
+            ],
+          },
+          finish_reason: "completed",
+        },
+      ],
+    });
   });
 });

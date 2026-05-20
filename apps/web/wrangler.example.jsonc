@@ -18,5 +18,8 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"TAVILY_API_KEY": "REPLACE_WITH_TAVILY_API_KEY"
 	}
 }

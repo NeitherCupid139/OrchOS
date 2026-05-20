@@ -29,6 +29,15 @@ type ChatCompletionResponse = {
   }>;
 };
 
+function safeParseJsonObject(value: string) {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 async function getCustomAgentConfig(customAgentId: string) {
   const db = await getLocalDb();
   const agentService = new CustomAgentService(db);
@@ -53,6 +62,108 @@ function conversationHistoryToChatMessages(messages: Message[]): ChatMessage[] {
     }));
 }
 
+function buildAnthropicMessages(messages: ChatMessage[]) {
+  const anthropicMessages: Array<{
+    role: "user" | "assistant";
+    content: Array<Record<string, unknown>>;
+  }> = [];
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      continue;
+    }
+
+    if (message.role === "user") {
+      anthropicMessages.push({
+        role: "user",
+        content: [{ type: "text", text: message.content ?? "" }],
+      });
+      continue;
+    }
+
+    if (message.role === "assistant") {
+      const content: Array<Record<string, unknown>> = [];
+
+      if (message.content) {
+        content.push({ type: "text", text: message.content });
+      }
+
+      for (const toolCall of message.tool_calls ?? []) {
+        content.push({
+          type: "tool_use",
+          id: toolCall.id,
+          name: toolCall.function.name,
+          input: safeParseJsonObject(toolCall.function.arguments),
+        });
+      }
+
+      anthropicMessages.push({
+        role: "assistant",
+        content: content.length > 0 ? content : [{ type: "text", text: "" }],
+      });
+      continue;
+    }
+
+    anthropicMessages.push({
+      role: "user",
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: message.tool_call_id ?? "",
+          content: message.content ?? "",
+        },
+      ],
+    });
+  }
+
+  return anthropicMessages;
+}
+
+function buildResponsesInput(messages: ChatMessage[]) {
+  const responsesInput: Array<Record<string, unknown>> = [];
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      continue;
+    }
+
+    if (message.role === "user" || message.role === "assistant") {
+      if (message.content) {
+        responsesInput.push({
+          role: message.role,
+          content: [
+            {
+              type: "input_text",
+              text: message.content,
+            },
+          ],
+        });
+      }
+
+      for (const toolCall of message.tool_calls ?? []) {
+        responsesInput.push({
+          type: "function_call",
+          call_id: toolCall.id,
+          name: toolCall.function.name,
+          arguments: toolCall.function.arguments,
+        });
+      }
+
+      continue;
+    }
+
+    if (message.tool_call_id) {
+      responsesInput.push({
+        type: "function_call_output",
+        call_id: message.tool_call_id,
+        output: message.content ?? "",
+      });
+    }
+  }
+
+  return responsesInput;
+}
+
 async function requestChatCompletion(input: {
   url: string;
   apiKey: string;
@@ -68,32 +179,27 @@ async function requestChatCompletion(input: {
     tool_choice: input.tools && input.tools.length > 0 ? "auto" : undefined,
   };
 
-  const anthropicMessages = input.messages
-    .filter((message) => message.role === "user" || message.role === "assistant")
-    .map((message) => ({
-      role: message.role,
-      content: message.content ?? "",
-    }));
-
   const anthropicBody = {
     model: input.model,
     max_tokens: 4096,
-    messages: anthropicMessages,
+    messages: buildAnthropicMessages(input.messages),
+    tools: input.tools?.map((tool) => ({
+      name: tool.function.name,
+      description: tool.function.description,
+      input_schema: tool.function.parameters,
+    })),
   };
-
-  const responsesInput = input.messages.map((message) => ({
-    role: message.role,
-    content: [
-      {
-        type: "input_text",
-        text: message.content ?? "",
-      },
-    ],
-  }));
 
   const responsesBody = {
     model: input.model,
-    input: responsesInput,
+    input: buildResponsesInput(input.messages),
+    tools: input.tools?.map((tool) => ({
+      type: "function",
+      name: tool.function.name,
+      description: tool.function.description,
+      parameters: tool.function.parameters,
+    })),
+    tool_choice: input.tools && input.tools.length > 0 ? "auto" : undefined,
   };
 
   return requestOpenAICompatibleChatCompletion<ChatCompletionResponse>(fetch, {

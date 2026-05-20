@@ -60,5 +60,6 @@ declare namespace Cloudflare {
   interface Env {
     DB?: D1Database;
     Sandbox?: unknown;
+    TAVILY_API_KEY?: string;
   }
 }

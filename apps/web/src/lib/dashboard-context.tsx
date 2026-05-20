@@ -14,6 +14,7 @@ import type { AgentModelFilter } from "@/components/layout/Toolbar";
 import { useUIStore } from "@/lib/store";
 import { useDashboardCache } from "@/lib/dashboard-cache";
 import type { Project, Organization, Problem, ProblemStatus, ControlSettings } from "@/lib/types";
+import { workspace } from "@/paraglide/messages";
 
 type RefreshResults = {
   localAgents?: LocalAgentProfile[];
@@ -146,6 +147,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const refreshQueuedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedViewsRef = useRef<Set<DashboardView>>(new Set());
+  const defaultOrganizationInFlightRef = useRef<Promise<Organization> | null>(null);
   const [loading, setLoading] = useState(() => {
     return initialCache.runtimes.length === 0 && initialCache.organizations.length === 0;
   });
@@ -179,11 +181,32 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const shouldLoadProblems = activeView === "inbox" || activeView === "observability";
   const agentModelCounts = useMemo(() => ({ all: 0, local: 0, cloud: 0 }), []);
 
+  const ensureDefaultOrganization = useCallback(async () => {
+    if (defaultOrganizationInFlightRef.current) {
+      return defaultOrganizationInFlightRef.current;
+    }
+
+    const request = api.createOrganization({ name: workspace() });
+    defaultOrganizationInFlightRef.current = request;
+
+    try {
+      return await request;
+    } finally {
+      if (defaultOrganizationInFlightRef.current === request) {
+        defaultOrganizationInFlightRef.current = null;
+      }
+    }
+  }, []);
+
   const applyOrganizationResult = useCallback(
     (nextOrganizations: Organization[]) => {
       setOrganizations(nextOrganizations);
       const currentOrgId = useUIStore.getState().activeOrganizationId;
-      if (nextOrganizations.length > 0 && !currentOrgId) {
+      const hasCurrentOrganization = currentOrgId
+        ? nextOrganizations.some((organization) => organization.id === currentOrgId)
+        : false;
+
+      if (nextOrganizations.length > 0 && !hasCurrentOrganization) {
         setActiveOrganizationId(nextOrganizations[0].id);
       }
     },
@@ -229,7 +252,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (results[2].status === "fulfilled") fresh.projects = results[2].value;
     if (results[3].status === "fulfilled") fresh.settings = results[3].value;
     if (results[4].status === "fulfilled") {
-      fresh.organizations = results[4].value;
+      const organizations = results[4].value;
+      fresh.organizations = organizations.length > 0
+        ? organizations
+        : [await ensureDefaultOrganization()];
     }
     if (results[5].status === "fulfilled") fresh.problemSummary = results[5].value;
     if (results[6].status === "fulfilled") fresh.problems = results[6].value;
@@ -240,6 +266,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [
     applyRefreshResults,
+    ensureDefaultOrganization,
     hasCachedDashboardData,
     shouldLoadProjects,
     shouldLoadLocalAgents,

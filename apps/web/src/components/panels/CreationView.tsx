@@ -855,7 +855,6 @@ function ChatArea({
     if (transcript && transcript !== prevTranscriptRef.current) {
       setInput((prev) => prev + transcript);
       prevTranscriptRef.current = transcript;
-      textareaRef.current?.focus();
     }
   }, [transcript]);
 

@@ -2,6 +2,7 @@ import type { AppDb } from "@/server/db/types";
 import { IntegrationService } from "@/server/modules/integration/service";
 import { PlannerService } from "@/server/modules/planner/service";
 import { parseReminderSchedule } from "@/lib/planner-reminders";
+import { searchWebWithTavily } from "./tavily";
 
 type ToolResult = unknown;
 
@@ -25,6 +26,32 @@ export class AgentToolService {
 
   getToolDefinitions(): AgentToolDefinition[] {
     return [
+      {
+        type: "function",
+        function: {
+          name: "web_search",
+          description: "Search the web for current information, recent news, and source URLs.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: { type: "string" },
+              topic: { type: "string", enum: ["general", "news", "finance"] },
+              searchDepth: { type: "string", enum: ["advanced", "basic", "fast", "ultra-fast"] },
+              timeRange: { type: "string", enum: ["day", "week", "month", "year"] },
+              maxResults: { type: "integer" },
+              includeDomains: {
+                type: "array",
+                items: { type: "string" },
+              },
+              excludeDomains: {
+                type: "array",
+                items: { type: "string" },
+              },
+            },
+            required: ["query"],
+          },
+        },
+      },
       {
         type: "function",
         function: {
@@ -97,6 +124,33 @@ export class AgentToolService {
       args = rawArgs ? JSON.parse(rawArgs) as Record<string, unknown> : {};
     } catch {
       throw new Error(`Invalid JSON arguments for tool ${name}`);
+    }
+
+    if (name === "web_search") {
+      return searchWebWithTavily(fetch, {
+        query: String(args.query ?? ""),
+        topic:
+          args.topic === "news" || args.topic === "finance" || args.topic === "general"
+            ? args.topic
+            : undefined,
+        searchDepth:
+          args.searchDepth === "advanced" ||
+            args.searchDepth === "basic" ||
+            args.searchDepth === "fast" ||
+            args.searchDepth === "ultra-fast"
+            ? args.searchDepth
+            : undefined,
+        timeRange:
+          args.timeRange === "day" ||
+            args.timeRange === "week" ||
+            args.timeRange === "month" ||
+            args.timeRange === "year"
+            ? args.timeRange
+            : undefined,
+        maxResults: typeof args.maxResults === "number" ? args.maxResults : undefined,
+        includeDomains: Array.isArray(args.includeDomains) ? args.includeDomains.map(String) : undefined,
+        excludeDomains: Array.isArray(args.excludeDomains) ? args.excludeDomains.map(String) : undefined,
+      });
     }
 
     if (name === "create_calendar_event") {

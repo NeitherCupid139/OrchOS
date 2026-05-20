@@ -37,13 +37,21 @@ export const orpc: ContractRouterClient<AppContract> = createORPCClient(
     fetch(input, init) {
       const controller = new AbortController();
       const timeoutId = globalThis.setTimeout(() => controller.abort(), RPC_REQUEST_TIMEOUT_MS);
+      const abortFromRequest = () => controller.abort();
+
+      if (input.signal.aborted) {
+        controller.abort();
+      } else {
+        input.signal.addEventListener("abort", abortFromRequest, { once: true });
+      }
 
       return fetch(input, {
         ...init,
         credentials: "include",
-        signal: init?.signal ?? controller.signal,
+        signal: controller.signal,
       }).finally(() => {
         globalThis.clearTimeout(timeoutId);
+        input.signal.removeEventListener("abort", abortFromRequest);
       });
     },
     interceptors: [

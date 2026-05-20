@@ -6,6 +6,26 @@ export type UpstreamAttempt = {
   status?: number;
 };
 
+type NormalizedToolCall = {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+};
+
+type NormalizedChatCompletion = {
+  choices: Array<{
+    message: {
+      role: "assistant";
+      content: string;
+      tool_calls?: NormalizedToolCall[];
+    };
+    finish_reason: string | null;
+  }>;
+};
+
 type OpenAICompatibleOperation = "chat/completions" | "messages" | "responses";
 
 function trimUrl(url: string) {
@@ -161,6 +181,103 @@ export function inferOpenAICompatibleOperationForModel(model: string): OpenAICom
   return "chat/completions";
 }
 
+function normalizeAnthropicToolCalls(data: Record<string, unknown>) {
+  const contentParts = Array.isArray(data.content) ? data.content : [];
+  const textParts: string[] = [];
+  const toolCalls: NormalizedToolCall[] = [];
+
+  for (const part of contentParts) {
+    if (!part || typeof part !== "object") continue;
+
+    const block = part as Record<string, unknown>;
+    if (block.type === "text" && typeof block.text === "string") {
+      textParts.push(block.text);
+      continue;
+    }
+
+    if (
+      block.type === "tool_use" &&
+      typeof block.id === "string" &&
+      typeof block.name === "string"
+    ) {
+      toolCalls.push({
+        id: block.id,
+        type: "function",
+        function: {
+          name: block.name,
+          arguments: JSON.stringify(block.input ?? {}),
+        },
+      });
+    }
+  }
+
+  return {
+    choices: [
+      {
+        message: {
+          role: "assistant" as const,
+          content: textParts.join("\n"),
+          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+        finish_reason: typeof data.stop_reason === "string" ? data.stop_reason : null,
+      },
+    ],
+  } satisfies NormalizedChatCompletion;
+}
+
+function normalizeResponsesToolCalls(data: Record<string, unknown>) {
+  const output = Array.isArray(data.output) ? data.output : [];
+  const textParts: string[] = [];
+  const toolCalls: NormalizedToolCall[] = [];
+
+  for (const item of output) {
+    if (!item || typeof item !== "object") continue;
+
+    const outputItem = item as Record<string, unknown>;
+    if (
+      outputItem.type === "function_call" &&
+      typeof outputItem.call_id === "string" &&
+      typeof outputItem.name === "string"
+    ) {
+      toolCalls.push({
+        id: outputItem.call_id,
+        type: "function",
+        function: {
+          name: outputItem.name,
+          arguments:
+            typeof outputItem.arguments === "string"
+              ? outputItem.arguments
+              : JSON.stringify(outputItem.arguments ?? {}),
+        },
+      });
+      continue;
+    }
+
+    const content = Array.isArray(outputItem.content) ? outputItem.content : [];
+    for (const part of content) {
+      if (!part || typeof part !== "object") continue;
+
+      const contentPart = part as Record<string, unknown>;
+      if (contentPart.type === "output_text" && typeof contentPart.text === "string") {
+        textParts.push(contentPart.text);
+      }
+    }
+  }
+
+  return {
+    choices: [
+      {
+        message: {
+          role: "assistant" as const,
+          content: textParts.join("\n"),
+          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+        finish_reason: typeof data.status === "string" ? data.status : null,
+      },
+    ],
+  } satisfies NormalizedChatCompletion;
+}
+
 export async function fetchOpenAICompatibleModels(
   fetchImpl: typeof fetch,
   input: {
@@ -245,47 +362,11 @@ export async function requestOpenAICompatibleChatCompletion<T>(
       const data = await response.json() as Record<string, unknown>;
 
       if (operation === "messages") {
-        const contentParts = Array.isArray(data.content) ? data.content : [];
-        const assistantContent = contentParts
-          .filter((part): part is { type?: unknown; text?: unknown } => !!part && typeof part === "object")
-          .filter((part) => part.type === "text" && typeof part.text === "string")
-          .map((part) => part.text)
-          .join("\n");
-
-        return {
-          choices: [
-            {
-              message: {
-                role: "assistant",
-                content: assistantContent,
-              },
-              finish_reason: typeof data.stop_reason === "string" ? data.stop_reason : null,
-            },
-          ],
-        } as T;
+        return normalizeAnthropicToolCalls(data) as T;
       }
 
       if (operation === "responses") {
-        const output = Array.isArray(data.output) ? data.output : [];
-        const assistantContent = output
-          .filter((item): item is { type?: unknown; content?: unknown } => !!item && typeof item === "object")
-          .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
-          .filter((part): part is { type?: unknown; text?: unknown } => !!part && typeof part === "object")
-          .filter((part) => part.type === "output_text" && typeof part.text === "string")
-          .map((part) => part.text)
-          .join("\n");
-
-        return {
-          choices: [
-            {
-              message: {
-                role: "assistant",
-                content: assistantContent,
-              },
-              finish_reason: typeof data.status === "string" ? data.status : null,
-            },
-          ],
-        } as T;
+        return normalizeResponsesToolCalls(data) as T;
       }
 
       return data as T;
