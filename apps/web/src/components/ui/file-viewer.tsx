@@ -1,4 +1,3 @@
-import { createHighlighter } from "shiki";
 import ReactMarkdown from "react-markdown";
 
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +20,7 @@ import {
 } from "react";
 import { toast } from "@/components/ui/toast";
 import { code, copy_file_content, file_content_copied, loading_code, preview, preview_markdown, show_markdown_source } from "@/paraglide/messages";
+import { getSharedHighlighter } from "@/lib/shiki-singleton";
 
 export interface ApiComponent {
   author?: string;
@@ -52,30 +52,8 @@ interface TreeContextProps {
 
 const TreeContext = createContext<TreeContextProps | null>(null);
 
-const SHIKI_LANGS = [
-  "tsx",
-  "typescript",
-  "javascript",
-  "jsx",
-  "json",
-  "css",
-  "scss",
-  "html",
-  "markdown",
-  "md",
-];
-
-let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
-
 function getHighlighter() {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      langs: SHIKI_LANGS,
-      themes: ["github-dark", "github-light"],
-    });
-  }
-
-  return highlighterPromise;
+  return getSharedHighlighter();
 }
 
 function escapeHtml(value: string) {

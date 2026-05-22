@@ -1,5 +1,5 @@
 import ReactMarkdown from "react-markdown";
-import type { ComponentPropsWithoutRef, ComponentType, ReactElement, ReactNode } from "react";
+import { memo, type ComponentPropsWithoutRef, type ComponentType, type ReactElement, type ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import remarkGfm from "remark-gfm";
@@ -98,7 +98,7 @@ function ChatCodeBlockClient({ code, language }: { code: string; language?: stri
   return <Component code={code} language={language} />;
 }
 
-export function ChatMarkdown({ content }: { content: string }) {
+export const ChatMarkdown = memo(function ChatMarkdown({ content }: { content: string }) {
   const processed = preprocessAgentOutput(content);
 
   return (
@@ -146,4 +146,4 @@ export function ChatMarkdown({ content }: { content: string }) {
       </ReactMarkdown>
     </div>
   );
-}
+});

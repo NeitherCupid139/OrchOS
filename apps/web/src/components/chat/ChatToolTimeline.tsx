@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn, formatDuration } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
@@ -312,7 +313,7 @@ function ToolStateDot({ state }: { state?: string }) {
   return <span className={cn("size-1.5 rounded-full shrink-0", tone)} />;
 }
 
-export function ChatToolTimeline({
+export const ChatToolTimeline = memo(function ChatToolTimeline({
   part,
 }: {
   part: Record<string, unknown> & { type: string };
@@ -366,4 +367,4 @@ export function ChatToolTimeline({
       </details>
     </div>
   );
-}
+});

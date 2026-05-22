@@ -31,15 +31,38 @@ export const Route = createFileRoute("/api/rpc/$")({
   server: {
     handlers: {
       ANY: async ({ request }) => {
-        const { response } = await handler.handle(request, {
-          prefix: "/api/rpc",
-          context: {
-            request,
-            headers: request.headers,
-          },
-        });
+        try {
+          const result = await handler.handle(request, {
+            prefix: "/api/rpc",
+            context: {
+              request,
+              headers: request.headers,
+            },
+          });
 
-        return response ?? new Response("Not Found", { status: 404 });
+          return (
+            result.response ??
+            new Response(
+              JSON.stringify({ code: "NOT_FOUND", message: "Procedure not found" }),
+              {
+                status: 404,
+                headers: { "content-type": "application/json" },
+              },
+            )
+          );
+        } catch (error) {
+          console.error("RPC handler threw unexpectedly", error);
+          return new Response(
+            JSON.stringify({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Internal server error",
+            }),
+            {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        }
       },
     },
   },

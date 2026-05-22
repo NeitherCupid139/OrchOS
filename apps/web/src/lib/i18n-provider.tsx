@@ -1,4 +1,4 @@
-import { Fragment, useState, useCallback, useEffect, createContext, use, type ReactNode } from "react";
+import { useState, useCallback, useEffect, createContext, use, type ReactNode } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useUIStore } from "@/lib/store";
 import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
@@ -60,7 +60,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   return (
     <I18nContext.Provider value={{ locale, setLocaleWithSync }}>
-      <Fragment key={locale}>{children}</Fragment>
+      {children}
     </I18nContext.Provider>
   );
 }

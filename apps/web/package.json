@@ -36,7 +36,7 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
-    "@tanstack/router-plugin": "^1.132.0",
+    "@tanstack/router-plugin": "latest",
     "@web-kits/audio": "^0.1.0",
     "ai": "^6.0.168",
     "border-beam": "^1.0.1",

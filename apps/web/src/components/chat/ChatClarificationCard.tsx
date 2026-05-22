@@ -1,9 +1,10 @@
+import { memo } from "react";
 import { CheckmarkCircle02Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-export function ChatClarificationCard({
+export const ChatClarificationCard = memo(function ChatClarificationCard({
   summary,
   questions,
 }: {
@@ -46,4 +47,4 @@ export function ChatClarificationCard({
       </CardContent>
     </Card>
   );
-}
+});

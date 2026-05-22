@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { formatDuration } from "@/lib/utils";
 
-export function ChatReasoningDrawer({
+export const ChatReasoningDrawer = memo(function ChatReasoningDrawer({
   text,
   metadata,
 }: {
@@ -28,4 +29,4 @@ export function ChatReasoningDrawer({
       </details>
     </div>
   );
-}
+});

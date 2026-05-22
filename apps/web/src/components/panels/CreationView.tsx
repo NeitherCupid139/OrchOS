@@ -126,30 +126,33 @@ export function CreationView(props?: CreationViewProps | null) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<string | null>(null);
+  const customAgentsLoadedRef = useRef(false);
 
-  useEffect(() => {
-    void Promise.all([api.listCustomAgents(), api.getDefaultCustomAgentId()])
-      .then(([agents, defaultAgentId]) => {
-        setCustomAgents(agents);
-        setSelectedCustomAgentId(defaultAgentId);
-      })
-      .catch(() => {});
+  const loadCustomAgents = useCallback(async () => {
+    if (customAgentsLoadedRef.current) return;
+    customAgentsLoadedRef.current = true;
+    try {
+      const [agents, defaultAgentId] = await Promise.all([
+        api.listCustomAgents(),
+        api.getDefaultCustomAgentId(),
+      ]);
+      setCustomAgents(agents);
+      if (defaultAgentId) setSelectedCustomAgentId(defaultAgentId);
+    } catch {}
   }, []);
 
-  const {
-    conversations,
-    activeConversationId,
-    messagesByConversationId,
-    hasLoadedConversations,
-    isLoadingConversations,
-    loadConversations,
-    setActiveConversationId,
-    loadMessages,
-    createConversation,
-    updateConversation,
-    deleteConversation,
-    setPendingUserMessage,
-  } = useConversationStore();
+  const conversations = useConversationStore((s) => s.conversations);
+  const activeConversationId = useConversationStore((s) => s.activeConversationId);
+  const messagesByConversationId = useConversationStore((s) => s.messagesByConversationId);
+  const hasLoadedConversations = useConversationStore((s) => s.hasLoadedConversations);
+  const isLoadingConversations = useConversationStore((s) => s.isLoadingConversations);
+  const loadConversations = useConversationStore((s) => s.loadConversations);
+  const setActiveConversationId = useConversationStore((s) => s.setActiveConversationId);
+  const loadMessages = useConversationStore((s) => s.loadMessages);
+  const createConversation = useConversationStore((s) => s.createConversation);
+  const updateConversation = useConversationStore((s) => s.updateConversation);
+  const deleteConversation = useConversationStore((s) => s.deleteConversation);
+  const setPendingUserMessage = useConversationStore((s) => s.setPendingUserMessage);
 
   const handleConversationListItemKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
@@ -646,6 +649,7 @@ export function CreationView(props?: CreationViewProps | null) {
           customAgents={customAgents}
           selectedCustomAgentId={selectedCustomAgentId}
           onSelectCustomAgent={setSelectedCustomAgentId}
+          onLoadCustomAgents={loadCustomAgents}
           onCreateConversation={handleCreateConversation}
           onUpdateConversation={handleUpdateConversation}
           onSendMessage={async (content, targetConversation, customAgentId) => {
@@ -705,6 +709,7 @@ interface ChatAreaProps {
   customAgents: CustomAgent[];
   selectedCustomAgentId: string | null;
   onSelectCustomAgent: (id: string | null) => void;
+  onLoadCustomAgents?: () => Promise<void>;
   onCreateConversation: (data: { runtimeId?: string }) => Promise<Conversation>;
   onUpdateConversation: (
     id: string,
@@ -789,6 +794,7 @@ function ChatArea({
   customAgents,
   selectedCustomAgentId,
   onSelectCustomAgent,
+  onLoadCustomAgents,
   onCreateConversation,
   onUpdateConversation,
   onSendMessage,
@@ -810,6 +816,7 @@ function ChatArea({
   const [modeIndicator, setModeIndicator] = useState({ left: 4, width: 0, ready: false });
   const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(undefined);
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
+  const bookmarksLoadedRef = useRef(false);
   const [mode, setMode] = useState<"chat" | "search">("chat");
   const [searchEngineId, setSearchEngineId] = useState<string>(searchEngineMeta[0].id);
   const isSendShortcutPreviewing = uiPreviewTarget === "send-shortcut" && mode === "chat";
@@ -837,12 +844,20 @@ function ChatArea({
     [bookmarks],
   );
 
-  useEffect(() => {
-    api
-      .listBookmarks()
-      .then((data) => setBookmarks(data.filter((c) => c.bookmarks.length > 0)))
-      .catch(() => {});
+  const loadBookmarks = useCallback(async () => {
+    if (bookmarksLoadedRef.current) return;
+    bookmarksLoadedRef.current = true;
+    try {
+      const data = await api.listBookmarks();
+      setBookmarks(data.filter((c) => c.bookmarks.length > 0));
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    if (showBookmarks) {
+      void loadBookmarks();
+    }
+  }, [showBookmarks, loadBookmarks]);
 
   const effectiveRuntimeId = isDraftConversation
     ? (draftRuntimeId ?? conversation.runtimeId)
@@ -867,12 +882,10 @@ function ChatArea({
     [customAgents, selectedCustomAgentId],
   );
   const { user } = useUser();
-  const {
-    pendingConversationId,
-    flowDraftByConversationId,
-    pendingUserMessageByConversationId,
-    setPendingUserMessage,
-  } = useConversationStore();
+  const pendingConversationId = useConversationStore((s) => s.pendingConversationId);
+  const flowDraftByConversationId = useConversationStore((s) => s.flowDraftByConversationId);
+  const pendingUserMessageByConversationId = useConversationStore((s) => s.pendingUserMessageByConversationId);
+  const setPendingUserMessage = useConversationStore((s) => s.setPendingUserMessage);
   const pendingUserMessage =
     conversation.id === "__draft__"
       ? null
@@ -1241,6 +1254,7 @@ function ChatArea({
                       onSelectCustomAgent(id);
                       if (id) queueConversationUpdate({ runtimeId: undefined });
                     }}
+                    onOpen={onLoadCustomAgents}
                   />
                 ) : (
                   <SearchEngineSelector
@@ -1461,14 +1475,22 @@ interface CustomAgentSelectorProps {
   agents: CustomAgent[];
   selectedAgentId: string | null;
   onSelect: (agentId: string | null) => void;
+  onOpen?: () => void;
 }
 
-function CustomAgentSelector({ agents, selectedAgentId, onSelect }: CustomAgentSelectorProps) {
+function CustomAgentSelector({ agents, selectedAgentId, onSelect, onOpen }: CustomAgentSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedAgent = agents.find((a) => a.id === selectedAgentId);
 
   return (
-    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+    <DropdownMenu
+      modal={false}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) onOpen?.();
+      }}
+    >
       <DropdownMenuTrigger
         onClick={(e) => e.stopPropagation()}
         className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"

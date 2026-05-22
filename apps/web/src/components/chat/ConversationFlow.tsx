@@ -1,5 +1,5 @@
 import { type UIMessage } from "ai";
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { cn, formatDuration } from "@/lib/utils";
 import type { ConversationMessage } from "@/lib/api";
 import { assistant, user } from "@/paraglide/messages";
@@ -125,7 +125,7 @@ export function mapConversationMessagesToUiMessages(messages: ConversationMessag
   }));
 }
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   msg,
   userImageUrl,
   onRetry,
@@ -289,4 +289,4 @@ export function MessageBubble({
       )}
     </div>
   );
-}
+});

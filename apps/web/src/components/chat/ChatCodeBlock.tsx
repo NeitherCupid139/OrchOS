@@ -1,38 +1,9 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import { createHighlighter } from "shiki";
 import { Check, Copy } from "lucide-react";
 
 import { copy_file_content, loading } from "@/paraglide/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-const CHAT_CODE_LANGS = [
-  "tsx",
-  "typescript",
-  "javascript",
-  "jsx",
-  "json",
-  "css",
-  "scss",
-  "html",
-  "markdown",
-  "md",
-  "bash",
-  "shell",
-  "diff",
-];
-
-let chatHighlighterPromise: ReturnType<typeof createHighlighter> | null = null;
-
-function getChatHighlighter() {
-  if (!chatHighlighterPromise) {
-    chatHighlighterPromise = createHighlighter({
-      langs: CHAT_CODE_LANGS,
-      themes: ["github-dark", "github-light"],
-    });
-  }
-
-  return chatHighlighterPromise;
-}
+import { getSharedHighlighter } from "@/lib/shiki-singleton";
 
 function escapeHtml(value: string) {
   return value
@@ -111,7 +82,7 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
     async function highlight() {
       try {
         dispatch({ type: "SET_LOADING" });
-        const highlighter = await getChatHighlighter();
+        const highlighter = await getSharedHighlighter();
         const highlightedHtml = highlighter.codeToHtml(code, {
           lang: normalizeCodeLanguage(language || "text"),
           theme: resolvedTheme === "dark" ? "github-dark" : "github-light",

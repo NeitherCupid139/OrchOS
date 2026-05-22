@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useReducer,
   type ReactNode,
 } from "react";
 import { useLocation } from "@tanstack/react-router";
@@ -14,7 +15,57 @@ import type { AgentModelFilter } from "@/components/layout/Toolbar";
 import { useUIStore } from "@/lib/store";
 import { useDashboardCache } from "@/lib/dashboard-cache";
 import type { Project, Organization, Problem, ProblemStatus, ControlSettings } from "@/lib/types";
-import { workspace } from "@/paraglide/messages";
+import { workspace as workspaceMsg } from "@/paraglide/messages";
+
+interface DashboardState {
+  runtimes: RuntimeProfile[];
+  localAgents: LocalAgentProfile[];
+  projects: Project[];
+  organizations: Organization[];
+  problems: Problem[];
+  problemSummary: ProblemSummary;
+}
+
+type DashboardAction =
+  | { type: "SET_ALL"; payload: Partial<DashboardState> }
+  | { type: "SET_RUNTIMES"; payload: RuntimeProfile[] }
+  | { type: "SET_LOCAL_AGENTS"; payload: LocalAgentProfile[] }
+  | { type: "SET_PROJECTS"; payload: Project[] }
+  | { type: "SET_ORGANIZATIONS"; payload: Organization[] }
+  | { type: "SET_PROBLEMS"; payload: Problem[] }
+  | { type: "SET_PROBLEM_SUMMARY"; payload: ProblemSummary };
+
+const initialDashboardState: DashboardState = {
+  runtimes: [],
+  localAgents: [],
+  projects: [],
+  organizations: [],
+  problems: [],
+  problemSummary: {
+    status: { open: 0, fixed: 0, ignored: 0, assigned: 0 },
+    inbox: { all: 0, github_pr: 0, github_issue: 0, mention: 0, agent_request: 0 },
+    system: { critical: 0, warning: 0, info: 0 },
+  },
+};
+
+function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
+  switch (action.type) {
+    case "SET_ALL":
+      return { ...state, ...action.payload };
+    case "SET_RUNTIMES":
+      return { ...state, runtimes: action.payload };
+    case "SET_LOCAL_AGENTS":
+      return { ...state, localAgents: action.payload };
+    case "SET_PROJECTS":
+      return { ...state, projects: action.payload };
+    case "SET_ORGANIZATIONS":
+      return { ...state, organizations: action.payload };
+    case "SET_PROBLEMS":
+      return { ...state, problems: action.payload };
+    case "SET_PROBLEM_SUMMARY":
+      return { ...state, problemSummary: action.payload };
+  }
+}
 
 type RefreshResults = {
   localAgents?: LocalAgentProfile[];
@@ -129,17 +180,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const initialCacheRef = useRef(useDashboardCache.getState());
   const initialCache = initialCacheRef.current;
 
-  // Server data (hydrated from cache, then refreshed from API)
-  const [runtimes, setRuntimes] = useState<RuntimeProfile[]>(() => initialCache.runtimes);
-  const [localAgents, setLocalAgents] = useState<LocalAgentProfile[]>([]);
-  const [projects, setProjects] = useState<Project[]>(() => initialCache.projects);
-  const [organizations, setOrganizations] = useState<Organization[]>(
-    () => initialCache.organizations,
-  );
-  const [problems, setProblems] = useState<Problem[]>(() => initialCache.problems);
-  const [problemSummary, setProblemSummary] = useState<ProblemSummary>(
-    () => initialCache.problemSummary,
-  );
+  // Server data (hydrated from cache, then refreshed from API) — batched via useReducer
+  const [state, dispatch] = useReducer(dashboardReducer, initialDashboardState, () => ({
+    runtimes: initialCache.runtimes,
+    localAgents: [],
+    projects: initialCache.projects,
+    organizations: initialCache.organizations,
+    problems: initialCache.problems,
+    problemSummary: initialCache.problemSummary,
+  }));
+
+  const { runtimes, localAgents, projects, organizations, problems, problemSummary } = state;
+
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [uiPreviewTarget, setUiPreviewTarget] = useState<DashboardUiPreviewTarget | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -179,14 +231,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     activeView === "mail";
   const shouldLoadLocalAgents = activeView === "agents";
   const shouldLoadProblems = activeView === "inbox" || activeView === "observability";
-  const agentModelCounts = useMemo(() => ({ all: 0, local: 0, cloud: 0 }), []);
+  const agentModelCounts: AgentModelCounts = { all: 0, local: 0, cloud: 0 };
+
+  const workspaceName = workspaceMsg();
 
   const ensureDefaultOrganization = useCallback(async () => {
     if (defaultOrganizationInFlightRef.current) {
       return defaultOrganizationInFlightRef.current;
     }
 
-    const request = api.createOrganization({ name: workspace() });
+    const request = api.createOrganization({ name: workspaceName });
     defaultOrganizationInFlightRef.current = request;
 
     try {
@@ -196,11 +250,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         defaultOrganizationInFlightRef.current = null;
       }
     }
-  }, []);
+  }, [workspaceName]);
 
   const applyOrganizationResult = useCallback(
     (nextOrganizations: Organization[]) => {
-      setOrganizations(nextOrganizations);
+      dispatch({ type: "SET_ORGANIZATIONS", payload: nextOrganizations });
       const currentOrgId = useUIStore.getState().activeOrganizationId;
       const hasCurrentOrganization = currentOrgId
         ? nextOrganizations.some((organization) => organization.id === currentOrgId)
@@ -215,13 +269,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const applyRefreshResults = useCallback(
     (results: RefreshResults) => {
-      if (results.runtimes) setRuntimes(results.runtimes);
-      if (results.localAgents) setLocalAgents(results.localAgents);
-      if (results.projects) setProjects(results.projects);
+      const updates: Partial<DashboardState> = {};
+      if (results.runtimes) updates.runtimes = results.runtimes;
+      if (results.localAgents) updates.localAgents = results.localAgents;
+      if (results.projects) updates.projects = results.projects;
+      if (results.organizations) {
+        applyOrganizationResult(results.organizations);
+      }
+      if (results.problemSummary) updates.problemSummary = results.problemSummary;
+      if (results.problems) updates.problems = results.problems;
       if (results.settings) setSettings(results.settings);
-      if (results.organizations) applyOrganizationResult(results.organizations);
-      if (results.problemSummary) setProblemSummary(results.problemSummary);
-      if (results.problems) setProblems(results.problems);
+      // Single dispatch for all state updates
+      dispatch({ type: "SET_ALL", payload: updates });
       useDashboardCache.getState().hydrate(results);
     },
     [applyOrganizationResult, setSettings],
@@ -275,7 +334,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const refreshLocalAgents = useCallback(async () => {
     const agents = await api.listLocalAgents();
-    setLocalAgents(agents);
+    dispatch({ type: "SET_LOCAL_AGENTS", payload: agents });
   }, []);
 
   const refreshAll = useCallback(async () => {

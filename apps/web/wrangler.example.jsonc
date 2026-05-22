@@ -1,25 +1,27 @@
 {
-	"name": "orchos-web",
-	"compatibility_date": "2026-05-06",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"main": "@tanstack/react-start/server-entry",
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "orchos-db",
-			"database_id": "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID",
-			"migrations_dir": "drizzle"
-		}
-	],
-	"assets": {
-		"not_found_handling": "single-page-application"
-	},
-	"observability": {
-		"enabled": true
-	},
-	"vars": {
-		"TAVILY_API_KEY": "REPLACE_WITH_TAVILY_API_KEY"
-	}
+  "name": "orchos-web",
+  "compatibility_date": "2026-05-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "orchos-db",
+      "database_id": "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID",
+      "migrations_dir": "drizzle",
+    },
+  ],
+  "assets": {
+    "not_found_handling": "single-page-application",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "TAVILY_API_KEY": "REPLACE_WITH_TAVILY_API_KEY",
+    "CLERK_SECRET_KEY": "REPLACE_WITH_CLERK_SECRET_KEY",
+    "ENABLE_WEBSOCKET": "false",
+    "VITE_CLERK_PUBLISHABLE_KEY": "REPLACE_WITH_VITE_CLERK_PUBLISHABLE_KEY",
+  },
 }
