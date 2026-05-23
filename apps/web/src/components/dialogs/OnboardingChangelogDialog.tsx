@@ -2,7 +2,26 @@ import { useEffect, useState } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { FramerCarousel, type CarouselItem } from "@/components/ui/framer-carousel";
-import { dismiss, next, previous, welcome_to_orchos } from "@/paraglide/messages";
+import {
+  dismiss,
+  next,
+  previous,
+  welcome_to_orchos,
+  agents,
+  creation,
+  bookmarks,
+  board,
+  calendar,
+  mail,
+  observability,
+  onboarding_agents_desc,
+  onboarding_creation_desc,
+  onboarding_bookmarks_desc,
+  onboarding_board_desc,
+  onboarding_calendar_desc,
+  onboarding_mail_desc,
+  onboarding_observability_desc,
+} from "@/paraglide/messages";
 
 function OnboardingPreviewImage({
   src,
@@ -26,6 +45,17 @@ function OnboardingPreviewImage({
 
 const ONBOARDING_SECTIONS: CarouselItem[] = [
   {
+    id: "agents",
+    media: (
+      <OnboardingPreviewImage
+        src="/hero/bento1.png"
+        alt="Agents configuration preview"
+      />
+    ),
+    title: agents(),
+    desc: onboarding_agents_desc(),
+  },
+  {
     id: "creation",
     media: (
       <OnboardingPreviewImage
@@ -33,30 +63,63 @@ const ONBOARDING_SECTIONS: CarouselItem[] = [
         alt="Creation workspace preview"
       />
     ),
-    title: "Creation",
-    desc: "Your AI command center — chat, search, and create with agents all in one place.",
+    title: creation(),
+    desc: onboarding_creation_desc(),
   },
   {
-    id: "inbox",
+    id: "bookmarks",
     media: (
       <OnboardingPreviewImage
         src="/hero/bento2.png"
-        alt="Inbox workspace preview"
+        alt="Bookmarks workspace preview"
       />
     ),
-    title: "Inbox",
-    desc: "Review GitHub updates, mentions, and agent activity in a single triage surface.",
+    title: bookmarks(),
+    desc: onboarding_bookmarks_desc(),
   },
   {
-    id: "runtimes",
+    id: "board",
+    media: (
+      <OnboardingPreviewImage
+        src="/hero/hero.png"
+        alt="Board workspace preview"
+      />
+    ),
+    title: board(),
+    desc: onboarding_board_desc(),
+  },
+  {
+    id: "calendar",
+    media: (
+      <OnboardingPreviewImage
+        src="/hero/bento2.png"
+        alt="Calendar workspace preview"
+      />
+    ),
+    title: calendar(),
+    desc: onboarding_calendar_desc(),
+  },
+  {
+    id: "mail",
     media: (
       <OnboardingPreviewImage
         src="/hero/bento1.png"
-        alt="Runtimes setup preview"
+        alt="Mail workspace preview"
       />
     ),
-    title: "Runtimes",
-    desc: "Detect local coding runtimes, connect them, and bring agents online without leaving the app.",
+    title: mail(),
+    desc: onboarding_mail_desc(),
+  },
+  {
+    id: "observability",
+    media: (
+      <OnboardingPreviewImage
+        src="/hero/hero.png"
+        alt="Observability workspace preview"
+      />
+    ),
+    title: observability(),
+    desc: onboarding_observability_desc(),
   },
 ];
 

@@ -254,6 +254,7 @@ export const messages = sqliteTable(
     projectId: text("project_id").references(() => projects.id),
     projectName: text("project_name"),
     clarificationQuestions: text("clarification_questions"),
+    tokens: text("tokens"),
     createdAt: text("created_at").notNull(),
   },
   (t) => [index("idx_messages_conversation_id").on(t.conversationId)],

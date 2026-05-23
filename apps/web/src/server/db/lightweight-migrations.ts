@@ -448,6 +448,10 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
     await exec("ALTER TABLE messages ADD COLUMN clarification_questions TEXT");
   }
 
+  if (await hasTable("messages") && !(await hasColumn("messages", "tokens"))) {
+    await exec("ALTER TABLE messages ADD COLUMN tokens TEXT");
+  }
+
   if (await hasTable("local_agents") && !(await hasColumn("local_agents", "host_token"))) {
     await exec("ALTER TABLE local_agents ADD COLUMN host_token TEXT NOT NULL DEFAULT ''");
   }

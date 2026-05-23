@@ -15,6 +15,15 @@ export const timeSeriesPointSchema = z.object({
   issues: z.number(),
 });
 
+export const agentTimelinePointSchema = z.object({
+  time: z.number(),
+  label: z.string(),
+  tokens: z.number(),
+  toolCalls: z.number(),
+  toolSuccesses: z.number(),
+  toolFailures: z.number(),
+});
+
 export const eventSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -28,6 +37,24 @@ export const observabilityMetricsSchema = z.object({
   resolvedIssues: z.number(),
   eventTypeCounts: z.array(eventTypeCountSchema),
   recentEvents: z.array(eventSchema),
+});
+
+export const agentMetricsSchema = z.object({
+  totalConversations: z.number(),
+  totalMessages: z.number(),
+  totalToolCalls: z.number(),
+  successfulToolCalls: z.number(),
+  failedToolCalls: z.number(),
+  totalTokens: z.number(),
+  recentCompletions: z.array(z.object({
+    conversationId: z.string(),
+    conversationTitle: z.string().optional(),
+    agent: z.string().optional(),
+    timestamp: z.string(),
+    tokens: z.number().optional(),
+    toolCalls: z.number(),
+    toolSuccesses: z.number(),
+  })),
 });
 
 export const observabilityContract = {
@@ -45,4 +72,18 @@ export const observabilityContract = {
       }),
     )
     .output(observabilityMetricsSchema),
+  agentMetrics: oc
+    .input(
+      z.object({
+        range: observabilityRangeSchema.optional(),
+      }),
+    )
+    .output(agentMetricsSchema),
+  agentTimeline: oc
+    .input(
+      z.object({
+        range: observabilityRangeSchema.optional(),
+      }),
+    )
+    .output(z.array(agentTimelinePointSchema)),
 };

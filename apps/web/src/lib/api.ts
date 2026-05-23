@@ -28,6 +28,8 @@ const READ_CACHE_TTL: Record<string, number> = {
   listRuntimeModels: 30_000,
   getObservabilityThroughput: 30_000,
   getObservabilityMetrics: 30_000,
+  getAgentMetrics: 30_000,
+  getAgentTimeline: 30_000,
   browseDirectory: 10_000,
 };
 

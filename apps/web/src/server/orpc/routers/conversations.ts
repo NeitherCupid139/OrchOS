@@ -27,6 +27,11 @@ type ChatCompletionResponse = {
     message?: ChatMessage;
     finish_reason?: string | null;
   }>;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
 };
 
 function safeParseJsonObject(value: string) {
@@ -234,6 +239,7 @@ async function runCustomAgentConversation(input: {
   const chatMessages = conversationHistoryToChatMessages(storedMessages);
   const tools = toolService.getToolDefinitions();
   const trace: NonNullable<Message["trace"]> = [];
+  let totalTokens = 0;
 
   for (let step = 0; step < 6; step += 1) {
     const completion = await requestChatCompletion({
@@ -249,6 +255,11 @@ async function runCustomAgentConversation(input: {
     const toolCalls = assistantMessage?.tool_calls ?? [];
     const assistantContent = assistantMessage?.content ?? "";
 
+    // Accumulate tokens from this completion
+    if (completion.usage?.totalTokens) {
+      totalTokens += completion.usage.totalTokens;
+    }
+
     if (assistantContent) {
       trace.push({ kind: "message", text: assistantContent });
     }
@@ -261,7 +272,7 @@ async function runCustomAgentConversation(input: {
         assistantContent || "No response",
         undefined,
         undefined,
-        { trace },
+        { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
       );
     }
 
@@ -327,7 +338,7 @@ async function runCustomAgentConversation(input: {
     "Agent exceeded tool execution limit.",
     "Agent exceeded tool execution limit.",
     undefined,
-    { trace },
+    { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
   );
 }
 

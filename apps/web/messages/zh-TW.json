@@ -417,6 +417,13 @@
   "obs_activity_overview": "活動概覽",
   "observability": "可觀測性",
   "observability_desc": "監控事件、問題和活動數據。",
+  "onboarding_agents_desc": "首先設定 AI 代理 — 註冊執行時期、設定能力、讓代理上線。OrchOS 中的其他頁面都建立在您在此設定的代理之上。",
+  "onboarding_board_desc": "使用看板管理工作。建立任務、設定優先順序、追蹤進度，讓代理自主處理。",
+  "onboarding_bookmarks_desc": "從檔案匯入書籤，依類別整理，讓您的參考連結隨手可得。",
+  "onboarding_calendar_desc": "在專案旁邊查看您的行程。建立本機日曆或連接 Google Calendar，在一個地方管理時間。",
+  "onboarding_creation_desc": "與代理聊天、下達指令、建立內容。這是您的 AI 指揮中心 — 描述您想要的內容，讓代理規劃並執行。",
+  "onboarding_mail_desc": "連接您的 Gmail 或 IMAP/SMTP 帳戶，在同一個工作區中管理郵件。",
+  "onboarding_observability_desc": "從一個總覽中監控代理活動、系統事件、目標進度和工作區健康狀況。",
   "off": "關",
   "on": "開",
   "open_activity_panel": "開啟活動面板",
@@ -956,5 +963,12 @@
   "resize_calendar_sidebar": "調整行事曆側邊欄大小",
   "resize_mail_sidebar": "調整郵件側邊欄大小",
   "resize_bookmarks_sidebar": "調整書籤側邊欄大小",
-  "view": "查看"
+  "view": "查看",
+  "provider": "服務商",
+  "email_provider": "信箱服務商",
+  "select_email_provider": "選擇服務商…",
+  "custom_provider": "自訂（手動設定）",
+  "custom_provider_desc": "手動輸入 SMTP/IMAP 伺服器設定。",
+  "email_provider_help": "選擇您的信箱服務商以自動填入伺服器設定，或選擇自訂手動輸入。",
+  "connect_mail_account": "連接帳號"
 }

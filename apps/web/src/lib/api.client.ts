@@ -1,6 +1,8 @@
 import { orpc } from "@/lib/orpc/client";
 
 import type {
+  AgentMetrics,
+  AgentTimelinePoint,
   BookmarkCategory,
   ControlSettings,
   Conversation,
@@ -599,5 +601,19 @@ export const api = {
     return (await orpc.observability.metrics({
       range: timeRange as "24h" | "7d" | "30d",
     })) as ObservabilityMetrics;
+  },
+  getAgentMetrics: async (
+    timeRange: string,
+  ): Promise<AgentMetrics> => {
+    return (await orpc.observability.agentMetrics({
+      range: timeRange as "24h" | "7d" | "30d",
+    })) as AgentMetrics;
+  },
+  getAgentTimeline: async (
+    timeRange: string,
+  ): Promise<AgentTimelinePoint[]> => {
+    return (await orpc.observability.agentTimeline({
+      range: timeRange as "24h" | "7d" | "30d",
+    })) as AgentTimelinePoint[];
   },
 };

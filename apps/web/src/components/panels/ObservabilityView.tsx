@@ -2,9 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Alert01Icon,
+  Cancel01Icon,
   CheckmarkCircle01Icon,
   Clock01Icon,
+  CodeIcon,
   FolderLibraryIcon,
+  Robot02Icon,
+  Wrench01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Bar,
@@ -16,8 +20,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { obs_active_issues, obs_activity_overview, obs_chart_critical, obs_chart_events, obs_chart_info, obs_chart_issues, obs_chart_warning, obs_event_breakdown, obs_event_timeline, obs_event_types, obs_events_and_issues, obs_issue_priority, obs_issues_needing_attention, obs_last_24h, obs_last_30d, obs_last_7d, obs_no_active_issues, obs_no_events, obs_open_issues, obs_priority_critical, obs_priority_info, obs_priority_warning, obs_recent_events, obs_resolved_issues, obs_total_events, observability, observability_desc } from "@/paraglide/messages";
-import { api, type ObservabilityMetrics, type TimeSeriesPoint } from "@/lib/api";
+import { obs_active_issues, obs_activity_overview, obs_agent_metrics, obs_agent_timeline, obs_agent_tokens_and_tools, obs_chart_critical, obs_chart_events, obs_chart_info, obs_chart_issues, obs_chart_tokens, obs_chart_tool_calls, obs_chart_warning, obs_conversations, obs_event_breakdown, obs_event_timeline, obs_event_types, obs_events_and_issues, obs_failed_tool_calls, obs_issue_priority, obs_issues_needing_attention, obs_last_24h, obs_last_30d, obs_last_7d, obs_no_active_issues, obs_no_agent_activity, obs_no_events, obs_no_recent_completions, obs_open_issues, obs_priority_critical, obs_priority_info, obs_priority_warning, obs_recent_completions, obs_recent_events, obs_resolved_issues, obs_success_rate, obs_successful_tool_calls, obs_token_usage, obs_tool_calls, obs_total_events, observability, observability_desc } from "@/paraglide/messages";
+import { api, type AgentMetrics, type AgentTimelinePoint, type ObservabilityMetrics, type TimeSeriesPoint } from "@/lib/api";
 import type { Problem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,14 +81,24 @@ function formatDateLabel(ts: string): string {
   return new Date(ts).toLocaleDateString();
 }
 
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 export function ObservabilityView({ problems }: ObservabilityViewProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("24h");
   const [throughputData, setThroughputData] = useState<TimeSeriesPoint[]>([]);
   const [metrics, setMetrics] = useState<ObservabilityMetrics | null>(null);
+  const [agentMetrics, setAgentMetrics] = useState<AgentMetrics | null>(null);
+  const [agentTimeline, setAgentTimeline] = useState<AgentTimelinePoint[]>([]);
 
   useEffect(() => {
     api.getObservabilityThroughput(timeRange).then(setThroughputData).catch(console.error);
     api.getObservabilityMetrics(timeRange).then(setMetrics).catch(console.error);
+    api.getAgentMetrics(timeRange).then(setAgentMetrics).catch(console.error);
+    api.getAgentTimeline(timeRange).then(setAgentTimeline).catch(console.error);
   }, [timeRange]);
 
   const totalEvents = metrics?.totalEvents ?? 0;
@@ -92,6 +106,14 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
   const resolvedIssues = metrics?.resolvedIssues ?? 0;
   const eventTypeCounts = metrics?.eventTypeCounts ?? [];
   const recentEvents = metrics?.recentEvents ?? [];
+
+  // Agent metrics
+  const totalToolCalls = agentMetrics?.totalToolCalls ?? 0;
+  const successfulToolCalls = agentMetrics?.successfulToolCalls ?? 0;
+  const failedToolCalls = agentMetrics?.failedToolCalls ?? 0;
+  const totalTokens = agentMetrics?.totalTokens ?? 0;
+  const recentCompletions = agentMetrics?.recentCompletions ?? [];
+  const successRate = totalToolCalls > 0 ? Math.round((successfulToolCalls / totalToolCalls) * 100) : 0;
 
   const criticalCount = problems.filter((p) => p.priority === "critical").length;
   const warningCount = problems.filter((p) => p.priority === "warning").length;
@@ -108,11 +130,16 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
     info: { label: obs_chart_info(), color: "var(--chart-1)" },
   } satisfies ChartConfig), []);
 
+  const agentTimelineChartConfig = useMemo(() => ({
+    tokens: { label: obs_chart_tokens(), color: "var(--chart-3)" },
+    toolCalls: { label: obs_chart_tool_calls(), color: "var(--chart-1)" },
+  } satisfies ChartConfig), []);
+
   const priorityData = useMemo(
     () => [
-      { name: "Critical", value: criticalCount, fill: PRIORITY_COLORS[0] },
-      { name: "Warning", value: warningCount, fill: PRIORITY_COLORS[1] },
-      { name: "Info", value: infoCount, fill: PRIORITY_COLORS[2] },
+      { name: "critical", value: criticalCount, fill: PRIORITY_COLORS[0] },
+      { name: "warning", value: warningCount, fill: PRIORITY_COLORS[1] },
+      { name: "info", value: infoCount, fill: PRIORITY_COLORS[2] },
     ],
     [criticalCount, warningCount, infoCount],
   );
@@ -145,6 +172,106 @@ export function ObservabilityView({ problems }: ObservabilityViewProps) {
               value={eventTypeCounts.length}
             />
           </div>
+
+          {/* ── Agent Metrics ── */}
+          <div>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">{obs_agent_metrics()}</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <MetricCard
+                icon={Wrench01Icon}
+                label={obs_tool_calls()}
+                value={totalToolCalls}
+                sub={successRate > 0 ? `${obs_success_rate()}: ${successRate}%` : undefined}
+              />
+              <MetricCard
+                icon={CheckmarkCircle01Icon}
+                label={obs_successful_tool_calls()}
+                value={successfulToolCalls}
+              />
+              <MetricCard
+                icon={Cancel01Icon}
+                label={obs_failed_tool_calls()}
+                value={failedToolCalls}
+              />
+              <MetricCard
+                icon={CodeIcon}
+                label={obs_token_usage()}
+                value={formatTokens(totalTokens)}
+              />
+            </div>
+          </div>
+
+          {/* ── Agent Timeline ── */}
+          {agentTimeline.length > 0
+            ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">{obs_agent_timeline()}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {obs_agent_tokens_and_tools()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <ChartContainer config={agentTimelineChartConfig} className="h-[200px] w-full">
+                    <BarChart data={agentTimeline} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={10} interval="preserveStartEnd" />
+                      <YAxis tickLine={false} axisLine={false} fontSize={10} width={40} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Bar dataKey="tokens" fill="var(--color-tokens)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                      <Bar dataKey="toolCalls" fill="var(--color-toolCalls)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            )
+            : agentMetrics
+              ? (
+                <div className="text-sm text-muted-foreground">{obs_no_agent_activity()}</div>
+              )
+              : null}
+
+          {/* ── Recent Agent Completions ── */}
+          {recentCompletions.length > 0
+            ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">{obs_recent_completions()}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {recentCompletions.slice(0, 10).map((comp) => (
+                      <div key={comp.conversationId} className="flex items-center gap-3 rounded-lg border border-border/50 px-3 py-2">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <HugeiconsIcon icon={Robot02Icon} className="size-3.5" />
+                        </div>
+                        <span className="flex-1 truncate text-sm text-foreground">
+                          {comp.conversationTitle || obs_conversations()}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-2 text-[10px] text-muted-foreground">
+                          {comp.tokens
+                            ? <span className="tabular-nums">{formatTokens(comp.tokens)} tokens</span>
+                            : null}
+                          <span className="tabular-nums">{comp.toolCalls} tools</span>
+                          {comp.toolSuccesses > 0
+                            ? <span className="tabular-nums text-green-600 dark:text-green-400">{comp.toolSuccesses} ✓</span>
+                            : null}
+                        </div>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {formatTimestamp(comp.timestamp)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+            : agentMetrics
+              ? (
+                <div className="text-sm text-muted-foreground">{obs_no_recent_completions()}</div>
+              )
+              : null}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>

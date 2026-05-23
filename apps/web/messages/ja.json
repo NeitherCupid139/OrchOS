@@ -419,6 +419,13 @@
   "obs_activity_overview": "アクティビティ概要",
   "observability": "可観測性",
   "observability_desc": "イベント、課題、アクティビティを監視します。",
+  "onboarding_agents_desc": "まず AI エージェントを設定しましょう — ランタイムを登録し、機能を構成し、エージェントをオンラインにします。OrchOS の他のすべてのページは、ここで設定したエージェントの上に構築されます。",
+  "onboarding_board_desc": "カンバンボードで作業を管理します。タスクを作成し、優先順位を設定し、進捗を追跡し、エージェントに自律的に処理させます。",
+  "onboarding_bookmarks_desc": "ファイルからブックマークをインポートし、カテゴリ別に整理して、参照リンクをいつでも手元に置きます。",
+  "onboarding_calendar_desc": "プロジェクトと一緒にスケジュールを確認します。ローカルカレンダーを作成するか、Google Calendar を接続して、一か所で時間を管理します。",
+  "onboarding_creation_desc": "エージェントと会話し、指示を出し、コンテンツを作成します。ここは AI コマンドセンターです — やりたいことを説明すれば、エージェントが計画して実行します。",
+  "onboarding_mail_desc": "Gmail または IMAP/SMTP アカウントを接続し、ワークスペースを離れずにメールを管理します。",
+  "onboarding_observability_desc": "エージェントの活動、システムイベント、目標の進捗、ワークスペースの健全性を一つの概要で監視します。",
   "off": "オフ",
   "on": "オン",
   "open_activity_panel": "アクティビティパネルを開く",
@@ -841,5 +848,12 @@
   "resize_calendar_sidebar": "カレンダーのサイドバーのサイズを変更",
   "resize_mail_sidebar": "メールのサイドバーのサイズを変更",
   "resize_bookmarks_sidebar": "ブックマークのサイドバーのサイズを変更",
-  "view": "表示"
+  "view": "表示",
+  "provider": "プロバイダー",
+  "email_provider": "メールプロバイダー",
+  "select_email_provider": "プロバイダーを選択…",
+  "custom_provider": "カスタム（手動設定）",
+  "custom_provider_desc": "SMTP/IMAPサーバー設定を手動で入力します。",
+  "email_provider_help": "メールプロバイダーを選択するとサーバー設定が自動入力されます。カスタムを選ぶと手動で入力できます。",
+  "connect_mail_account": "アカウントを接続"
 }

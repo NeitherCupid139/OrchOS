@@ -17,6 +17,11 @@ import {
   CommandIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
+import {
+  EMAIL_PROVIDERS,
+  CUSTOM_PROVIDER_ID,
+  getEmailProvider,
+} from "@/lib/email-providers";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { Spinner } from "@/components/ui/spinner";
 import { AppleSwitch } from "@/components/unlumen-ui/apple-switch";
@@ -104,6 +109,9 @@ import {
   use_tls_smtp,
   username,
   username_placeholder,
+  email_provider,
+  custom_provider,
+  custom_provider_desc,
 } from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
 import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
@@ -333,7 +341,33 @@ export function SettingsDialog({
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(EMAIL_PROVIDERS[0].id);
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
+
+  /** Try to match current SMTP/IMAP settings to a known provider */
+  function detectProvider(host: string, port: number, imapHost: string): string {
+    const match = EMAIL_PROVIDERS.find(
+      (p) => p.smtp.host === host && p.smtp.port === port && p.imap.host === imapHost,
+    );
+    return match?.id ?? CUSTOM_PROVIDER_ID;
+  }
+
+  /** Apply a provider's settings to the edit form */
+  function applyProviderToEditForm(providerId: string) {
+    setSelectedEditProviderId(providerId);
+    const provider = getEmailProvider(providerId);
+    if (provider) {
+      setEditMailForm((f) => ({
+        ...f,
+        smtpHost: provider.smtp.host,
+        smtpPort: String(provider.smtp.port),
+        smtpSecure: provider.smtp.secure,
+        imapHost: provider.imap.host,
+        imapPort: String(provider.imap.port),
+        imapSecure: provider.imap.secure,
+      }));
+    }
+  }
 
   const currentSettings = settings;
 
@@ -438,19 +472,23 @@ export function SettingsDialog({
 
   const handleEditMailAccount = useCallback(
     (integrationId: string, account: MailIntegrationAccount) => {
+      const smtpHost = account.smtpImap?.smtp.host || "smtp.gmail.com";
+      const smtpPort = account.smtpImap?.smtp.port ?? 587;
+      const imapHost = account.smtpImap?.imap.host || "imap.gmail.com";
       setEditMailForm({
         label: account.label,
         email: account.email || account.smtpImap?.email || "",
         username: account.username || account.smtpImap?.username || "",
         displayName: account.smtpImap?.displayName || "",
-        smtpHost: account.smtpImap?.smtp.host || "smtp.gmail.com",
-        smtpPort: String(account.smtpImap?.smtp.port ?? 587),
+        smtpHost,
+        smtpPort: String(smtpPort),
         smtpSecure: account.smtpImap?.smtp.secure ?? false,
-        imapHost: account.smtpImap?.imap.host || "imap.gmail.com",
+        imapHost,
         imapPort: String(account.smtpImap?.imap.port ?? 993),
         imapSecure: account.smtpImap?.imap.secure ?? true,
         password: account.smtpImap?.password || "",
       });
+      setSelectedEditProviderId(detectProvider(smtpHost, smtpPort, imapHost));
       setEditingMailAccount({ integrationId, account });
     },
     [],
@@ -960,6 +998,35 @@ export function SettingsDialog({
                         </button>
                       </div>
                     </label>
+
+                    {/* Provider selector */}
+                    <div className="border-t border-border pt-4">
+                      <p className="text-xs font-medium text-muted-foreground mb-3">{email_provider()}</p>
+                      <select
+                        value={selectedEditProviderId}
+                        onChange={(e) => applyProviderToEditForm(e.target.value)}
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {EMAIL_PROVIDERS.map((provider) => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.name}
+                            {provider.description ? ` — ${provider.description}` : ""}
+                          </option>
+                        ))}
+                        <option value={CUSTOM_PROVIDER_ID}>
+                          {custom_provider()}
+                        </option>
+                      </select>
+                      {selectedEditProviderId === CUSTOM_PROVIDER_ID ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {custom_provider_desc()}
+                        </p>
+                      ) : selectedEditProviderId && getEmailProvider(selectedEditProviderId)?.helpText ? (
+                        <p className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2 text-xs leading-5 text-muted-foreground">
+                          {getEmailProvider(selectedEditProviderId)!.helpText}
+                        </p>
+                      ) : null}
+                    </div>
 
                     <div className="border-t border-border pt-4">
                       <p className="text-xs font-medium text-muted-foreground mb-3">

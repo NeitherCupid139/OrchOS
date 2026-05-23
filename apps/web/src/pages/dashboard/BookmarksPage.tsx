@@ -1,5 +1,6 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { motion } from "motion/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -28,7 +29,7 @@ import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { RenameDialog } from "@/components/dialogs/RenameDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -862,6 +863,33 @@ export function BookmarksPage() {
     return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [normalizedSearchQuery, selectedCategory]);
 
+  const contentContainerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(3);
+
+  useEffect(() => {
+    const el = contentContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+      setColumns(width >= 1000 ? 3 : width >= 600 ? 2 : 1);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filteredBookmarks.length]);
+
+  const rowCount = useMemo(
+    () => Math.ceil(filteredBookmarks.length / columns),
+    [filteredBookmarks.length, columns],
+  );
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => viewportRef.current,
+    estimateSize: () => 124,
+    overscan: 1,
+  });
+
   const handleEditBookmark = useCallback((bookmarkId: string, title: string, url: string, icon?: string) => {
     setEditingBookmarkId(bookmarkId);
     setBookmarkDraft({ title, url, icon });
@@ -1117,61 +1145,95 @@ export function BookmarksPage() {
           </Tooltip>
         ) : null}
 
-        <ScrollArea className="h-full">
-          <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-6">
-            {loading ? (
-              <div className="flex flex-1 items-center justify-center">
-                <AsciiLoading label={loading_label()} />
-              </div>
-            ) : selectedCategory ? (
-              <>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <h1 className="flex items-center gap-2 truncate text-2xl font-semibold text-foreground">
-                      <HugeiconsIcon
-                        icon={getBookmarkCategoryIcon(selectedCategory.icon)}
-                        className="size-5 shrink-0 text-muted-foreground"
-                      />
-                      <span className="truncate">{selectedCategory.name}</span>
-                    </h1>
-                    <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
-                      {bookmark_count({ count: selectedCategory.bookmarks.length })}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setBookmarkDraft({ title: "", url: "", icon: undefined });
-                        setIsCreateBookmarkDialogOpen(true);
-                      }}
-                    >
-                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                      {new_bookmark()}
-                    </Button>
-
-                  </div>
+        <ScrollAreaPrimitive.Root className="relative h-full">
+          <ScrollAreaPrimitive.Viewport
+            ref={viewportRef}
+            className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
+          >
+            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-6">
+              {loading ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <AsciiLoading label={loading_label()} />
                 </div>
-
-                <section className={cn("flex-1", filteredBookmarks.length > 0 ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "flex items-center justify-center")}>
-                  {filteredBookmarks.length > 0 ? (
-                    filteredBookmarks.map((bookmark) => (
-                      <motion.div key={bookmark.id} layout>
-                        <BookmarkCard
-                          bookmark={bookmark}
-                          categoryId={selectedCategory.id}
-                          pinPending={pendingPinBookmarkIds.includes(bookmark.id)}
-                          onTogglePin={handleTogglePin}
-                          onEdit={handleEditBookmark}
-                          onDelete={handleDeleteBookmark}
-                          onDragStart={handleBookmarkDragStart}
-                          onDragEnd={handleBookmarkDragEnd}
-                          onDropReorder={handleBookmarkDropReorder}
+              ) : selectedCategory ? (
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <h1 className="flex items-center gap-2 truncate text-2xl font-semibold text-foreground">
+                        <HugeiconsIcon
+                          icon={getBookmarkCategoryIcon(selectedCategory.icon)}
+                          className="size-5 shrink-0 text-muted-foreground"
                         />
-                      </motion.div>
-                    ))
+                        <span className="truncate">{selectedCategory.name}</span>
+                      </h1>
+                      <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
+                        {bookmark_count({ count: selectedCategory.bookmarks.length })}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setBookmarkDraft({ title: "", url: "", icon: undefined });
+                          setIsCreateBookmarkDialogOpen(true);
+                        }}
+                      >
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                        {new_bookmark()}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {filteredBookmarks.length > 0 ? (
+                    <div ref={contentContainerRef} className="min-h-0 flex-1">
+                      <div
+                        style={{
+                          height: virtualizer.getTotalSize(),
+                          position: "relative",
+                          width: "100%",
+                        }}
+                      >
+                        {virtualizer.getVirtualItems().map((virtualRow) => {
+                          const startIndex = virtualRow.index * columns;
+                          const rowBookmarks = filteredBookmarks.slice(startIndex, startIndex + columns);
+
+                          return (
+                            <div
+                              key={virtualRow.key}
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                transform: `translateY(${virtualRow.start}px)`,
+                              }}
+                            >
+                              <div
+                                className="grid gap-4"
+                                style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+                              >
+                                {rowBookmarks.map((bookmark) => (
+                                  <BookmarkCard
+                                    key={bookmark.id}
+                                    bookmark={bookmark}
+                                    categoryId={selectedCategory.id}
+                                    pinPending={pendingPinBookmarkIds.includes(bookmark.id)}
+                                    onTogglePin={handleTogglePin}
+                                    onEdit={handleEditBookmark}
+                                    onDelete={handleDeleteBookmark}
+                                    onDragStart={handleBookmarkDragStart}
+                                    onDragEnd={handleBookmarkDragEnd}
+                                    onDropReorder={handleBookmarkDropReorder}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ) : (
-                    <div className="flex justify-center md:col-span-2 xl:col-span-3">
+                    <div className="flex flex-1 items-center justify-center">
                       <EmptyState
                         variant="subtle"
                         size="lg"
@@ -1194,31 +1256,33 @@ export function BookmarksPage() {
                       />
                     </div>
                   )}
-                </section>
-              </>
-            ) : (
-              <div className="flex flex-1 items-center justify-center">
-                <EmptyState
-                  variant="subtle"
-                  size="lg"
-                  title={bookmarks_workspace()}
-                  description={bookmarks_workspace_desc()}
-                  icons={[
-                    <HugeiconsIcon key="b1" icon={Bookmark01Icon} className="size-6" />,
-                    <HugeiconsIcon key="b2" icon={Folder01Icon} className="size-6" />,
-                    <HugeiconsIcon key="b3" icon={Upload01Icon} className="size-6" />,
-                  ]}
-                  action={{
-                    label: import_from_file(),
-                    icon: <HugeiconsIcon icon={Upload01Icon} className="size-4" />,
-                    onClick: handleCreateCategory,
-                  }}
-                  className="w-full max-w-lg"
-                />
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+                </>
+              ) : (
+                <div className="flex flex-1 items-center justify-center">
+                  <EmptyState
+                    variant="subtle"
+                    size="lg"
+                    title={bookmarks_workspace()}
+                    description={bookmarks_workspace_desc()}
+                    icons={[
+                      <HugeiconsIcon key="b1" icon={Bookmark01Icon} className="size-6" />,
+                      <HugeiconsIcon key="b2" icon={Folder01Icon} className="size-6" />,
+                      <HugeiconsIcon key="b3" icon={Upload01Icon} className="size-6" />,
+                    ]}
+                    action={{
+                      label: import_from_file(),
+                      icon: <HugeiconsIcon icon={Upload01Icon} className="size-4" />,
+                      onClick: handleCreateCategory,
+                    }}
+                    className="w-full max-w-lg"
+                  />
+                </div>
+              )}
+            </div>
+          </ScrollAreaPrimitive.Viewport>
+          <ScrollBar />
+          <ScrollAreaPrimitive.Corner />
+        </ScrollAreaPrimitive.Root>
       </div>
 
       <RenameDialog

@@ -26,7 +26,6 @@ import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
@@ -36,9 +35,14 @@ import {
   type Integration,
 } from "@/lib/api";
 import { matchesMailFolder } from "@/lib/mail";
+import {
+  EMAIL_PROVIDERS,
+  CUSTOM_PROVIDER_ID,
+  getEmailProvider,
+} from "@/lib/email-providers";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useUIStore } from "@/lib/store";
-import { account_label, cancel, client_id, client_secret, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect, connect_gmail, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, expand_sidebar, failed_to_connect_gmail, failed_to_connect_mail_account, gmail_account_label_placeholder, gmail_connect_help, gmail_connected, gmail_credentials_required, gmail_refresh_token_placeholder, google_oauth_client_id_placeholder, google_oauth_client_secret_placeholder, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_custom_mailbox_help, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, refresh_token, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
+import { cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, custom_provider, custom_provider_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
 
 type MailIntegrationAccount = {
   id: string;
@@ -71,22 +75,15 @@ export function MailPage() {
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [isAccountsDialogOpen, setIsAccountsDialogOpen] = useState(false);
   const [isComposeDialogOpen, setIsComposeDialogOpen] = useState(false);
-  const [mailConnectMode, setMailConnectMode] = useState<"gmail" | "smtp-imap">(
-    "gmail",
+  const [selectedProviderId, setSelectedProviderId] = useState<string>(
+    EMAIL_PROVIDERS[0].id,
   );
-  const [showClientSecret, setShowClientSecret] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submittingAccount, setSubmittingAccount] = useState(false);
   const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(null);
   const collapseTimerRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const [gmailForm, setGmailForm] = useState({
-    label: "",
-    clientId: "",
-    clientSecret: "",
-    refreshToken: "",
-  });
   const [mailAccountForm, setMailAccountForm] = useState({
     email: "",
     displayName: "",
@@ -289,6 +286,22 @@ export function MailPage() {
     );
   }
 
+  function handleProviderChange(providerId: string) {
+    setSelectedProviderId(providerId);
+    const provider = getEmailProvider(providerId);
+    if (provider) {
+      setMailAccountForm((f) => ({
+        ...f,
+        smtpHost: provider.smtp.host,
+        smtpPort: String(provider.smtp.port),
+        smtpSecure: provider.smtp.secure,
+        imapHost: provider.imap.host,
+        imapPort: String(provider.imap.port),
+        imapSecure: provider.imap.secure,
+      }));
+    }
+  }
+
   async function handleCreateMailAccount() {
     if (
       !mailAccountForm.email.trim() ||
@@ -328,17 +341,18 @@ export function MailPage() {
         },
       });
       setIsConnectDialogOpen(false);
+      setSelectedProviderId(EMAIL_PROVIDERS[0].id);
       setMailAccountForm({
         email: "",
         displayName: "",
         username: "",
         password: "",
-        smtpHost: "",
-        smtpPort: "587",
-        smtpSecure: false,
-        imapHost: "",
-        imapPort: "993",
-        imapSecure: true,
+        smtpHost: EMAIL_PROVIDERS[0].smtp.host,
+        smtpPort: String(EMAIL_PROVIDERS[0].smtp.port),
+        smtpSecure: EMAIL_PROVIDERS[0].smtp.secure,
+        imapHost: EMAIL_PROVIDERS[0].imap.host,
+        imapPort: String(EMAIL_PROVIDERS[0].imap.port),
+        imapSecure: EMAIL_PROVIDERS[0].imap.secure,
       });
       toast.success(mail_account_connected());
       void loadThreads();
@@ -348,44 +362,6 @@ export function MailPage() {
         error instanceof Error
           ? error.message
           : failed_to_connect_mail_account(),
-        { closeButton: true },
-      );
-    } finally {
-      setSubmittingAccount(false);
-    }
-  }
-
-  async function handleConnectGmail() {
-    if (
-      !gmailForm.clientId.trim() ||
-      !gmailForm.clientSecret.trim() ||
-      !gmailForm.refreshToken.trim()
-    ) {
-      toast.error(gmail_credentials_required());
-      return;
-    }
-
-    setSubmittingAccount(true);
-    try {
-      await api.connectGoogleIntegration("gmail", {
-        label: gmailForm.label.trim() || undefined,
-        clientId: gmailForm.clientId.trim(),
-        clientSecret: gmailForm.clientSecret.trim(),
-        refreshToken: gmailForm.refreshToken.trim(),
-      });
-      setIsConnectDialogOpen(false);
-      setGmailForm({
-        label: "",
-        clientId: "",
-        clientSecret: "",
-        refreshToken: "",
-      });
-      toast.success(gmail_connected());
-      void loadThreads();
-      void loadIntegrations();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_to_connect_gmail(),
         { closeButton: true },
       );
     } finally {
@@ -728,7 +704,20 @@ export function MailPage() {
         onOpenChange={(open) => {
           setIsConnectDialogOpen(open);
           if (open) {
-            setMailConnectMode("gmail");
+            const defaultProvider = EMAIL_PROVIDERS[0];
+            setSelectedProviderId(defaultProvider.id);
+            setMailAccountForm({
+              email: "",
+              displayName: "",
+              username: "",
+              password: "",
+              smtpHost: defaultProvider.smtp.host,
+              smtpPort: String(defaultProvider.smtp.port),
+              smtpSecure: defaultProvider.smtp.secure,
+              imapHost: defaultProvider.imap.host,
+              imapPort: String(defaultProvider.imap.port),
+              imapSecure: defaultProvider.imap.secure,
+            });
           }
         }}
         title={connect_mailbox()}
@@ -745,131 +734,51 @@ export function MailPage() {
             </Button>
             <Button
               type="button"
-              onClick={() =>
-                void (mailConnectMode === "gmail"
-                  ? handleConnectGmail()
-                  : handleCreateMailAccount())
-              }
+              onClick={() => void handleCreateMailAccount()}
               disabled={submittingAccount}
             >
-              {submittingAccount
-                ? loading_label()
-                : mailConnectMode === "gmail"
-                  ? connect_gmail()
-                  : connect()}
+              {submittingAccount ? loading_label() : connect_mail_account()}
             </Button>
           </>
         }
       >
         <div className="space-y-5">
-          <Tabs
-            value={mailConnectMode}
-            onValueChange={(value) =>
-              setMailConnectMode(value as "gmail" | "smtp-imap")
-            }
-          >
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="gmail">
-                <HugeiconsIcon
-                  icon={GoogleIcon}
-                  className="size-4 text-sky-500"
-                />
-                Gmail
-              </TabsTrigger>
-              <TabsTrigger value="smtp-imap">
-                <HugeiconsIcon
-                  icon={SquareArrowDataTransferHorizontalIcon}
-                  className="size-4 text-violet-500"
-                />
-                IMAP/SMTP
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Provider selector */}
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{email_provider()}</span>
+            <select
+              value={selectedProviderId}
+              onChange={(e) => handleProviderChange(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              {EMAIL_PROVIDERS.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                  {provider.description ? ` — ${provider.description}` : ""}
+                </option>
+              ))}
+              <option value={CUSTOM_PROVIDER_ID}>
+                {custom_provider()}
+              </option>
+            </select>
+          </label>
+
+          {/* Help text */}
+          {selectedProviderId === CUSTOM_PROVIDER_ID ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              {custom_provider_desc()}
+            </p>
+          ) : selectedProviderId && getEmailProvider(selectedProviderId)?.helpText ? (
+            <p className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
+              {getEmailProvider(selectedProviderId)!.helpText}
+            </p>
+          ) : null}
 
           <p className="text-xs leading-5 text-muted-foreground">
-            {mailConnectMode === "gmail"
-              ? gmail_connect_help()
-              : mail_custom_mailbox_help()}
+            {email_provider_help()}
           </p>
 
-          {mailConnectMode === "gmail" ? (
-            <div className="grid gap-4">
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">
-                  {account_label()}
-                </span>
-                <input
-                  value={gmailForm.label}
-                  onChange={(event) =>
-                    setGmailForm((current) => ({
-                      ...current,
-                      label: event.target.value,
-                    }))
-                  }
-                  placeholder={gmail_account_label_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
-              </label>
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">{client_id()}</span>
-                <input
-                  value={gmailForm.clientId}
-                  onChange={(event) =>
-                    setGmailForm((current) => ({
-                      ...current,
-                      clientId: event.target.value,
-                    }))
-                  }
-                  placeholder={google_oauth_client_id_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
-              </label>
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">
-                  {client_secret()}
-                </span>
-                <div className="relative">
-                  <input
-                    type={showClientSecret ? "text" : "password"}
-                    value={gmailForm.clientSecret}
-                    onChange={(event) =>
-                      setGmailForm((current) => ({
-                        ...current,
-                        clientSecret: event.target.value,
-                      }))
-                    }
-                    placeholder={google_oauth_client_secret_placeholder()}
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowClientSecret((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    <HugeiconsIcon icon={showClientSecret ? ViewOffSlashIcon : EyeIcon} className="size-4" />
-                  </button>
-                </div>
-              </label>
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">
-                  {refresh_token()}
-                </span>
-                <textarea
-                  value={gmailForm.refreshToken}
-                  onChange={(event) =>
-                    setGmailForm((current) => ({
-                      ...current,
-                      refreshToken: event.target.value,
-                    }))
-                  }
-                  placeholder={gmail_refresh_token_placeholder()}
-                  className="min-h-28 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
-              </label>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted-foreground">{email()}</span>
                 <input
@@ -1039,7 +948,6 @@ export function MailPage() {
                 </div>
               </div>
             </div>
-          )}
         </div>
       </AppDialog>
     </div>

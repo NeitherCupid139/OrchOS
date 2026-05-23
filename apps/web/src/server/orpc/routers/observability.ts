@@ -1,4 +1,4 @@
-import { events, problems } from "@/server/db/schema";
+import { events, problems, messages, conversations } from "@/server/db/schema";
 import { os } from "@/server/orpc/base";
 import { getLocalDb } from "@/server/runtime/local-db";
 
@@ -11,6 +11,16 @@ function getRangeDate(range: string): Date {
       return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     default:
       return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  }
+}
+
+function parseTrace(trace: string | null): Array<{ kind: string; state?: string }> {
+  if (!trace) return [];
+  try {
+    const parsed = JSON.parse(trace);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }
 
@@ -101,6 +111,125 @@ export const observabilityRouter = {
       eventTypeCounts,
       recentEvents,
     };
+  }),
+  agentMetrics: os.observability.agentMetrics.handler(async ({ input }) => {
+    const range = input.range ?? "24h";
+    const db = await getLocalDb();
+    const rangeDate = getRangeDate(range);
+
+    const allMessages = await db.select().from(messages).all();
+    const allConversations = await db.select().from(conversations).all();
+
+    const convoMap = new Map(allConversations.map((c) => [c.id, c]));
+
+    const filteredMessages = allMessages.filter(
+      (m) => m.role === "assistant" && new Date(m.createdAt) >= rangeDate,
+    );
+
+    let totalToolCalls = 0;
+    let successfulToolCalls = 0;
+    let failedToolCalls = 0;
+    let totalTokens = 0;
+
+    for (const msg of filteredMessages) {
+      const trace = parseTrace(msg.trace);
+      for (const entry of trace) {
+        if (entry.kind === "tool") {
+          totalToolCalls++;
+          if (entry.state === "completed") {
+            successfulToolCalls++;
+          } else if (entry.state === "failed") {
+            failedToolCalls++;
+          }
+        }
+      }
+      if (msg.tokens) {
+        totalTokens += Number(msg.tokens);
+      }
+    }
+
+    const recentCompletions = filteredMessages
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 20)
+      .map((msg) => {
+        const trace = parseTrace(msg.trace);
+        const toolEntries = trace.filter((e) => e.kind === "tool");
+        const convo = convoMap.get(msg.conversationId);
+        return {
+          conversationId: msg.conversationId,
+          conversationTitle: convo?.title ?? undefined,
+          agent: convo?.agentId ?? convo?.runtimeId ?? undefined,
+          timestamp: msg.createdAt,
+          tokens: msg.tokens ? Number(msg.tokens) : undefined,
+          toolCalls: toolEntries.length,
+          toolSuccesses: toolEntries.filter((e) => e.state === "completed").length,
+        };
+      });
+
+    return {
+      totalConversations: allConversations.length,
+      totalMessages: filteredMessages.length,
+      totalToolCalls,
+      successfulToolCalls,
+      failedToolCalls,
+      totalTokens,
+      recentCompletions,
+    };
+  }),
+  agentTimeline: os.observability.agentTimeline.handler(async ({ input }) => {
+    const range = input.range ?? "24h";
+    const db = await getLocalDb();
+    const rangeDate = getRangeDate(range);
+
+    const allMessages = await db.select().from(messages).all();
+
+    const filteredMessages = allMessages.filter(
+      (m) => m.role === "assistant" && new Date(m.createdAt) >= rangeDate,
+    );
+
+    const size = range === "24h" ? 24 : range === "7d" ? 7 : 30;
+    const intervalMs = range === "24h"
+      ? 60 * 60 * 1000
+      : 24 * 60 * 60 * 1000;
+
+    const buckets: { time: number; label: string; tokens: number; toolCalls: number; toolSuccesses: number; toolFailures: number }[] = [];
+    for (let i = 0; i < size; i++) {
+      const bucketStart = new Date(rangeDate.getTime() + i * intervalMs);
+      const bucketEnd = new Date(bucketStart.getTime() + intervalMs);
+
+      let tokens = 0;
+      let toolCalls = 0;
+      let toolSuccesses = 0;
+      let toolFailures = 0;
+
+      for (const msg of filteredMessages) {
+        const t = new Date(msg.createdAt).getTime();
+        if (t >= bucketStart.getTime() && t < bucketEnd.getTime()) {
+          if (msg.tokens) {
+            tokens += Number(msg.tokens);
+          }
+          const trace = parseTrace(msg.trace);
+          for (const entry of trace) {
+            if (entry.kind === "tool") {
+              toolCalls++;
+              if (entry.state === "completed") {
+                toolSuccesses++;
+              } else if (entry.state === "failed") {
+                toolFailures++;
+              }
+            }
+          }
+        }
+      }
+
+      const label = range === "24h"
+        ? `${String(bucketStart.getHours()).padStart(2, "0")}:00`
+        : `${bucketStart.getMonth() + 1}/${bucketStart.getDate()}`;
+
+      buckets.push({ time: i, label, tokens, toolCalls, toolSuccesses, toolFailures });
+    }
+
+    return buckets;
   }),
 };
 

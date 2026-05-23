@@ -162,6 +162,35 @@ export interface TimeSeriesPoint {
   issues: number;
 }
 
+export interface AgentTimelinePoint {
+  time: number;
+  label: string;
+  tokens: number;
+  toolCalls: number;
+  toolSuccesses: number;
+  toolFailures: number;
+}
+
+export interface AgentCompletion {
+  conversationId: string;
+  conversationTitle?: string;
+  agent?: string;
+  timestamp: string;
+  tokens?: number;
+  toolCalls: number;
+  toolSuccesses: number;
+}
+
+export interface AgentMetrics {
+  totalConversations: number;
+  totalMessages: number;
+  totalToolCalls: number;
+  successfulToolCalls: number;
+  failedToolCalls: number;
+  totalTokens: number;
+  recentCompletions: AgentCompletion[];
+}
+
 export type ControlSettings = ControlSettingsType;
 
 export interface Event {
@@ -256,6 +285,7 @@ export interface ConversationMessage {
   projectId?: string;
   projectName?: string;
   clarificationQuestions?: string[];
+  tokens?: number;
   createdAt: string;
 }
 

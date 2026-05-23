@@ -43,6 +43,7 @@ export interface Message {
   projectId?: string;
   projectName?: string;
   clarificationQuestions?: string[];
+  tokens?: number;
   createdAt: string;
 }
 
@@ -176,6 +177,7 @@ export abstract class ConversationService {
       projectId?: string;
       projectName?: string;
       clarificationQuestions?: string[];
+      tokens?: number;
     },
   ): Promise<Message> {
     const id = generateId("msg");
@@ -199,6 +201,7 @@ export abstract class ConversationService {
         clarificationQuestions: metadata?.clarificationQuestions
           ? JSON.stringify(metadata.clarificationQuestions)
           : null,
+        tokens: metadata?.tokens != null ? String(metadata.tokens) : null,
         createdAt: now,
       })
       .run();
@@ -223,6 +226,7 @@ export abstract class ConversationService {
       projectId: metadata?.projectId,
       projectName: metadata?.projectName,
       clarificationQuestions: metadata?.clarificationQuestions,
+      tokens: metadata?.tokens,
       createdAt: now,
     };
   }
@@ -339,6 +343,7 @@ export abstract class ConversationService {
       projectId: row.projectId || undefined,
       projectName: row.projectName || undefined,
       clarificationQuestions: parseJson<string[]>(row.clarificationQuestions),
+      tokens: row.tokens != null ? Number(row.tokens) : undefined,
       createdAt: row.createdAt,
     };
   }

@@ -10,6 +10,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { Toolbar } from "@/components/layout/Toolbar";
 import { CreateBoardConversationDialog } from "@/components/dialogs/CreateBoardConversationDialog";
+import { OnboardingChangelogDialog } from "@/components/dialogs/OnboardingChangelogDialog";
 import { useUIStore } from "@/lib/store";
 import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
 import { Search01Icon } from "@hugeicons/core-free-icons";
@@ -25,6 +26,7 @@ import { checking_auth, search_bookmarks } from "@/paraglide/messages";
 
 const ACTIVITY_PANEL_TRANSITION_MS = 320;
 const ACTIVITY_PANEL_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+const ONBOARDING_SEEN_KEY = "orchos-onboarding-seen";
 
 const loadAuthTransitionOverlay = createClientOnlyFn(async () => {
   const mod = await import("@/components/ui/auth-transition-overlay");
@@ -154,6 +156,8 @@ function DashboardContentInner() {
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<
     "general" | "notifications" | "mail" | "about"
   >("general");
+  const [firstTimeOnboardingOpen, setFirstTimeOnboardingOpen] = useState(false);
+  const onboardingCheckedRef = useRef(false);
   const revealTriggeredRef = useRef(false);
   const createBoardTask = useBoardStore((state) => state.createTask);
 
@@ -243,6 +247,33 @@ function DashboardContentInner() {
       void navigate({ to: "/dashboard/creation" });
     }
   }, [activeView, navigate, uiPreviewTarget]);
+
+  // First-time onboarding: show the tour dialog once after the dashboard loads
+  useEffect(() => {
+    if (onboardingCheckedRef.current || loading) {
+      return;
+    }
+
+    // Don't show onboarding during auth transition; wait for it to complete
+    if (showAuthTransition) {
+      return;
+    }
+
+    onboardingCheckedRef.current = true;
+
+    try {
+      const seen = localStorage.getItem(ONBOARDING_SEEN_KEY);
+      if (!seen) {
+        // Small delay so the dashboard renders first, then the dialog appears
+        const timer = window.setTimeout(() => {
+          setFirstTimeOnboardingOpen(true);
+        }, 600);
+        return () => window.clearTimeout(timer);
+      }
+    } catch {
+      // localStorage unavailable; skip onboarding
+    }
+  }, [loading, showAuthTransition]);
 
   return (
     <>
@@ -379,6 +410,15 @@ function DashboardContentInner() {
               tags: values.tags,
               subtasks: values.subtasks,
             });
+          }}
+        />
+        <OnboardingChangelogDialog
+          open={firstTimeOnboardingOpen}
+          onClose={() => {
+            setFirstTimeOnboardingOpen(false);
+            try {
+              localStorage.setItem(ONBOARDING_SEEN_KEY, "1");
+            } catch {}
           }}
         />
       </div>

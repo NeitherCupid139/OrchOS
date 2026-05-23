@@ -24,6 +24,11 @@ type NormalizedChatCompletion = {
     };
     finish_reason: string | null;
   }>;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
 };
 
 type OpenAICompatibleOperation = "chat/completions" | "messages" | "responses";
@@ -361,15 +366,26 @@ export async function requestOpenAICompatibleChatCompletion<T>(
 
       const data = await response.json() as Record<string, unknown>;
 
+      let result: NormalizedChatCompletion;
       if (operation === "messages") {
-        return normalizeAnthropicToolCalls(data) as T;
+        result = normalizeAnthropicToolCalls(data);
+      } else if (operation === "responses") {
+        result = normalizeResponsesToolCalls(data);
+      } else {
+        result = data as unknown as NormalizedChatCompletion;
       }
 
-      if (operation === "responses") {
-        return normalizeResponsesToolCalls(data) as T;
+      // Extract token usage from the raw response
+      const rawUsage = data.usage as Record<string, number> | undefined;
+      if (rawUsage) {
+        result.usage = {
+          promptTokens: rawUsage.prompt_tokens ?? rawUsage.input_tokens,
+          completionTokens: rawUsage.completion_tokens ?? rawUsage.output_tokens,
+          totalTokens: rawUsage.total_tokens ?? ((rawUsage.prompt_tokens ?? rawUsage.input_tokens ?? 0) + (rawUsage.completion_tokens ?? rawUsage.output_tokens ?? 0)),
+        };
       }
 
-      return data as T;
+      return result as T;
     } catch (error) {
       attempts.push({
         url: candidate,
