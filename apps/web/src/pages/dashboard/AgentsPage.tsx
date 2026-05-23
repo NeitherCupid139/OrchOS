@@ -252,7 +252,11 @@ export function AgentsPage() {
         className={cn(
           "relative hidden min-h-0 shrink-0 flex-col overflow-visible border-r bg-card transition-[width] duration-300 ease-out lg:flex",
           sidebarCollapsed ? "w-0 border-r-transparent" : "w-[var(--agents-sidebar-width)]",
-          isResizingSidebar ? "border-r-transparent" : "border-border",
+          sidebarCollapsed
+            ? ""
+            : isResizingSidebar
+              ? "border-r-transparent"
+              : "border-border",
         )}
         style={
           sidebarCollapsed
@@ -413,7 +417,7 @@ export function AgentsPage() {
           onPointerDown={handleResizeStart}
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
-            sidebarCollapsed && "hidden",
+            !showExpandedContent && "hidden",
             isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >

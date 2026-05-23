@@ -1,6 +1,6 @@
 import type { AppDb } from "../../db/types";
 import { problems } from "../../db/schema";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { generateId } from "../../utils";
 import { getRowsAffected } from "../../db/utils";
 
@@ -147,71 +147,78 @@ export const ProblemService = {
   },
 
   async countByStatus(db: AppDb): Promise<Record<ProblemStatus, number>> {
-    const all = await db.select().from(problems).all();
+    const rows = await db
+      .select({
+        status: problems.status,
+        count: sql<number>`count(*)`,
+      })
+      .from(problems)
+      .groupBy(problems.status)
+      .all();
+
     const counts: Record<string, number> = {
       open: 0,
       fixed: 0,
       ignored: 0,
       assigned: 0,
     };
-    for (const row of all) {
-      counts[row.status] = (counts[row.status] || 0) + 1;
+    for (const row of rows) {
+      if (row.status in counts) {
+        counts[row.status] = row.count;
+      }
     }
     return counts as Record<ProblemStatus, number>;
   },
 
   async summarize(db: AppDb): Promise<ProblemSummary> {
-    const all = await db.select().from(problems).all();
-    const summary: ProblemSummary = {
+    const inboxSources = ["github_pr", "github_issue", "mention", "agent_request"];
+
+    const rows = await db
+      .select({
+        open: sql<number>`sum(case when ${problems.status} = 'open' then 1 else 0 end)`,
+        fixed: sql<number>`sum(case when ${problems.status} = 'fixed' then 1 else 0 end)`,
+        ignored: sql<number>`sum(case when ${problems.status} = 'ignored' then 1 else 0 end)`,
+        assigned: sql<number>`sum(case when ${problems.status} = 'assigned' then 1 else 0 end)`,
+        inboxAll:
+          sql<number>`sum(case when ${problems.status} = 'open' and ${problems.source} in ('${sql.raw(inboxSources.join("','"))}') then 1 else 0 end)`,
+        inboxGithubPr:
+          sql<number>`sum(case when ${problems.status} = 'open' and ${problems.source} = 'github_pr' then 1 else 0 end)`,
+        inboxGithubIssue:
+          sql<number>`sum(case when ${problems.status} = 'open' and ${problems.source} = 'github_issue' then 1 else 0 end)`,
+        inboxMention:
+          sql<number>`sum(case when ${problems.status} = 'open' and ${problems.source} = 'mention' then 1 else 0 end)`,
+        inboxAgentRequest:
+          sql<number>`sum(case when ${problems.status} = 'open' and ${problems.source} = 'agent_request' then 1 else 0 end)`,
+        systemCritical:
+          sql<number>`sum(case when ${problems.status} = 'open' and (${problems.source} is null or ${problems.source} not in ('${sql.raw(inboxSources.join("','"))}')) and ${problems.priority} = 'critical' then 1 else 0 end)`,
+        systemWarning:
+          sql<number>`sum(case when ${problems.status} = 'open' and (${problems.source} is null or ${problems.source} not in ('${sql.raw(inboxSources.join("','"))}')) and ${problems.priority} = 'warning' then 1 else 0 end)`,
+        systemInfo:
+          sql<number>`sum(case when ${problems.status} = 'open' and (${problems.source} is null or ${problems.source} not in ('${sql.raw(inboxSources.join("','"))}')) and ${problems.priority} = 'info' then 1 else 0 end)`,
+      })
+      .from(problems)
+      .all();
+
+    const row = rows[0];
+    return {
       status: {
-        open: 0,
-        fixed: 0,
-        ignored: 0,
-        assigned: 0,
+        open: row?.open ?? 0,
+        fixed: row?.fixed ?? 0,
+        ignored: row?.ignored ?? 0,
+        assigned: row?.assigned ?? 0,
       },
       inbox: {
-        all: 0,
-        github_pr: 0,
-        github_issue: 0,
-        mention: 0,
-        agent_request: 0,
+        all: row?.inboxAll ?? 0,
+        github_pr: row?.inboxGithubPr ?? 0,
+        github_issue: row?.inboxGithubIssue ?? 0,
+        mention: row?.inboxMention ?? 0,
+        agent_request: row?.inboxAgentRequest ?? 0,
       },
       system: {
-        critical: 0,
-        warning: 0,
-        info: 0,
+        critical: row?.systemCritical ?? 0,
+        warning: row?.systemWarning ?? 0,
+        info: row?.systemInfo ?? 0,
       },
     };
-
-    for (const row of all) {
-      const status = row.status as ProblemStatus;
-      if (status in summary.status) {
-        summary.status[status] += 1;
-      }
-
-      const isOpen = status === "open";
-      const source = row.source ?? undefined;
-      const priority = row.priority as ProblemPriority;
-      const isInboxSource =
-        source === "github_pr" ||
-        source === "github_issue" ||
-        source === "mention" ||
-        source === "agent_request";
-
-      if (isOpen && isInboxSource) {
-        summary.inbox.all += 1;
-        summary.inbox[source] += 1;
-      }
-
-      if (
-        isOpen &&
-        !isInboxSource &&
-        (priority === "critical" || priority === "warning" || priority === "info")
-      ) {
-        summary.system[priority] += 1;
-      }
-    }
-
-    return summary;
   },
 };

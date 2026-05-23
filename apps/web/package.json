@@ -48,7 +48,7 @@
     "motion": "^12.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-grab": "^0.1.32",
+    "react-grab": "^0.1.37",
     "react-markdown": "^10.1.0",
     "react-nice-avatar": "^1.5.0",
     "react-resizable-panels": "^4.10.0",
