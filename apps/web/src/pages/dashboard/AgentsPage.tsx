@@ -477,6 +477,7 @@ export function AgentsPage() {
         }}
         title={editingAgentId ? edit_agent() : custom_configuration()}
         size="sm"
+        h="h-[480px]"
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
@@ -495,7 +496,7 @@ export function AgentsPage() {
               value={agentForm.name}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
               placeholder={custom_agent_name_placeholder()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
           <div className="grid gap-2 text-sm">
@@ -549,7 +550,7 @@ export function AgentsPage() {
                     value={agentForm.url}
                     onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
                     placeholder={custom_agent_url_placeholder()}
-                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                   />
                   <Tooltip>
                     <TooltipTrigger
@@ -578,7 +579,7 @@ export function AgentsPage() {
               value={agentForm.apiKey}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
               placeholder={api_key_placeholder()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
           <label className="grid gap-2 text-sm">

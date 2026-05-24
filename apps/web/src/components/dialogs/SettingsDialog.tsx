@@ -103,6 +103,7 @@ import {
   sound_ring_2,
   system_notifications,
   system_notifications_desc,
+  notification_permission_denied,
   use_mixed_script,
   use_mixed_script_desc,
   use_tls_imap,
@@ -119,6 +120,8 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { toast } from "@/components/ui/toast";
+import { ensureSystemNotificationAccess } from "@/lib/notifications";
 
 const defaultEventSounds: Record<string, string> = {
   email: "bell",
@@ -408,11 +411,27 @@ export function SettingsDialog({
 
   const handleNotificationToggle = async (key: "system" | "sound") => {
     if (!currentSettings) return;
+
+    const newValue = !currentSettings.notifications[key];
+
+    // When enabling system notifications, request browser permission first
+    if (key === "system" && newValue) {
+      const granted = await ensureSystemNotificationAccess();
+      if (!granted) {
+        toast.error(notification_permission_denied());
+        // Force re-render so AppleSwitch snaps back to OFF
+        // (its setChecked already moved the thumb ON, but currentSettings
+        //  wasn't updated, leaving it stuck in a limbo state)
+        onSettingsChange({ ...currentSettings });
+        return;
+      }
+    }
+
     const updated = {
       ...currentSettings,
       notifications: {
         ...currentSettings.notifications,
-        [key]: !currentSettings.notifications[key],
+        [key]: newValue,
       },
     };
     onSettingsChange(updated);
@@ -948,7 +967,7 @@ export function SettingsDialog({
                           }))
                         }
                         placeholder={email_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -959,7 +978,7 @@ export function SettingsDialog({
                           setEditMailForm((f) => ({ ...f, displayName: e.target.value }))
                         }
                         placeholder={display_name_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -970,7 +989,7 @@ export function SettingsDialog({
                           setEditMailForm((f) => ({ ...f, username: e.target.value }))
                         }
                         placeholder={username_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -983,7 +1002,7 @@ export function SettingsDialog({
                             setEditMailForm((f) => ({ ...f, password: e.target.value }))
                           }
                           placeholder={password_placeholder()}
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                         />
                         <button
                           type="button"
@@ -1005,7 +1024,7 @@ export function SettingsDialog({
                       <select
                         value={selectedEditProviderId}
                         onChange={(e) => applyProviderToEditForm(e.target.value)}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                       >
                         {EMAIL_PROVIDERS.map((provider) => (
                           <option key={provider.id} value={provider.id}>
@@ -1041,7 +1060,7 @@ export function SettingsDialog({
                               setEditMailForm((f) => ({ ...f, smtpHost: e.target.value }))
                             }
                             placeholder="smtp.gmail.com"
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                           />
                         </label>
                         <div className="grid grid-cols-2 gap-3">
@@ -1053,7 +1072,7 @@ export function SettingsDialog({
                                 setEditMailForm((f) => ({ ...f, smtpPort: e.target.value }))
                               }
                               placeholder="587"
-                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                             />
                           </label>
                           <label className="flex items-center gap-2 text-sm pt-5">
@@ -1084,7 +1103,7 @@ export function SettingsDialog({
                               setEditMailForm((f) => ({ ...f, imapHost: e.target.value }))
                             }
                             placeholder="imap.gmail.com"
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                           />
                         </label>
                         <div className="grid grid-cols-2 gap-3">
@@ -1096,7 +1115,7 @@ export function SettingsDialog({
                                 setEditMailForm((f) => ({ ...f, imapPort: e.target.value }))
                               }
                               placeholder="993"
-                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
                             />
                           </label>
                           <label className="flex items-center gap-2 text-sm pt-5">

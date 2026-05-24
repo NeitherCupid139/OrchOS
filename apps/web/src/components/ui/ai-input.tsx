@@ -341,7 +341,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                       ? `Message ${selectedRuntime.name}…`
                       : "Select a runtime to start"
                   }
-                  className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-xs outline-0 focus:border-primary/50"
+                  className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-xs outline-0 focus:outline-none focus:ring-1 focus:ring-ring/50"
                   rows={2}
                   onKeyDown={handleKeys}
                   spellCheck={false}

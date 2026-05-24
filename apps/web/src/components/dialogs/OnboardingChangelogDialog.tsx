@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { FramerCarousel, type CarouselItem } from "@/components/ui/framer-carousel";
+import { cn } from "@/lib/utils";
 import {
   dismiss,
   next,
@@ -132,8 +133,6 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
   const [index, setIndex] = useState(0);
   const isFirstSlide = index === 0;
   const isLastSlide = index === ONBOARDING_SECTIONS.length - 1;
-  const currentSection = ONBOARDING_SECTIONS[index];
-
   useEffect(() => {
     if (open) {
       setIndex(0);
@@ -168,25 +167,33 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
       className="max-w-4xl"
       bodyClassName="p-3 md:p-4"
     >
-      <div className="space-y-3">
+      <div className="flex h-full flex-col gap-3">
         <FramerCarousel
           items={ONBOARDING_SECTIONS}
           index={index}
           onIndexChange={setIndex}
           flush
         />
-        <div className="flex w-full flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-3">
-            <div className="min-w-0">
-              <div className="text-[15px] font-semibold text-foreground [text-wrap:balance]">
-                {currentSection.title}
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
+          <div className="grid min-w-0">
+            {ONBOARDING_SECTIONS.map((section, i) => (
+              <div
+                key={section.id}
+                className={cn(
+                  "col-span-full row-span-full",
+                  i !== index && "invisible",
+                )}
+              >
+                <div className="text-[15px] font-semibold text-foreground [text-wrap:balance]">
+                  {section.title}
+                </div>
+                <div className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty]">
+                  {section.desc}
+                </div>
               </div>
-              <div className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty]">
-                {currentSection.desc}
-              </div>
-            </div>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <Button
               size="sm"
               type="button"

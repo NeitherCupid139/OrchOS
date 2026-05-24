@@ -278,7 +278,7 @@ export function InboxDetail({ thread, messages, projects, onOpenGoal, onReply }:
                 value={replyBody}
                 onChange={(e) => setReplyBody(e.target.value)}
                 placeholder="Add clarification, ask a question, or redirect the work..."
-                className="mt-4 min-h-32 w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
+                className="mt-4 min-h-32 w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50"
               />
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

@@ -1404,7 +1404,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1412,7 +1412,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
         </div>
@@ -1501,7 +1501,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1509,7 +1509,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
             />
           </label>
         </div>
@@ -1619,7 +1619,7 @@ export function BookmarksPage() {
               value={createCategoryName}
               onChange={(event) => setCreateCategoryName(event.target.value)}
               placeholder={category_name()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

@@ -28,6 +28,7 @@ interface AppDialogProps {
   bodyClassName?: string;
   footerClassName?: string;
   hideCloseButton?: boolean;
+  h?: string;
 }
 
 export function AppDialog({
@@ -43,6 +44,7 @@ export function AppDialog({
   bodyClassName,
   footerClassName,
   hideCloseButton = false,
+  h,
 }: AppDialogProps) {
   const zIndexClass = nested ? "z-[60]" : "z-50";
 
@@ -58,7 +60,8 @@ export function AppDialog({
         <div className={cn("fixed inset-0 flex items-center justify-center p-4", zIndexClass)}>
           <DialogPrimitive.Popup
             className={cn(
-              "relative flex max-h-[min(90vh,720px)] w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl ring-1 ring-background/60 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+              "relative flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl ring-1 ring-background/60 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+              h ?? "max-h-[min(90vh,720px)]",
               dialogSizeClasses[size],
               className,
             )}

@@ -186,7 +186,7 @@ const AppleSwitch = (
 
       const deltaX = event.clientX - dragStartX.current;
 
-      if (Math.abs(deltaX) > 3) {
+      if (Math.abs(deltaX) > 10) {
         isDragging.current = true;
       }
 
@@ -215,8 +215,16 @@ const AppleSwitch = (
       if (!isDragging.current) return;
 
       isDragging.current = false;
-      suppressNextClick.current = true;
-      setChecked(targetX.get() >= thumbTravel / 2);
+
+      // Only suppress click if the drag actually crossed the toggle threshold
+      const newChecked = targetX.get() >= thumbTravel / 2;
+      if (newChecked !== currentChecked) {
+        suppressNextClick.current = true;
+        setChecked(newChecked);
+      } else {
+        // Dragged but came back to the same side — let click handler handle the toggle
+        targetX.set(currentChecked ? thumbTravel : 0);
+      }
     };
 
     const handlePointerCancel = (
@@ -250,8 +258,15 @@ const AppleSwitch = (
         activePointerId.current = null;
         grabTarget.set(0);
         if (!wasDragging) return;
-        suppressNextClick.current = true;
-        setChecked(targetX.get() >= thumbTravel / 2);
+
+        // Only suppress click if the drag actually crossed the toggle threshold
+        const newChecked = targetX.get() >= thumbTravel / 2;
+        if (newChecked !== currentChecked) {
+          suppressNextClick.current = true;
+          setChecked(newChecked);
+        } else {
+          targetX.set(currentChecked ? thumbTravel : 0);
+        }
       };
 
       window.addEventListener("pointerup", stopFromWindow);
@@ -285,7 +300,7 @@ const AppleSwitch = (
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full active:cursor-grabbing",
           "border border-input bg-transparent dark:bg-input/30",
-          "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "outline-none focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:ring-offset-0",
           "disabled:cursor-not-allowed disabled:opacity-45",
           className,
         )}

@@ -263,7 +263,7 @@ export function Sidebar({
                     value={orgSearch}
                     onChange={(e) => setOrgSearch(e.target.value)}
                     placeholder={space_launcher_search_placeholder()}
-                    className="h-8 border-border/60 bg-background/80 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-8 border-border/60 bg-background/80"
                   />
                 </div>
                 <DropdownMenuGroup>
@@ -1143,7 +1143,7 @@ function ProfileEditDialog({
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -1154,7 +1154,7 @@ function ProfileEditDialog({
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -1167,7 +1167,7 @@ function ProfileEditDialog({
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           disabled={!canEdit || saving}
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
                     </div>
