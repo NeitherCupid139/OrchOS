@@ -447,6 +447,7 @@ export interface BookmarkCategory {
   id: string;
   name: string;
   icon: string;
+  color?: string;
   bookmarks: BookmarkItem[];
 }
 

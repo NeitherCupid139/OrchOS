@@ -47,7 +47,7 @@ export function LocalDevicesView({
 
     return (
       <div className="flex min-h-0 flex-1 bg-background p-6">
-        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <section className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export function LocalDevicesView({
             </Button>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DetailCard label={endpoint()} value={agent.url} mono />
             <DetailCard label={model()} value={agent.model} mono />
             <DetailCard label={api_key()} value={maskApiKey(agent.apiKey)} mono />
@@ -89,7 +89,7 @@ export function LocalDevicesView({
 
     return (
       <div className="flex min-h-0 flex-1 bg-background p-6">
-        <section className="flex min-h-0 w-full max-w-3xl flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <section className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <HugeiconsIcon icon={ComputerIcon} className="size-5" />

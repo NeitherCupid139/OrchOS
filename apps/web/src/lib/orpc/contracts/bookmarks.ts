@@ -13,6 +13,7 @@ export const bookmarkCategorySchema = z.object({
   id: z.string(),
   name: z.string(),
   icon: z.string(),
+  color: z.string().optional(),
   bookmarks: z.array(bookmarkItemSchema),
 });
 
@@ -21,7 +22,7 @@ export const bookmarksContract = {
   replaceAll: oc
     .input(z.object({ categories: z.array(bookmarkCategorySchema) }))
     .output(z.array(bookmarkCategorySchema)),
-  createCategory: oc.input(z.object({ name: z.string(), icon: z.string().optional() })).output(z.array(bookmarkCategorySchema)),
+  createCategory: oc.input(z.object({ name: z.string(), icon: z.string().optional(), color: z.string().optional() })).output(z.array(bookmarkCategorySchema)),
   createItem: oc
     .input(
       z.object({
@@ -33,7 +34,7 @@ export const bookmarksContract = {
     )
     .output(z.array(bookmarkCategorySchema)),
   updateCategory: oc
-    .input(z.object({ id: z.string(), name: z.string().optional(), icon: z.string().optional() }))
+    .input(z.object({ id: z.string(), name: z.string().optional(), icon: z.string().optional(), color: z.string().optional() }))
     .output(z.array(bookmarkCategorySchema)),
   deleteCategory: oc.input(z.object({ id: z.string() })).output(z.array(bookmarkCategorySchema)),
   updateItem: oc

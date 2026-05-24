@@ -6,15 +6,33 @@ import {
   ArrowRight01Icon,
   Add01Icon,
   Bookmark01Icon,
+  Briefcase01Icon,
   Cancel01Icon,
+  ChartIcon,
+  CloudIcon,
   CodeIcon,
+  CogIcon,
+  CreditCardIcon,
+  CrownIcon,
+  DatabaseIcon,
   Delete02Icon,
+  EarthIcon,
   Edit02Icon,
   Folder01Icon,
+  GameIcon,
+  GiftIcon,
   GlobeIcon,
   Home01Icon,
+  Idea01Icon,
+  Image01Icon,
+  Key01Icon,
+  LaptopIcon,
   Link01Icon,
+  LockIcon,
+  MusicNote01Icon,
   PinIcon,
+  RocketIcon,
+  SchoolIcon,
   Search01Icon,
   StarIcon,
   Upload01Icon,
@@ -27,7 +45,7 @@ import { useDashboard } from "@/lib/dashboard-context";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
-import { RenameDialog } from "@/components/dialogs/RenameDialog";
+import { RenameDialog, type IconOption } from "@/components/dialogs/RenameDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
@@ -50,21 +68,37 @@ type BookmarkDraft = {
   icon?: string;
 };
 
+const categoryIconOptions: IconOption[] = [
+  { value: "folder", icon: Folder01Icon },
+  { value: "globe", icon: GlobeIcon },
+  { value: "code", icon: CodeIcon },
+  { value: "star", icon: StarIcon },
+  { value: "home", icon: Home01Icon },
+  { value: "link", icon: Link01Icon },
+  { value: "briefcase", icon: Briefcase01Icon },
+  { value: "chart", icon: ChartIcon },
+  { value: "cloud", icon: CloudIcon },
+  { value: "cog", icon: CogIcon },
+  { value: "credit-card", icon: CreditCardIcon },
+  { value: "crown", icon: CrownIcon },
+  { value: "database", icon: DatabaseIcon },
+  { value: "earth", icon: EarthIcon },
+  { value: "game", icon: GameIcon },
+  { value: "gift", icon: GiftIcon },
+  { value: "image", icon: Image01Icon },
+  { value: "idea", icon: Idea01Icon },
+  { value: "key", icon: Key01Icon },
+  { value: "laptop", icon: LaptopIcon },
+  { value: "lock", icon: LockIcon },
+  { value: "music", icon: MusicNote01Icon },
+  { value: "rocket", icon: RocketIcon },
+  { value: "school", icon: SchoolIcon },
+];
+
 function getBookmarkCategoryIcon(icon: string) {
-  switch (icon) {
-    case "globe":
-      return GlobeIcon;
-    case "code":
-      return CodeIcon;
-    case "star":
-      return StarIcon;
-    case "home":
-      return Home01Icon;
-    case "link":
-      return Link01Icon;
-    default:
-      return Folder01Icon;
-  }
+  const option = categoryIconOptions.find((o) => o.value === icon);
+  if (option) return option.icon;
+  return Folder01Icon;
 }
 
 function slugify(value: string) {
@@ -495,34 +529,29 @@ const BookmarkCard = memo(function BookmarkCard({
       onDragOver={(event) => event.preventDefault()}
       onDrop={() => onDropReorder(bookmark.id)}
       className={cn(
-        "group h-[108px] rounded-2xl bg-card p-5 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] [contain-intrinsic-size:108px] [content-visibility:auto]",
+        "group h-[108px] rounded-2xl bg-card p-4 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] [contain-intrinsic-size:108px] [content-visibility:auto]",
         !bookmark.pinned && "ring-1 ring-black/[0.06] hover:ring-black/[0.08] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]",
         bookmark.pinned && "border border-primary/30 bg-primary/[0.02]",
       )}
     >
-      <div className="relative flex items-start gap-3">
+      <div className="relative flex items-start gap-2">
         <a
           href={bookmark.url}
           target="_blank"
           rel="noreferrer"
-          className={cn(
-            "flex min-w-0 flex-1 items-start gap-3",
-            !bookmark.pinned && "group-hover:pr-[86px]",
-          )}
+          className="flex min-w-0 flex-1 items-start gap-2"
         >
           <Favicon url={bookmark.url} pinned={bookmark.pinned} icon={bookmark.icon} />
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-medium text-foreground">{bookmark.title}</h2>
-            <p className="mt-2 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
+            <h2 className={cn("line-clamp-2 break-all text-sm font-medium text-foreground", "group-hover:pr-[86px]")}>{bookmark.title}</h2>
+            <p className="mt-0.5 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
               {bookmark.url}
             </p>
           </div>
         </a>
         <div className={cn(
-          "flex items-center gap-1 transition-opacity",
-          bookmark.pinned
-            ? "shrink-0 opacity-100"
-            : "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
+          "flex items-center gap-0.5 transition-opacity",
+          "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
         )}>
           <Button
             type="button"
@@ -865,22 +894,11 @@ export function BookmarksPage() {
 
   const contentContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [columns, setColumns] = useState(3);
-
-  useEffect(() => {
-    const el = contentContainerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width;
-      setColumns(width >= 1000 ? 3 : width >= 600 ? 2 : 1);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [filteredBookmarks.length]);
+  const columns = 3;
 
   const rowCount = useMemo(
     () => Math.ceil(filteredBookmarks.length / columns),
-    [filteredBookmarks.length, columns],
+    [filteredBookmarks.length],
   );
 
   const virtualizer = useVirtualizer({
@@ -1044,7 +1062,7 @@ export function BookmarksPage() {
                             onClick={() => setSelectedCategoryId(category.id)}
                             className="flex min-w-0 flex-1 items-center gap-3 text-left"
                           >
-                            <HugeiconsIcon icon={CategoryIcon} className="size-3.5 shrink-0 text-muted-foreground" />
+                            <HugeiconsIcon icon={CategoryIcon} className="size-3.5 shrink-0" color={category.color} />
                             <span className="min-w-0 flex-1 truncate text-sm text-foreground">{category.name}</span>
                           </button>
                           <div className="relative ml-auto h-6 w-[76px] shrink-0">
@@ -1091,7 +1109,27 @@ export function BookmarksPage() {
                       );
                     })}
                   </div>
-                ) : null}
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-8 text-center">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted/60">
+                      <HugeiconsIcon icon={Folder01Icon} className="size-6 text-muted-foreground/60" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">{bookmarks_workspace()}</p>
+                      <p className="text-xs text-muted-foreground/60 px-3">{new_category_desc()}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateCategory}
+                      className="mt-1"
+                    >
+                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                      {new_category()}
+                    </Button>
+                  </div>
+                )}
             </div>
           </ScrollArea>
 
@@ -1150,7 +1188,7 @@ export function BookmarksPage() {
             ref={viewportRef}
             className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
           >
-            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-6">
+            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 p-6">
               {loading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <AsciiLoading label={loading_label()} />
@@ -1162,7 +1200,8 @@ export function BookmarksPage() {
                       <h1 className="flex items-center gap-2 truncate text-2xl font-semibold text-foreground">
                         <HugeiconsIcon
                           icon={getBookmarkCategoryIcon(selectedCategory.icon)}
-                          className="size-5 shrink-0 text-muted-foreground"
+                          className="size-5 shrink-0"
+                          color={selectedCategory.color}
                         />
                         <span className="truncate">{selectedCategory.name}</span>
                       </h1>
@@ -1210,7 +1249,7 @@ export function BookmarksPage() {
                             >
                               <div
                                 className="grid gap-4"
-                                style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+                                style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
                               >
                                 {rowBookmarks.map((bookmark) => (
                                   <BookmarkCard
@@ -1270,8 +1309,8 @@ export function BookmarksPage() {
                       <HugeiconsIcon key="b3" icon={Upload01Icon} className="size-6" />,
                     ]}
                     action={{
-                      label: import_from_file(),
-                      icon: <HugeiconsIcon icon={Upload01Icon} className="size-4" />,
+                      label: create_or_import(),
+                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
                       onClick: handleCreateCategory,
                     }}
                     className="w-full max-w-lg"
@@ -1290,14 +1329,17 @@ export function BookmarksPage() {
         title={edit_category()}
         initialValue={categories.find((category) => category.id === renameCategoryId)?.name ?? ""}
         placeholder={category_name()}
+        iconValue={categories.find((category) => category.id === renameCategoryId)?.icon}
+        availableIcons={categoryIconOptions}
+        colorValue={categories.find((category) => category.id === renameCategoryId)?.color}
         onClose={() => setRenameCategoryId(null)}
-        onSubmit={(name) => {
+        onSubmit={(name, icon, color) => {
           const category = categories.find((item) => item.id === renameCategoryId);
           if (!category) {
             return;
           }
 
-          void api.updateBookmarkCategory(category.id, { name }).then((saved) => {
+          void api.updateBookmarkCategory(category.id, { name, icon, color }).then((saved) => {
             setCategories(saved);
             setSelectedCategoryId((current) => current ?? saved[0]?.id ?? null);
             setRenameCategoryId(null);

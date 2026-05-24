@@ -47,6 +47,7 @@ import {
   creation_archived,
   creation_image_unsupported,
   creation_intro_desc,
+  creation_intro_search_desc,
   creation_intro_title,
   creation_placeholder,
   delete as delete_message,
@@ -1129,7 +1130,9 @@ function ChatArea({
         {allMessages.length === 0 && (
           <div className="mb-3 px-1">
             <p className="text-sm font-medium text-foreground/85">{creation_intro_title()}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{creation_intro_desc()}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {mode === "chat" ? creation_intro_desc() : creation_intro_search_desc()}
+            </p>
           </div>
         )}
         <BorderBeam

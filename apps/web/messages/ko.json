@@ -771,8 +771,9 @@
   "message_agent_placeholder": "{name}에게 보내기...",
   "agent": "에이전트",
   "none": "없음",
-  "creation_intro_title": "이제 만들어 봅시다",
+  "creation_intro_title": "시작해 봅시다",
   "creation_intro_desc": "목표를 설명해 주세요. 먼저 계획으로 나눈 뒤 실행과 검토까지 이어가겠습니다.",
+  "creation_intro_search_desc": "웹에서 답변과 기사를 검색해 보세요.",
   "creation_image_unsupported": "현재 모델은 이미지 입력을 지원하지 않습니다. 이미지를 제거한 뒤 다시 시도하세요.",
   "resize_creation_sidebar": "생성 사이드바 크기 조절",
   "mail_accounts": "메일 계정",
@@ -855,5 +856,14 @@
   "custom_provider": "사용자 정의 (수동 설정)",
   "custom_provider_desc": "SMTP/IMAP 서버 설정을 직접 입력하세요.",
   "email_provider_help": "이메일 제공업체를 선택하면 서버 설정이 자동으로 채워집니다. 사용자 정의를 선택하면 직접 입력할 수 있습니다.",
-  "connect_mail_account": "계정 연결"
+  "connect_mail_account": "계정 연결",
+  "board_filter_all": "모두",
+  "board_in_progress": "진행 중",
+  "board_planning": "계획 중",
+  "board_today": "오늘",
+  "ignored": "무시됨",
+  "in_progress": "진행 중",
+  "market": "마켓",
+  "mine": "내 것",
+  "open": "열림"
 }

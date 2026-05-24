@@ -215,7 +215,7 @@ export const MessageBubble = memo(function MessageBubble({
           {metadata.responseTime != null && <span className="opacity-50">{formatDuration(metadata.responseTime)}</span>}
         </div>
         <div className={cn(
-          "rounded-2xl px-3 py-2",
+          "rounded-2xl px-3 py-1.5",
           isUser
             ? "bg-primary text-primary-foreground [&_a]:text-primary-foreground/80 [&_a]:underline-offset-4 [&_code]:bg-primary-foreground/15"
             : "bg-muted/50",

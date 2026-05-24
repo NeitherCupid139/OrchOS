@@ -15,6 +15,7 @@ export type BookmarkCategoryRecord = {
   id: string;
   name: string;
   icon: string;
+  color?: string;
   bookmarks: BookmarkItem[];
 };
 
@@ -33,6 +34,7 @@ export abstract class BookmarkService {
       id: category.id,
       name: category.name,
       icon: category.icon,
+      color: category.color ?? undefined,
       bookmarks: bookmarkRows
         .flatMap((bookmark) => bookmark.categoryId === category.id ? [{
           id: bookmark.id,
@@ -59,6 +61,7 @@ export abstract class BookmarkService {
           id: category.id,
           name: category.name,
           icon: category.icon,
+          color: category.color ?? null,
           sortOrder: String(categoryIndex),
           createdAt: now,
           updatedAt: now,
@@ -98,19 +101,20 @@ export abstract class BookmarkService {
     return BookmarkService.list(db);
   }
 
-  static async createCategory(db: AppDb, name: string, icon = "folder") {
+  static async createCategory(db: AppDb, name: string, icon = "folder", color?: string) {
     const categories = await BookmarkService.list(db);
     const category: BookmarkCategoryRecord = {
       id: generateId("bookmark_category"),
       name,
       icon,
+      color,
       bookmarks: [],
     };
 
     return BookmarkService.replaceAll(db, [...categories, category]);
   }
 
-  static async updateCategory(db: AppDb, id: string, data: { name?: string; icon?: string }) {
+  static async updateCategory(db: AppDb, id: string, data: { name?: string; icon?: string; color?: string }) {
     const categories = await BookmarkService.list(db);
     return BookmarkService.replaceAll(
       db,
@@ -120,6 +124,7 @@ export abstract class BookmarkService {
               ...category,
               name: data.name ?? category.name,
               icon: data.icon ?? category.icon,
+              color: data.color !== undefined ? data.color : category.color,
             }
           : category,
       ),

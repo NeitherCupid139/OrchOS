@@ -771,8 +771,9 @@
   "message_agent_placeholder": "{name} に送信...",
   "agent": "エージェント",
   "none": "なし",
-  "creation_intro_title": "作成を始めましょう",
+  "creation_intro_title": "始めましょう",
   "creation_intro_desc": "目標を説明してください。まず計画に分解し、その後に実行とレビューを進めます。",
+  "creation_intro_search_desc": "ウェブを検索して回答や記事を見つけましょう。",
   "creation_image_unsupported": "現在のモデルは画像入力に対応していません。画像を削除してから再試行してください。",
   "resize_creation_sidebar": "作成サイドバーのサイズを変更",
   "mail_accounts": "メールアカウント",
@@ -855,5 +856,14 @@
   "custom_provider": "カスタム（手動設定）",
   "custom_provider_desc": "SMTP/IMAPサーバー設定を手動で入力します。",
   "email_provider_help": "メールプロバイダーを選択するとサーバー設定が自動入力されます。カスタムを選ぶと手動で入力できます。",
-  "connect_mail_account": "アカウントを接続"
+  "connect_mail_account": "アカウントを接続",
+  "board_filter_all": "すべて",
+  "board_in_progress": "進行中",
+  "board_planning": "計画中",
+  "board_today": "今日",
+  "ignored": "無視",
+  "in_progress": "進行中",
+  "market": "マーケット",
+  "mine": "自分の",
+  "open": "未処理"
 }

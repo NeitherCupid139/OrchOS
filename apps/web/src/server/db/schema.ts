@@ -289,6 +289,7 @@ export const bookmarkCategories = sqliteTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     icon: text("icon").notNull().default("folder"),
+    color: text("color"),
     sortOrder: text("sort_order").notNull().default("0"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),

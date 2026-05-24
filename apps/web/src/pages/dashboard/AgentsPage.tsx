@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, InformationCircleIcon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
 import { useUIStore } from "@/lib/store";
@@ -544,15 +544,31 @@ export function AgentsPage() {
                 </Select>
               </TabsContent>
               <TabsContent value="url">
-                <input
-                  value={agentForm.url}
-                  onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
-                  placeholder={custom_agent_url_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
-                <span className="mt-2 block text-[11px] text-muted-foreground/70">
-                  Point to an OpenAI-compatible API endpoint, e.g. <code className="text-[10px]">https://api.example.com/v1</code>
-                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={agentForm.url}
+                    onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
+                    placeholder={custom_agent_url_placeholder()}
+                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={InformationCircleIcon} className="size-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent side="top" className="max-w-64">
+                      Point to an OpenAI-compatible API endpoint, e.g. <code className="text-[10px] opacity-70">https://api.example.com/v1</code>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

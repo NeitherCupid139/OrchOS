@@ -235,6 +235,15 @@ html.theme-switching *::after {
   }
 }
 
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 @utility t-resize {
   transition:
     width  var(--resize-dur) var(--resize-ease),
@@ -243,5 +252,17 @@ html.theme-switching *::after {
 
   @media (prefers-reduced-motion: reduce) {
     transition: none !important;
+  }
+}
+
+@keyframes icon-swap-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.75);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
   }
 }

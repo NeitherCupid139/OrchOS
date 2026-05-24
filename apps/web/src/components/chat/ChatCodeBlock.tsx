@@ -74,6 +74,7 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
   /* eslint-disable react--no-danger */
   const [highlight, dispatch] = useReducer(highlightReducer, { html: "", loading: true });
   const [copied, setCopied] = useState(false);
+  const [iconKey, setIconKey] = useState(0);
   const resolvedTheme = useResolvedTheme();
 
   useEffect(() => {
@@ -108,7 +109,11 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    setIconKey((k) => k + 1);
+    window.setTimeout(() => {
+      setCopied(false);
+      setIconKey((k) => k + 1);
+    }, 1200);
   }, [code]);
 
   return (
@@ -126,7 +131,13 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
                 className="rounded p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors"
                 onClick={() => void handleCopy()}
               >
-                {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+                <span
+                  key={iconKey}
+                  className="inline-flex"
+                  style={{ animation: "icon-swap-spin 0.35s ease-in-out" }}
+                >
+                  {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+                </span>
               </button>
             )}
           />

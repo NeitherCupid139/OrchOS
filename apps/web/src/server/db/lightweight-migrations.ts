@@ -460,6 +460,10 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
     await exec("ALTER TABLE bookmark_categories ADD COLUMN icon TEXT NOT NULL DEFAULT 'folder'");
   }
 
+  if (await hasTable("bookmark_categories") && !(await hasColumn("bookmark_categories", "color"))) {
+    await exec("ALTER TABLE bookmark_categories ADD COLUMN color TEXT");
+  }
+
   if (await hasTable("bookmarks") && !(await hasColumn("bookmarks", "pinned"))) {
     await exec("ALTER TABLE bookmarks ADD COLUMN pinned TEXT NOT NULL DEFAULT 'false'");
   }

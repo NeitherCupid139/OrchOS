@@ -765,8 +765,9 @@
   "message_agent_placeholder": "傳送給 {name}...",
   "agent": "代理",
   "none": "無",
-  "creation_intro_title": "開始創作吧",
+  "creation_intro_title": "讓我們開始吧",
   "creation_intro_desc": "描述你的目標，我會先拆解計畫，再推進執行與審查。",
+  "creation_intro_search_desc": "搜尋網路，獲取答案與文章。",
   "creation_image_unsupported": "目前模型不支援圖片輸入，請移除圖片後再試。",
   "resize_creation_sidebar": "調整創作側邊欄大小",
   "mail_accounts": "郵件帳戶",
@@ -970,5 +971,14 @@
   "custom_provider": "自訂（手動設定）",
   "custom_provider_desc": "手動輸入 SMTP/IMAP 伺服器設定。",
   "email_provider_help": "選擇您的信箱服務商以自動填入伺服器設定，或選擇自訂手動輸入。",
-  "connect_mail_account": "連接帳號"
+  "connect_mail_account": "連接帳號",
+  "board_filter_all": "全部",
+  "board_in_progress": "進行中",
+  "board_planning": "規劃中",
+  "board_today": "今天",
+  "ignored": "已忽略",
+  "in_progress": "進行中",
+  "market": "市集",
+  "mine": "我的",
+  "open": "開啟"
 }
