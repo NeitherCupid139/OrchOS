@@ -6,7 +6,6 @@ import { formatDuration } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowUp01Icon,
-  Cancel01Icon,
   Robot02Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
@@ -282,13 +281,16 @@ export function FeaturesBento() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="shrink-0 text-muted-foreground/60 hover:text-foreground"
               >
-                <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
-              </button>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </Button>
             </div>
 
             <div className="flex h-[520px] flex-col">

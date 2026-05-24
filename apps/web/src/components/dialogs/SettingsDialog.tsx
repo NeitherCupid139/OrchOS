@@ -614,7 +614,7 @@ export function SettingsDialog({
                     }
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20",
                     activeTab === tab.id
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
@@ -638,8 +638,10 @@ export function SettingsDialog({
             <h2 className="text-sm font-semibold text-foreground">
               {tabDefs.find((t) => t.id === activeTab)?.labelKey()}
             </h2>
-            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={close()}>
-              <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={close()} className="shrink-0 text-muted-foreground/60 hover:text-foreground">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
             </Button>
           </div>
 
@@ -782,7 +784,7 @@ export function SettingsDialog({
                                   <div
                                     key={sound.id}
                                     className={cn(
-                                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs",
+                                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20",
                                       sound.id === currentSoundId
                                         ? "bg-accent text-accent-foreground"
                                         : "hover:bg-accent/50 cursor-pointer",
@@ -803,7 +805,7 @@ export function SettingsDialog({
                                   >
                                     <button
                                       onClick={() => playSound(sound.id)}
-                                      className="play-btn rounded p-0.5 hover:bg-muted transition-colors"
+                                      className="play-btn rounded p-0.5 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20"
                                       type="button"
                                     >
                                       <HugeiconsIcon icon={VolumeHighIcon} className="size-3.5" />
@@ -967,7 +969,7 @@ export function SettingsDialog({
                           }))
                         }
                         placeholder={email_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -978,7 +980,7 @@ export function SettingsDialog({
                           setEditMailForm((f) => ({ ...f, displayName: e.target.value }))
                         }
                         placeholder={display_name_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -989,7 +991,7 @@ export function SettingsDialog({
                           setEditMailForm((f) => ({ ...f, username: e.target.value }))
                         }
                         placeholder={username_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
@@ -1002,7 +1004,7 @@ export function SettingsDialog({
                             setEditMailForm((f) => ({ ...f, password: e.target.value }))
                           }
                           placeholder={password_placeholder()}
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                         />
                         <button
                           type="button"
@@ -1024,7 +1026,7 @@ export function SettingsDialog({
                       <select
                         value={selectedEditProviderId}
                         onChange={(e) => applyProviderToEditForm(e.target.value)}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                       >
                         {EMAIL_PROVIDERS.map((provider) => (
                           <option key={provider.id} value={provider.id}>
@@ -1060,7 +1062,7 @@ export function SettingsDialog({
                               setEditMailForm((f) => ({ ...f, smtpHost: e.target.value }))
                             }
                             placeholder="smtp.gmail.com"
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                           />
                         </label>
                         <div className="grid grid-cols-2 gap-3">
@@ -1072,7 +1074,7 @@ export function SettingsDialog({
                                 setEditMailForm((f) => ({ ...f, smtpPort: e.target.value }))
                               }
                               placeholder="587"
-                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                             />
                           </label>
                           <label className="flex items-center gap-2 text-sm pt-5">
@@ -1103,7 +1105,7 @@ export function SettingsDialog({
                               setEditMailForm((f) => ({ ...f, imapHost: e.target.value }))
                             }
                             placeholder="imap.gmail.com"
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                           />
                         </label>
                         <div className="grid grid-cols-2 gap-3">
@@ -1115,7 +1117,7 @@ export function SettingsDialog({
                                 setEditMailForm((f) => ({ ...f, imapPort: e.target.value }))
                               }
                               placeholder="993"
-                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+                              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
                             />
                           </label>
                           <label className="flex items-center gap-2 text-sm pt-5">

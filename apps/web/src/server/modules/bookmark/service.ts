@@ -222,6 +222,33 @@ export abstract class BookmarkService {
     );
   }
 
+  static async cacheFavicon(db: AppDb, bookmarkId: string, categoryId: string, url: string): Promise<BookmarkCategoryRecord[]> {
+    let domain: string | null = null;
+    try {
+      domain = new URL(url).hostname;
+    } catch {}
+
+    if (!domain) {
+      return BookmarkService.list(db);
+    }
+
+    try {
+      const response = await fetch(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+      if (!response.ok) {
+        return BookmarkService.list(db);
+      }
+
+      const blob = await response.blob();
+      const buffer = await blob.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const dataUrl = `data:${blob.type || "image/x-icon"};base64,${base64}`;
+
+      return BookmarkService.updateBookmark(db, categoryId, bookmarkId, { icon: dataUrl });
+    } catch {
+      return BookmarkService.list(db);
+    }
+  }
+
   static async deleteBookmark(db: AppDb, categoryId: string, bookmarkId: string) {
     const categories = await BookmarkService.list(db);
     return BookmarkService.replaceAll(

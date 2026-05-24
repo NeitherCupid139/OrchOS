@@ -174,8 +174,8 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
           onIndexChange={setIndex}
           flush
         />
-        <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
-          <div className="grid min-w-0">
+        <div className="flex min-w-0 flex-1 flex-wrap items-end justify-between gap-4">
+          <div className="grid min-w-0 flex-1">
             {ONBOARDING_SECTIONS.map((section, i) => (
               <div
                 key={section.id}
@@ -193,7 +193,7 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               type="button"

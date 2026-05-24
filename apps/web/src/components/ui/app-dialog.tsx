@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+
 import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
@@ -78,8 +77,10 @@ export function AppDialog({
                 ) : null}
               </div>
               {!hideCloseButton ? (
-                <DialogPrimitive.Close render={<Button variant="ghost" size="icon-sm" />}>
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+                <DialogPrimitive.Close render={<Button variant="ghost" size="icon-sm" className="shrink-0 text-muted-foreground/60 hover:text-foreground" />}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
                 </DialogPrimitive.Close>
               ) : null}
             </div>

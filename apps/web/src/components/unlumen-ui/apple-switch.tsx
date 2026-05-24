@@ -300,7 +300,7 @@ const AppleSwitch = (
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full active:cursor-grabbing",
           "border border-input bg-transparent dark:bg-input/30",
-          "outline-none focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:ring-offset-0",
+          "outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:ring-offset-0",
           "disabled:cursor-not-allowed disabled:opacity-45",
           className,
         )}

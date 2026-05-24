@@ -11,7 +11,6 @@ import {
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Cancel01Icon,
   Server,
   CloudIcon,
   Robot02Icon,
@@ -278,13 +277,16 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                     {modelDisplay}
                   </span>
                 )}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={triggerClose}
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="shrink-0 text-muted-foreground/60 hover:text-foreground"
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
-                </button>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </Button>
               </div>
             </div>
 
@@ -341,7 +343,7 @@ function InputForm({ runtimes }: { runtimes: RuntimeProfile[] }) {
                       ? `Message ${selectedRuntime.name}…`
                       : "Select a runtime to start"
                   }
-                  className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-xs outline-0 focus:outline-none focus:ring-1 focus:ring-ring/50"
+                  className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-xs outline-0 focus:outline-none focus:ring-[0.5px] focus:ring-ring/20"
                   rows={2}
                   onKeyDown={handleKeys}
                   spellCheck={false}

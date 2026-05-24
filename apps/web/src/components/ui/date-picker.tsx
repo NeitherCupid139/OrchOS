@@ -132,7 +132,7 @@ export function DatePicker({
         render={
           <div
             className={cn(
-              "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-background/80 px-3 py-2 text-sm transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+              "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-background/80 px-3 py-2 text-sm transition-colors focus-within:outline-none focus-within:ring-[0.5px] focus-within:ring-ring/20 focus-within:ring-offset-2",
               className,
             )}
           >

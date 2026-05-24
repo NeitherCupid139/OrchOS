@@ -61,4 +61,13 @@ export const bookmarksContract = {
       }),
     )
     .output(z.array(bookmarkCategorySchema)),
+  cacheFavicon: oc
+    .input(
+      z.object({
+        bookmarkId: z.string(),
+        categoryId: z.string(),
+        url: z.string(),
+      }),
+    )
+    .output(z.array(bookmarkCategorySchema)),
 };

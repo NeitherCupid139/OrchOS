@@ -98,7 +98,7 @@ export function InboxList({
         <ScrollAreaPrimitive.Viewport
           ref={viewportRef}
           data-slot="scroll-area-viewport"
-          className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
+          className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:outline-1"
         >
           {threads.length > 0 ? (
             <div

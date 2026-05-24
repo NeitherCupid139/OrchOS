@@ -480,6 +480,17 @@ export const api = {
       targetCategoryId,
     })) as BookmarkCategory[];
   },
+  cacheBookmarkFavicon: async (
+    bookmarkId: string,
+    categoryId: string,
+    url: string,
+  ): Promise<BookmarkCategory[]> => {
+    return (await orpc.bookmarks.cacheFavicon({
+      bookmarkId,
+      categoryId,
+      url,
+    })) as BookmarkCategory[];
+  },
   listCustomAgents: async (): Promise<CustomAgent[]> => {
     return (await orpc.customAgents.list({})) as CustomAgent[];
   },

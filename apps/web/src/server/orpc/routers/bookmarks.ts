@@ -48,4 +48,12 @@ export const bookmarksRouter = {
       input.targetCategoryId,
     );
   }),
+  cacheFavicon: os.bookmarks.cacheFavicon.handler(async ({ input }) => {
+    return BookmarkService.cacheFavicon(
+      await getLocalDb(),
+      input.bookmarkId,
+      input.categoryId,
+      input.url,
+    );
+  }),
 };

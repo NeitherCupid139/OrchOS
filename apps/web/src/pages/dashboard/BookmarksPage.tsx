@@ -336,18 +336,55 @@ function parseBookmarkCsv(text: string) {
   return Array.from(grouped.entries()).map(([name, bookmarks]) => normalizeCategory(name, bookmarks, used));
 }
 
-function Favicon({ url, pinned, icon }: { url: string; pinned: boolean; icon?: string }) {
+const FAVICON_CACHE_KEY = "favicon_cache_v1";
+
+function getLocalFavicon(domain: string): string | null {
+  try {
+    const cache = JSON.parse(localStorage.getItem(FAVICON_CACHE_KEY) || "{}");
+    return typeof cache[domain] === "string" ? cache[domain] : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalFavicon(domain: string, dataUrl: string) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(FAVICON_CACHE_KEY) || "{}");
+    cache[domain] = dataUrl;
+    localStorage.setItem(FAVICON_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage might be full or unavailable — silently ignore
+  }
+}
+
+function Favicon({ url, pinned, icon, bookmarkId, categoryId }: { url: string; pinned: boolean; icon?: string; bookmarkId?: string; categoryId?: string }) {
   const failedRef = useRef(false);
   const [visible, setVisible] = useState(false);
+  const [src, setSrc] = useState<string | null>(() => {
+    // Initialize: localStorage > DB icon > null
+    if (icon) return icon;
+    let domain: string | null = null;
+    try { domain = new URL(url).hostname; } catch {}
+    return domain ? getLocalFavicon(domain) : null;
+  });
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
   try { domain = new URL(url).hostname; } catch {}
 
-  if (icon) {
+  // Sync DB icon to state when the prop changes
+  useEffect(() => {
+    if (icon) {
+      setSrc(icon);
+      if (domain) setLocalFavicon(domain, icon);
+    }
+  }, [icon, domain]);
+
+  // If we have a cached or DB icon, render it directly
+  if (src) {
     return (
       <div className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-accent">
         <img
-          src={icon}
+          src={src}
           alt=""
           className="size-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
         />
@@ -359,6 +396,24 @@ function Favicon({ url, pinned, icon }: { url: string; pinned: boolean; icon?: s
       </div>
     );
   }
+
+  const handleImageLoad = useCallback(() => {
+    if (!bookmarkId || !categoryId || domain === null) return;
+    void (async () => {
+      try {
+        const result = await api.cacheBookmarkFavicon(bookmarkId, categoryId, url);
+        if (!domain) return;
+        const category = result.find((c) => c.id === categoryId);
+        const updated = category?.bookmarks.find((b) => b.id === bookmarkId);
+        if (updated?.icon) {
+          setLocalFavicon(domain, updated.icon);
+          setSrc(updated.icon); // triggers re-render with cached icon
+        }
+      } catch {
+        // Silently fail — DuckDuckGo icon still works
+      }
+    })();
+  }, [bookmarkId, categoryId, url, domain]);
 
   useEffect(() => {
     const el = ref.current;
@@ -399,6 +454,7 @@ function Favicon({ url, pinned, icon }: { url: string; pinned: boolean; icon?: s
           src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
           alt=""
           className="size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+          onLoad={handleImageLoad}
           onError={() => {
             failedRef.current = true;
             setVisible(false);
@@ -541,16 +597,16 @@ const BookmarkCard = memo(function BookmarkCard({
           rel="noreferrer"
           className="flex min-w-0 flex-1 items-start gap-2"
         >
-          <Favicon url={bookmark.url} pinned={bookmark.pinned} icon={bookmark.icon} />
+          <Favicon url={bookmark.url} pinned={bookmark.pinned} icon={bookmark.icon} bookmarkId={bookmark.id} categoryId={categoryId} />
           <div className="min-w-0 flex-1">
-            <h2 className={cn("line-clamp-2 break-all text-sm font-medium text-foreground", "group-hover:pr-[86px]")}>{bookmark.title}</h2>
+            <h2 className="line-clamp-2 break-all text-sm font-medium text-foreground">{bookmark.title}</h2>
             <p className="mt-0.5 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
               {bookmark.url}
             </p>
           </div>
         </a>
         <div className={cn(
-          "flex items-center gap-0.5 transition-opacity",
+          "flex items-center gap-0.5 transition-opacity duration-200 ease-out",
           "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
         )}>
           <Button
@@ -1186,7 +1242,7 @@ export function BookmarksPage() {
         <ScrollAreaPrimitive.Root className="relative h-full">
           <ScrollAreaPrimitive.Viewport
             ref={viewportRef}
-            className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
+            className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:outline-1"
           >
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 p-6">
               {loading ? (
@@ -1404,7 +1460,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1412,7 +1468,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
             />
           </label>
         </div>
@@ -1501,7 +1557,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1509,7 +1565,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
             />
           </label>
         </div>
@@ -1619,7 +1675,7 @@ export function BookmarksPage() {
               value={createCategoryName}
               onChange={(event) => setCreateCategoryName(event.target.value)}
               placeholder={category_name()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

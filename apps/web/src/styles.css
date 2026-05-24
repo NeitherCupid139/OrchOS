@@ -266,3 +266,20 @@ html.theme-switching *::after {
     transform: rotate(360deg) scale(1);
   }
 }
+
+/*
+ * Global focus ring fallback for interactive elements that don't have their own
+ * focus styling (raw <button>, [role="button"], etc.). Elements with component-level
+ * focus:ring-* classes already have higher specificity and won't be affected.
+ */
+@layer base {
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):focus,
+  textarea:focus,
+  select:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 0.5px var(--ring);
+  }
+}

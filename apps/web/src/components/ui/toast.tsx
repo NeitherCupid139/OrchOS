@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Button } from "@/components/ui/button-1";
+import { Button as BaseButton } from "@/components/ui/button";
 import { dismiss } from "@/paraglide/messages";
 import {
   CheckCircleIcon,
   XCircleIcon,
   AlertTriangleIcon,
   InfoIcon,
-  XIcon,
   Undo2Icon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -227,20 +227,17 @@ const ToastContainer = () => {
                 <p className="flex-1 text-sm leading-snug text-foreground min-w-0 break-words pt-px">
                   {toast.text}
                 </p>
-                <button
-                  type="button"
+                <BaseButton
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => toastStore.remove(toast.id)}
-                  className={cn(
-                    "relative shrink-0 -mr-1.5 -mt-1.5 p-1.5 rounded-lg",
-                    "text-muted-foreground/70 hover:text-foreground hover:bg-muted",
-                    "transition-colors duration-150",
-                    // Minimum 40×40 hit area via pseudo-element
-                    "after:absolute after:inset-0",
-                  )}
+                  className="shrink-0 -mr-1.5 -mt-1.5 text-muted-foreground/60 hover:text-foreground after:absolute after:inset-0"
                   aria-label="Close"
                 >
-                  <XIcon className="size-4" />
-                </button>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </BaseButton>
               </div>
 
               {/* Action buttons row */}

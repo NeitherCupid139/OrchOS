@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/info-card";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  Cancel01Icon,
   DashboardCircleIcon,
   CommandIcon,
   Key01Icon,
@@ -1112,13 +1111,16 @@ function ProfileEditDialog({
                     {profile_basic_info_desc()}
                   </DialogPrimitive.Description>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => onOpenChange(false)}
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="shrink-0 text-muted-foreground/60 hover:text-foreground"
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
-                </button>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </Button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6">
@@ -1143,7 +1145,7 @@ function ProfileEditDialog({
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -1154,7 +1156,7 @@ function ProfileEditDialog({
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -1167,7 +1169,7 @@ function ProfileEditDialog({
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           disabled={!canEdit || saving}
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
                     </div>
