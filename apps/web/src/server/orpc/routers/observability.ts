@@ -158,7 +158,7 @@ export const observabilityRouter = {
         return {
           conversationId: msg.conversationId,
           conversationTitle: convo?.title ?? undefined,
-          agent: convo?.agentId ?? convo?.runtimeId ?? undefined,
+          agent: convo?.runtimeId ?? undefined,
           timestamp: msg.createdAt,
           tokens: msg.tokens ? Number(msg.tokens) : undefined,
           toolCalls: toolEntries.length,

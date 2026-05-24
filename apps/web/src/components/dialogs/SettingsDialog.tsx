@@ -104,6 +104,10 @@ import {
   system_notifications,
   system_notifications_desc,
   notification_permission_denied,
+  notification_test_send,
+  notification_test_send_desc,
+  notification_test_sent,
+  notification_test_failed,
   use_mixed_script,
   use_mixed_script_desc,
   use_tls_imap,
@@ -111,8 +115,6 @@ import {
   username,
   username_placeholder,
   email_provider,
-  custom_provider,
-  custom_provider_desc,
 } from "@/paraglide/messages";
 import type { ControlSettings, NotificationEvent, SoundId } from "@/lib/types";
 import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
@@ -121,7 +123,7 @@ import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "@/components/ui/toast";
-import { ensureSystemNotificationAccess } from "@/lib/notifications";
+import { ensureSystemNotificationAccess, sendTestNotification, canUseNotifications } from "@/lib/notifications";
 
 const defaultEventSounds: Record<string, string> = {
   email: "bell",
@@ -580,7 +582,11 @@ export function SettingsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="flex h-[600px] w-full max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         {/* Left: Tabs */}
         <div className="flex w-48 shrink-0 flex-col border-r border-border bg-muted/30">
@@ -743,6 +749,29 @@ export function SettingsDialog({
                     size="sm"
                     aria-label={system_notifications()}
                   />
+                </div>
+                {/* Test Notification */}
+                <div className="flex items-center justify-between">
+                  <div className="max-w-[280px]">
+                    <span className="text-sm font-medium text-foreground">{notification_test_send()}</span>
+                    <p className="text-xs text-muted-foreground">{notification_test_send_desc()}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!canUseNotifications()}
+                    onClick={() => {
+                      const result = sendTestNotification();
+                      if (result) {
+                        toast.success(notification_test_sent());
+                      } else {
+                        toast.error(notification_test_failed());
+                      }
+                    }}
+                  >
+                    {notification_test_send()}
+                  </Button>
                 </div>
                 {/* Per-Event Sound Config */}
                 <div className="space-y-2">
@@ -1023,26 +1052,21 @@ export function SettingsDialog({
                     {/* Provider selector */}
                     <div className="border-t border-border pt-4">
                       <p className="text-xs font-medium text-muted-foreground mb-3">{email_provider()}</p>
-                      <select
-                        value={selectedEditProviderId}
-                        onChange={(e) => applyProviderToEditForm(e.target.value)}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
-                      >
-                        {EMAIL_PROVIDERS.map((provider) => (
-                          <option key={provider.id} value={provider.id}>
-                            {provider.name}
-                            {provider.description ? ` — ${provider.description}` : ""}
-                          </option>
-                        ))}
-                        <option value={CUSTOM_PROVIDER_ID}>
-                          {custom_provider()}
-                        </option>
-                      </select>
-                      {selectedEditProviderId === CUSTOM_PROVIDER_ID ? (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {custom_provider_desc()}
-                        </p>
-                      ) : selectedEditProviderId && getEmailProvider(selectedEditProviderId)?.helpText ? (
+                      <Select value={selectedEditProviderId} onValueChange={applyProviderToEditForm}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={email_provider()} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {EMAIL_PROVIDERS.map((provider) => (
+                              <SelectItem key={provider.id} value={provider.id}>
+                                {provider.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      {selectedEditProviderId && getEmailProvider(selectedEditProviderId)?.helpText ? (
                         <p className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2 text-xs leading-5 text-muted-foreground">
                           {getEmailProvider(selectedEditProviderId)!.helpText}
                         </p>

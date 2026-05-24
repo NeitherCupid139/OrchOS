@@ -1,5 +1,5 @@
 import type { AppDb } from "../../db/types";
-import { problems, activities, goals } from "../../db/schema";
+import { problems } from "../../db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { generateId } from "../../utils";
 
@@ -173,7 +173,6 @@ export const InboxService = {
       summary?: string;
       status?: InboxThreadStatus;
       priority?: InboxPriority;
-      primaryGoalId?: string;
       archived?: boolean;
     },
   ): Promise<InboxThread | null> {
@@ -196,63 +195,12 @@ export const InboxService = {
       updates.status = statusMap[data.status] ?? "open";
     }
 
-    if (data.primaryGoalId !== undefined) updates.goalId = data.primaryGoalId;
-
     await db.update(problems).set(updates).where(eq(problems.id, id)).run();
     return InboxService.get(db, id);
   },
 
-  async listMessages(db: AppDb, threadId: string): Promise<InboxMessage[]> {
-    const problem = await db
-      .select()
-      .from(problems)
-      .where(eq(problems.id, threadId))
-      .get();
-
-    if (!problem?.goalId) return [];
-
-    const [goal, activityRows] = await Promise.all([
-      db
-        .select()
-        .from(goals)
-        .where(eq(goals.id, problem.goalId!))
-        .get(),
-      db
-        .select()
-        .from(activities)
-        .where(eq(activities.goalId, problem.goalId!))
-        .orderBy(desc(activities.timestamp))
-        .all(),
-    ]);
-
-    const messages: InboxMessage[] = activityRows.map((a) => ({
-      id: a.id,
-      threadId,
-      messageType: "status_update" as InboxMessageType,
-      senderType: "agent" as const,
-      senderId: a.agent,
-      senderName: a.agent,
-      body: a.detail ?? a.action,
-      to: [],
-      cc: [],
-      createdAt: a.timestamp,
-    }));
-
-    if (goal && messages.length === 0) {
-      messages.push({
-        id: `goal-${goal.id}`,
-        threadId,
-        messageType: "request" as InboxMessageType,
-        senderType: "user" as const,
-        senderName: "User",
-        body: goal.description ?? goal.title,
-        to: [],
-        cc: [],
-        createdAt: goal.createdAt,
-      });
-    }
-
-    return messages;
+  async listMessages(_db: AppDb, _threadId: string): Promise<InboxMessage[]> {
+    return [];
   },
 
   async addMessage(
@@ -267,8 +215,6 @@ export const InboxService = {
       body: string;
       to?: string[];
       cc?: string[];
-      goalId?: string;
-      stateId?: string;
       problemId?: string;
       metadata?: Record<string, unknown>;
     },

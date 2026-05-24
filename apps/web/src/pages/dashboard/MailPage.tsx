@@ -25,6 +25,7 @@ import { InboxList } from "@/components/panels/InboxList";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -37,12 +38,11 @@ import {
 import { matchesMailFolder } from "@/lib/mail";
 import {
   EMAIL_PROVIDERS,
-  CUSTOM_PROVIDER_ID,
   getEmailProvider,
 } from "@/lib/email-providers";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useUIStore } from "@/lib/store";
-import { cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, custom_provider, custom_provider_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
+import { cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
 
 type MailIntegrationAccount = {
   id: string;
@@ -746,29 +746,24 @@ export function MailPage() {
           {/* Provider selector */}
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-foreground">{email_provider()}</span>
-            <select
-              value={selectedProviderId}
-              onChange={(e) => handleProviderChange(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
-            >
-              {EMAIL_PROVIDERS.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                  {provider.description ? ` — ${provider.description}` : ""}
-                </option>
-              ))}
-              <option value={CUSTOM_PROVIDER_ID}>
-                {custom_provider()}
-              </option>
-            </select>
+            <Select value={selectedProviderId} onValueChange={handleProviderChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={email_provider()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {EMAIL_PROVIDERS.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </label>
 
           {/* Help text */}
-          {selectedProviderId === CUSTOM_PROVIDER_ID ? (
-            <p className="text-xs leading-5 text-muted-foreground">
-              {custom_provider_desc()}
-            </p>
-          ) : selectedProviderId && getEmailProvider(selectedProviderId)?.helpText ? (
+          {selectedProviderId && getEmailProvider(selectedProviderId)?.helpText ? (
             <p className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
               {getEmailProvider(selectedProviderId)!.helpText}
             </p>

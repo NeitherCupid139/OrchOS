@@ -10,7 +10,6 @@ export const problemSchema = z.object({
   priority: problemPrioritySchema,
   source: z.string().optional(),
   context: z.string().optional(),
-  suggestedGoal: z.string().optional(),
   status: problemStatusSchema,
   actions: z.array(z.string()),
   createdAt: z.string(),
@@ -68,7 +67,6 @@ export const problemsContract = {
         priority: problemPrioritySchema.optional(),
         source: z.string().optional(),
         context: z.string().optional(),
-        goalId: z.string().optional(),
         actions: z.array(z.string()).optional(),
       }),
     )

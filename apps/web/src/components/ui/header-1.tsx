@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import LocaleToggle from "@/components/layout/LocaleToggle";
-import { nav_about, nav_changelog, nav_home, toggle_menu } from "@/paraglide/messages";
+import { nav_about, nav_changelog, nav_home, nav_pricing, toggle_menu } from "@/paraglide/messages";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
 
@@ -41,6 +41,10 @@ export function Header() {
     {
       label: nav_home(),
       to: "/",
+    },
+    {
+      label: nav_pricing(),
+      to: "/pricing",
     },
     {
       label: nav_changelog(),

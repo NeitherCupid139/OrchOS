@@ -58,7 +58,6 @@ export const conversationsContract = {
       z.object({
         title: z.string().optional(),
         projectId: z.string().optional(),
-        agentId: z.string().optional(),
         runtimeId: z.string().optional(),
         archived: z.boolean().optional(),
         deleted: z.boolean().optional(),
@@ -71,7 +70,6 @@ export const conversationsContract = {
         id: z.string(),
         title: z.string().optional(),
         projectId: z.string().optional(),
-        agentId: z.string().optional(),
         runtimeId: z.string().optional(),
         archived: z.boolean().optional(),
         deleted: z.boolean().optional(),

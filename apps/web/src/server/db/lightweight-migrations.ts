@@ -82,19 +82,6 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
   }
 
   await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "commands" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "instruction" TEXT NOT NULL,
-      "agent_names" TEXT NOT NULL DEFAULT '[]',
-      "project_ids" TEXT NOT NULL DEFAULT '[]',
-      "goal_id" TEXT,
-      "status" TEXT NOT NULL DEFAULT 'sent',
-      "created_at" TEXT NOT NULL
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_commands_goal_id" ON "commands" ("goal_id")');
-
-  await ensureTable(`
     CREATE TABLE IF NOT EXISTS "projects" (
       "id" TEXT PRIMARY KEY NOT NULL,
       "name" TEXT NOT NULL,
@@ -119,65 +106,6 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
   `);
 
   await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "goals" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "title" TEXT NOT NULL,
-      "description" TEXT,
-      "success_criteria" TEXT NOT NULL DEFAULT '[]',
-      "constraints" TEXT NOT NULL DEFAULT '[]',
-      "status" TEXT NOT NULL DEFAULT 'active',
-      "project_id" TEXT,
-      "command_id" TEXT,
-      "watchers" TEXT NOT NULL DEFAULT '[]',
-      "created_at" TEXT NOT NULL,
-      "updated_at" TEXT NOT NULL,
-      FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY ("command_id") REFERENCES "commands"("id") ON UPDATE no action ON DELETE no action
-    )
-  `);
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "states" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "goal_id" TEXT NOT NULL,
-      "label" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'pending',
-      "actions" TEXT,
-      "updated_at" TEXT NOT NULL,
-      FOREIGN KEY ("goal_id") REFERENCES "goals"("id") ON UPDATE no action ON DELETE cascade
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_states_goal_id" ON "states" ("goal_id")');
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "artifacts" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "goal_id" TEXT NOT NULL,
-      "name" TEXT NOT NULL,
-      "type" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'pending',
-      "detail" TEXT,
-      "updated_at" TEXT NOT NULL,
-      FOREIGN KEY ("goal_id") REFERENCES "goals"("id") ON UPDATE no action ON DELETE cascade
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_artifacts_goal_id" ON "artifacts" ("goal_id")');
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "activities" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "goal_id" TEXT NOT NULL,
-      "timestamp" TEXT NOT NULL,
-      "agent" TEXT NOT NULL,
-      "action" TEXT NOT NULL,
-      "detail" TEXT,
-      "reasoning" TEXT,
-      "diff" TEXT
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_activities_goal_id" ON "activities" ("goal_id")');
-
-  await ensureTable(`
     CREATE TABLE IF NOT EXISTS "runtimes" (
       "id" TEXT PRIMARY KEY NOT NULL,
       "name" TEXT NOT NULL,
@@ -197,33 +125,13 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
   await ensureIndex('CREATE UNIQUE INDEX IF NOT EXISTS "runtimes_name_unique" ON "runtimes" ("name")');
 
   await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "agents" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "name" TEXT NOT NULL,
-      "role" TEXT NOT NULL,
-      "capabilities" TEXT NOT NULL DEFAULT '[]',
-      "status" TEXT NOT NULL DEFAULT 'idle',
-      "model" TEXT NOT NULL,
-      "enabled" TEXT NOT NULL DEFAULT 'true',
-      "cli_command" TEXT,
-      "current_model" TEXT,
-      "runtime_id" TEXT,
-      "avatar_url" TEXT,
-      FOREIGN KEY ("runtime_id") REFERENCES "runtimes"("id") ON UPDATE no action ON DELETE no action
-    )
-  `);
-  await ensureIndex('CREATE UNIQUE INDEX IF NOT EXISTS "agents_name_unique" ON "agents" ("name")');
-
-  await ensureTable(`
     CREATE TABLE IF NOT EXISTS "events" (
       "id" TEXT PRIMARY KEY NOT NULL,
       "type" TEXT NOT NULL,
-      "goal_id" TEXT,
       "payload" TEXT NOT NULL DEFAULT '{}',
       "timestamp" TEXT NOT NULL
     )
   `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_events_goal_id" ON "events" ("goal_id")');
 
   await ensureTable(`
     CREATE TABLE IF NOT EXISTS "problems" (
@@ -232,8 +140,6 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
       "priority" TEXT NOT NULL DEFAULT 'warning',
       "source" TEXT,
       "context" TEXT,
-      "goal_id" TEXT,
-      "state_id" TEXT,
       "status" TEXT NOT NULL DEFAULT 'open',
       "actions" TEXT NOT NULL DEFAULT '[]',
       "created_at" TEXT NOT NULL,
@@ -241,52 +147,18 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
     )
   `);
   await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_problems_status" ON "problems" ("status")');
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_problems_goal_id" ON "problems" ("goal_id")');
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "rules" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "name" TEXT NOT NULL,
-      "condition" TEXT NOT NULL,
-      "action" TEXT NOT NULL,
-      "enabled" TEXT NOT NULL DEFAULT 'true',
-      "created_at" TEXT NOT NULL
-    )
-  `);
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "mcp_servers" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "name" TEXT NOT NULL,
-      "command" TEXT NOT NULL,
-      "args" TEXT NOT NULL DEFAULT '[]',
-      "env" TEXT NOT NULL DEFAULT '{}',
-      "enabled" TEXT NOT NULL DEFAULT 'true',
-      "scope" TEXT NOT NULL DEFAULT 'global',
-      "project_id" TEXT,
-      "organization_id" TEXT,
-      "created_at" TEXT NOT NULL,
-      "updated_at" TEXT NOT NULL,
-      FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON UPDATE no action ON DELETE no action
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_mcp_servers_project_id" ON "mcp_servers" ("project_id")');
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_mcp_servers_organization_id" ON "mcp_servers" ("organization_id")');
 
   await ensureTable(`
     CREATE TABLE IF NOT EXISTS "conversations" (
       "id" TEXT PRIMARY KEY NOT NULL,
       "title" TEXT,
       "project_id" TEXT,
-      "agent_id" TEXT,
       "runtime_id" TEXT,
       "archived" TEXT NOT NULL DEFAULT 'false',
       "deleted" TEXT NOT NULL DEFAULT 'false',
       "created_at" TEXT NOT NULL,
       "updated_at" TEXT NOT NULL,
       FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY ("agent_id") REFERENCES "agents"("id") ON UPDATE no action ON DELETE no action,
       FOREIGN KEY ("runtime_id") REFERENCES "runtimes"("id") ON UPDATE no action ON DELETE no action
     )
   `);
@@ -297,35 +169,21 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
       "conversation_id" TEXT NOT NULL,
       "role" TEXT NOT NULL,
       "content" TEXT NOT NULL,
+      "trace" TEXT,
       "error" TEXT,
       "response_time" TEXT,
+      "execution_mode" TEXT,
+      "sandbox_status" TEXT,
+      "sandbox_vm_id" TEXT,
+      "project_id" TEXT,
+      "project_name" TEXT,
+      "clarification_questions" TEXT,
+      "tokens" TEXT,
       "created_at" TEXT NOT NULL,
       FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id") ON UPDATE no action ON DELETE cascade
     )
   `);
   await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_messages_conversation_id" ON "messages" ("conversation_id")');
-
-  await ensureTable(`
-    CREATE TABLE IF NOT EXISTS "skills" (
-      "id" TEXT PRIMARY KEY NOT NULL,
-      "name" TEXT NOT NULL,
-      "description" TEXT,
-      "enabled" TEXT NOT NULL DEFAULT 'true',
-      "scope" TEXT NOT NULL DEFAULT 'global',
-      "project_id" TEXT,
-      "organization_id" TEXT,
-      "source_type" TEXT NOT NULL DEFAULT 'manual',
-      "source_url" TEXT,
-      "install_path" TEXT,
-      "manifest_path" TEXT,
-      "created_at" TEXT NOT NULL,
-      "updated_at" TEXT NOT NULL,
-      FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON UPDATE no action ON DELETE no action
-    )
-  `);
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_skills_project_id" ON "skills" ("project_id")');
-  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_skills_organization_id" ON "skills" ("organization_id")');
 
   await ensureTable(`
     CREATE TABLE IF NOT EXISTS "local_agents" (
@@ -377,6 +235,7 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
       "id" TEXT PRIMARY KEY NOT NULL,
       "name" TEXT NOT NULL,
       "icon" TEXT NOT NULL DEFAULT 'folder',
+      "color" TEXT,
       "sort_order" TEXT NOT NULL DEFAULT '0',
       "created_at" TEXT NOT NULL,
       "updated_at" TEXT NOT NULL
@@ -390,6 +249,7 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
       "category_id" TEXT NOT NULL,
       "title" TEXT NOT NULL,
       "url" TEXT NOT NULL,
+      "icon" TEXT,
       "pinned" TEXT NOT NULL DEFAULT 'false',
       "sort_order" TEXT NOT NULL DEFAULT '0',
       "created_at" TEXT NOT NULL,

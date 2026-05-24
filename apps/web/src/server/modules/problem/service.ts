@@ -28,8 +28,6 @@ export interface Problem {
   priority: ProblemPriority;
   source?: string;
   context?: string;
-  goalId?: string;
-  stateId?: string;
   status: ProblemStatus;
   actions: string[];
   createdAt: string;
@@ -41,8 +39,6 @@ interface CreateProblemData {
   priority?: ProblemPriority;
   source?: string;
   context?: string;
-  goalId?: string;
-  stateId?: string;
   actions?: string[];
 }
 
@@ -63,8 +59,6 @@ export const ProblemService = {
       ...row,
       source: row.source ?? undefined,
       context: row.context ?? undefined,
-      goalId: row.goalId ?? undefined,
-      stateId: row.stateId ?? undefined,
       priority: row.priority as ProblemPriority,
       status: row.status as ProblemStatus,
       actions: JSON.parse(row.actions || "[]"),
@@ -78,8 +72,6 @@ export const ProblemService = {
       ...row,
       source: row.source ?? undefined,
       context: row.context ?? undefined,
-      goalId: row.goalId ?? undefined,
-      stateId: row.stateId ?? undefined,
       priority: row.priority as ProblemPriority,
       status: row.status as ProblemStatus,
       actions: JSON.parse(row.actions || "[]"),
@@ -100,8 +92,6 @@ export const ProblemService = {
     };
     if (data.source) problem.source = data.source;
     if (data.context) problem.context = data.context;
-    if (data.goalId) problem.goalId = data.goalId;
-    if (data.stateId) problem.stateId = data.stateId;
     await db
       .insert(problems)
       .values(problem as any)

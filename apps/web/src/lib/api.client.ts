@@ -339,7 +339,6 @@ export const api = {
     priority?: ProblemPriority;
     source?: string;
     context?: string;
-    goalId?: string;
     actions?: string[];
   }): Promise<Problem> => {
     return orpc.problems.create(data) as Promise<Problem>;
@@ -389,7 +388,6 @@ export const api = {
       summary?: string;
       status?: InboxThreadStatus;
       priority?: InboxPriority;
-      primaryGoalId?: string;
       archived?: boolean;
     },
   ): Promise<InboxThread> => {
@@ -411,8 +409,6 @@ export const api = {
       body: string;
       to?: string[];
       cc?: string[];
-      goalId?: string;
-      stateId?: string;
       problemId?: string;
       metadata?: Record<string, unknown>;
     },

@@ -1,34 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
-  Goal,
-  AgentProfile,
   Project,
   Organization,
   Problem,
-  Rule,
-  Command,
   ControlSettings,
 } from "@/lib/types";
 import type {
   RuntimeProfile,
-  McpServerProfile,
-  SkillProfile,
   ProblemSummary,
 } from "@/lib/api";
 
 interface DashboardCacheState {
-  goals: Goal[];
-  agents: AgentProfile[];
   runtimes: RuntimeProfile[];
   projects: Project[];
   organizations: Organization[];
   problems: Problem[];
   problemSummary: ProblemSummary;
-  rules: Rule[];
-  commands: Command[];
-  mcpServers: McpServerProfile[];
-  skills: SkillProfile[];
   settings: ControlSettings | null;
 }
 
@@ -44,17 +32,11 @@ const emptySummary: ProblemSummary = {
 };
 
 const initialState: DashboardCacheState = {
-  goals: [],
-  agents: [],
   runtimes: [],
   projects: [],
   organizations: [],
   problems: [],
   problemSummary: emptySummary,
-  rules: [],
-  commands: [],
-  mcpServers: [],
-  skills: [],
   settings: null,
 };
 
@@ -67,10 +49,10 @@ export const useDashboardCache = create<DashboardCacheState & DashboardCacheActi
     }),
     {
       name: "orchos-dashboard-cache",
-      version: 2,
+      version: 3,
       /**
        * Only persist essential data for fast initial render.
-       * Large/frequently-changing collections (problems, mcpServers, etc.)
+       * Large/frequently-changing collections (problems, etc.)
        * are fetched fresh on each visit — persisting them causes unnecessary
        * localStorage writes on every dashboard refresh.
        */

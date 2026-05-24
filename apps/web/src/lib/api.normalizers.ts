@@ -98,8 +98,6 @@ export function normalizeInboxThread(thread: unknown): InboxThread {
     summary: readString(record.summary),
     projectId: readString(record.projectId),
     conversationId: readString(record.conversationId),
-    commandId: readString(record.commandId),
-    primaryGoalId: readString(record.primaryGoalId),
     createdByType:
       record.createdByType === "user" ||
       record.createdByType === "agent" ||

@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { agent_request, convert_to_goal, converting, critical, dismiss, inbox_is_empty, issue, mention, no_new_items, pull_request, suggested } from "@/paraglide/messages";
+import { agent_request, convert_to_goal, converting, critical, dismiss, inbox_is_empty, issue, mention, no_new_items, pull_request } from "@/paraglide/messages";
 import type { Problem, InboxSource, ProblemStatus } from "@/lib/types";
 import { isInboxItem } from "@/lib/types";
 import type { InboxStatusFilter } from "@/components/layout/InboxStatusTabs";
@@ -28,7 +28,7 @@ type SourceFilter = "all" | InboxSource;
 
 interface InboxProps {
   problems: Problem[];
-  onConvertToGoal: (problemId: string, suggestedGoal?: string) => void;
+  onConvertToGoal: (problemId: string) => void;
   onDismiss: (problemId: string) => void;
   sourceFilter: SourceFilter;
   statusFilter: InboxStatusFilter;
@@ -72,7 +72,7 @@ interface InboxItemProps {
   item: Problem;
   isFocused: boolean;
   isConverting: boolean;
-  onConvert: (id: string, suggestedGoal?: string) => void;
+  onConvert: (id: string) => void;
   onDismiss: (id: string) => void;
 }
 
@@ -120,21 +120,10 @@ const InboxItem = memo(function InboxItem({
           {item.context && (
             <p className="mt-1 text-xs text-muted-foreground truncate">{item.context}</p>
           )}
-          {item.suggestedGoal && (
-            <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5">
-              <HugeiconsIcon
-                icon={Target01Icon}
-                className="size-3.5 shrink-0 text-primary/60"
-              />
-              <span className="text-xs text-primary/80">
-                {suggested()}
-                <span className="font-medium text-primary">{item.suggestedGoal}</span>
-              </span>
-            </div>
-          )}
+
           <div className="mt-2.5 flex items-center gap-2">
             <button
-              onClick={() => onConvert(item.id, item.suggestedGoal)}
+              onClick={() => onConvert(item.id)}
               disabled={isConverting}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
@@ -189,9 +178,9 @@ export function Inbox({
   }, [problems, sourceFilter, statusFilter]);
 
   const handleConvert = useCallback(
-    (problemId: string, suggestedGoal?: string) => {
+    (problemId: string) => {
       setConvertingId(problemId);
-      onConvertToGoal(problemId, suggestedGoal);
+      onConvertToGoal(problemId);
     },
     [onConvertToGoal],
   );
@@ -209,7 +198,7 @@ export function Inbox({
       } else if (e.key === "Enter" && focusedIndex >= 0 && focusedIndex < inboxItems.length) {
         e.preventDefault();
         const item = inboxItems[focusedIndex];
-        handleConvert(item.id, item.suggestedGoal);
+        handleConvert(item.id);
       } else if (e.key === "d" && focusedIndex >= 0 && focusedIndex < inboxItems.length) {
         e.preventDefault();
         onDismiss(inboxItems[focusedIndex].id);

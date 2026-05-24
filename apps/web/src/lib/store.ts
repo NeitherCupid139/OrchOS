@@ -7,7 +7,6 @@ import { migrateUIStore } from "@/lib/ui-store-migrations";
 
 type SourceFilter = "all" | "github_pr" | "github_issue" | "mention" | "agent_request";
 type InboxStatusFilter = "all" | "open" | "assigned" | "fixed" | "ignored";
-type GoalStatusFilter = "all" | "active" | "completed" | "paused";
 type ScopeFilter = "all" | "global" | "project";
 type CreationArchiveFilter = "all" | "active" | "archived";
 type MailFolderFilter = "all" | "unread" | "waiting_reply" | "completed" | "archived";
@@ -15,14 +14,12 @@ type CalendarViewMode = "day" | "week" | "month";
 type CapabilityViewMode = "mine" | "market";
 interface UIState {
   // Navigation & selection
-  activeGoalId: string | null;
   activeInboxId: string | null;
   activeOrganizationId: string | null;
 
   // Filters
   sourceFilter: SourceFilter;
   inboxStatusFilter: InboxStatusFilter;
-  goalStatusFilter: GoalStatusFilter;
   scopeFilter: ScopeFilter;
   creationArchiveFilter: CreationArchiveFilter;
   mailFolderFilter: MailFolderFilter;
@@ -47,12 +44,10 @@ interface UIState {
 }
 
 interface UIActions {
-  setActiveGoalId: (id: string | null) => void;
   setActiveInboxId: (id: string | null) => void;
   setActiveOrganizationId: (id: string | null) => void;
   setSourceFilter: (filter: SourceFilter) => void;
   setInboxStatusFilter: (filter: InboxStatusFilter) => void;
-  setGoalStatusFilter: (filter: GoalStatusFilter) => void;
   setScopeFilter: (filter: ScopeFilter) => void;
   setCreationArchiveFilter: (filter: CreationArchiveFilter) => void;
   setMailFolderFilter: (filter: MailFolderFilter) => void;
@@ -91,14 +86,12 @@ export const useUIStore = create<UIState & UIActions>()(
   persist(
     (set) => ({
       // Navigation & selection
-      activeGoalId: null,
       activeInboxId: null,
       activeOrganizationId: null,
 
       // Filters
       sourceFilter: "all" as SourceFilter,
       inboxStatusFilter: "all" as InboxStatusFilter,
-      goalStatusFilter: "all" as GoalStatusFilter,
       scopeFilter: "all" as ScopeFilter,
       creationArchiveFilter: "all" as CreationArchiveFilter,
       mailFolderFilter: "all" as MailFolderFilter,
@@ -121,12 +114,10 @@ export const useUIStore = create<UIState & UIActions>()(
       // Settings
       settings: defaultSettings,
 
-      setActiveGoalId: (id) => set({ activeGoalId: id }),
       setActiveInboxId: (id) => set({ activeInboxId: id }),
       setActiveOrganizationId: (id) => set({ activeOrganizationId: id }),
       setSourceFilter: (filter) => set({ sourceFilter: filter }),
       setInboxStatusFilter: (filter) => set({ inboxStatusFilter: filter }),
-      setGoalStatusFilter: (filter) => set({ goalStatusFilter: filter }),
       setScopeFilter: (filter) => set({ scopeFilter: filter }),
       setCreationArchiveFilter: (filter) => set({ creationArchiveFilter: filter }),
       setMailFolderFilter: (filter) => set({ mailFolderFilter: filter }),
@@ -148,8 +139,29 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: "orchos-ui",
-      version: 3,
+      version: 2,
       migrate: migrateUIStore,
+      partialize: (state) => ({
+        activeInboxId: state.activeInboxId,
+        activeOrganizationId: state.activeOrganizationId,
+        sourceFilter: state.sourceFilter,
+        inboxStatusFilter: state.inboxStatusFilter,
+        scopeFilter: state.scopeFilter,
+        creationArchiveFilter: state.creationArchiveFilter,
+        mailFolderFilter: state.mailFolderFilter,
+        calendarViewMode: state.calendarViewMode,
+        capabilityViewMode: state.capabilityViewMode,
+        boardFilter: state.boardFilter,
+        activityPanelOpen: state.activityPanelOpen,
+        activityExpanded: state.activityExpanded,
+        sidebarCollapsed: state.sidebarCollapsed,
+        creationSidebarCollapsed: state.creationSidebarCollapsed,
+        creationSidebarWidth: state.creationSidebarWidth,
+        sidebarWidth: state.sidebarWidth,
+        theme: state.theme,
+        themePreferenceSet: state.themePreferenceSet,
+        settings: state.settings,
+      }),
     },
   ),
 );

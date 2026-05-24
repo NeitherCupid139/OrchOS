@@ -3,7 +3,7 @@ import { BookmarkService } from "@/server/modules/bookmark/service";
 import { IntegrationService } from "@/server/modules/integration/service";
 import { PlannerService } from "@/server/modules/planner/service";
 import { parseReminderSchedule } from "@/lib/planner-reminders";
-import { searchWebWithTavily } from "./tavily";
+import { searchWebWithDuckDuckGo } from "./duckduckgo";
 
 type ToolResult = unknown;
 
@@ -33,22 +33,21 @@ export class AgentToolService {
         type: "function",
         function: {
           name: "web_search",
-          description: "Search the web for current information, recent news, and source URLs.",
+          description: "Search the web using DuckDuckGo for current information, recent news, and source URLs. Free, no API key required.",
           parameters: {
             type: "object",
             properties: {
-              query: { type: "string" },
-              topic: { type: "string", enum: ["general", "news", "finance"] },
-              searchDepth: { type: "string", enum: ["advanced", "basic", "fast", "ultra-fast"] },
-              timeRange: { type: "string", enum: ["day", "week", "month", "year"] },
-              maxResults: { type: "integer" },
-              includeDomains: {
-                type: "array",
-                items: { type: "string" },
+              query: { type: "string", description: "Search query" },
+              timeRange: {
+                type: "string",
+                enum: ["d", "w", "m", "y"],
+                description: "Time filter: d (past day), w (past week), m (past month), y (past year)",
               },
+              maxResults: { type: "integer", description: "Number of results (1-10)" },
               excludeDomains: {
                 type: "array",
                 items: { type: "string" },
+                description: "Domains to exclude from results",
               },
             },
             required: ["query"],
@@ -288,30 +287,36 @@ export class AgentToolService {
     }
 
     if (name === "web_search") {
-      return searchWebWithTavily(fetch, {
+      const result = await searchWebWithDuckDuckGo(fetch, {
         query: String(args.query ?? ""),
-        topic:
-          args.topic === "news" || args.topic === "finance" || args.topic === "general"
-            ? args.topic
-            : undefined,
-        searchDepth:
-          args.searchDepth === "advanced" ||
-            args.searchDepth === "basic" ||
-            args.searchDepth === "fast" ||
-            args.searchDepth === "ultra-fast"
-            ? args.searchDepth
-            : undefined,
+        region: args.region === "us-en" || args.region === "cn-zh" || args.region === "wt-wt"
+          ? args.region
+          : undefined,
         timeRange:
-          args.timeRange === "day" ||
-            args.timeRange === "week" ||
-            args.timeRange === "month" ||
-            args.timeRange === "year"
+          args.timeRange === "d" ||
+            args.timeRange === "w" ||
+            args.timeRange === "m" ||
+            args.timeRange === "y"
             ? args.timeRange
             : undefined,
         maxResults: typeof args.maxResults === "number" ? args.maxResults : undefined,
-        includeDomains: Array.isArray(args.includeDomains) ? args.includeDomains.map(String) : undefined,
         excludeDomains: Array.isArray(args.excludeDomains) ? args.excludeDomains.map(String) : undefined,
       });
+
+      if (result.error) {
+        return {
+          success: false,
+          error: result.error,
+          query: result.query,
+          results: result.results,
+        };
+      }
+
+      return {
+        success: true,
+        query: result.query,
+        results: result.results,
+      };
     }
 
     if (name === "create_calendar_event") {

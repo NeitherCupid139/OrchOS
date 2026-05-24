@@ -53,7 +53,6 @@ export abstract class ConversationService {
     data: {
       title?: string;
       projectId?: string;
-      agentId?: string;
       runtimeId?: string;
       archived?: boolean;
       deleted?: boolean;
@@ -68,7 +67,6 @@ export abstract class ConversationService {
         id,
         title: data.title || null,
         projectId: data.projectId || null,
-        agentId: data.agentId || null,
         runtimeId: data.runtimeId || null,
         archived: data.archived ? "true" : "false",
         deleted: data.deleted ? "true" : "false",
@@ -81,7 +79,6 @@ export abstract class ConversationService {
       id,
       title: data.title,
       projectId: data.projectId,
-      agentId: data.agentId,
       runtimeId: data.runtimeId,
       archived: data.archived ?? false,
       deleted: data.deleted ?? false,
@@ -107,7 +104,6 @@ export abstract class ConversationService {
     data: {
       title?: string;
       projectId?: string;
-      agentId?: string;
       runtimeId?: string;
       archived?: boolean;
       deleted?: boolean;
@@ -116,7 +112,6 @@ export abstract class ConversationService {
     const updates: Record<string, unknown> = {};
     if (data.title !== undefined) updates.title = data.title;
     if (data.projectId !== undefined) updates.projectId = data.projectId || null;
-    if (data.agentId !== undefined) updates.agentId = data.agentId || null;
     if (data.runtimeId !== undefined) updates.runtimeId = data.runtimeId || null;
     if (data.archived !== undefined) updates.archived = data.archived ? "true" : "false";
     if (data.deleted !== undefined) updates.deleted = data.deleted ? "true" : "false";
@@ -298,7 +293,6 @@ export abstract class ConversationService {
       id: row.id,
       title: row.title || undefined,
       projectId: row.projectId || undefined,
-      agentId: row.agentId || undefined,
       runtimeId: row.runtimeId || undefined,
       archived: row.archived === "true",
       deleted: row.deleted === "true",

@@ -15,7 +15,6 @@ export const inboxRouter = {
       summary: input.summary,
       status: input.status,
       priority: input.priority,
-      primaryGoalId: input.primaryGoalId,
       archived: input.archived,
     });
   }),
@@ -32,8 +31,6 @@ export const inboxRouter = {
       body: input.body,
       to: input.to,
       cc: input.cc,
-      goalId: input.goalId,
-      stateId: input.stateId,
       problemId: input.problemId,
       metadata: input.metadata,
     });

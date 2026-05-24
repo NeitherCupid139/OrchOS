@@ -225,36 +225,6 @@ export interface Problem {
   updatedAt: string;
 }
 
-export interface McpServerProfile {
-  id: string;
-  name: string;
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-  enabled: boolean;
-  scope: "global" | "project";
-  projectId?: string;
-  organizationId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SkillProfile {
-  id: string;
-  name: string;
-  description?: string;
-  enabled: boolean;
-  scope: "global" | "project";
-  projectId?: string;
-  organizationId?: string;
-  sourceType: "manual" | "repository";
-  sourceUrl?: string;
-  installPath?: string;
-  manifestPath?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Conversation {
   id: string;
   title?: string;

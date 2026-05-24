@@ -423,7 +423,6 @@ export const conversationsRouter = {
       (await ConversationService.update(await getLocalDb(), input.id, {
         title: input.title,
         projectId: input.projectId,
-        agentId: input.agentId,
         runtimeId: input.runtimeId,
         archived: input.archived,
         deleted: input.deleted,

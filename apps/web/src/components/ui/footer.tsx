@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { about_orchos, footer_company, footer_help_center, footer_product, footer_resources, footer_rights, integration_github, nav_about, nav_changelog, nav_home, open_dashboard, privacy_policy, terms_of_service } from "@/paraglide/messages";
+import { about_orchos, footer_company, footer_help_center, footer_product, footer_resources, footer_rights, integration_github, nav_about, nav_changelog, nav_home, nav_pricing, open_dashboard, privacy_policy, terms_of_service } from "@/paraglide/messages";
 
 const COPYRIGHT_YEAR = new Date().getFullYear();
 
@@ -50,6 +50,7 @@ export default function Footer() {
       title: footer_product(),
       links: [
         { label: nav_home(), to: "/" },
+        { label: nav_pricing(), to: "/pricing" },
         { label: open_dashboard(), to: "/dashboard" },
         { label: nav_changelog(), to: "/changelog" },
       ],
