@@ -3,7 +3,27 @@ import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { loading as loading_label, sign_in, sign_up } from "@/paraglide/messages";
+import {
+  auth_apple_button,
+  auth_email_placeholder,
+  auth_google_button,
+  auth_or_divider,
+  auth_passwords_mismatch,
+  auth_sign_in_error,
+  auth_sign_up_error,
+  auth_unexpected_error,
+  auth_verification_code_label,
+  auth_verification_code_placeholder,
+  auth_verification_code_sent,
+  auth_verification_failed,
+  auth_verify_button,
+  confirm as confirm_label,
+  email as email_label,
+  loading as loading_label,
+  password as password_label,
+  sign_in,
+  sign_up,
+} from "@/paraglide/messages";
 
 function AppleIcon({ className }: { className?: string }) {
   return (
@@ -69,11 +89,11 @@ export function SignInForm() {
       if (result.status === "complete" && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
       } else {
-        setError("Sign in failed. Please check your credentials.");
+        setError(auth_sign_in_error());
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred";
+        err instanceof Error ? err.message : auth_unexpected_error();
       setError(message);
     } finally {
       setLoading(false);
@@ -90,7 +110,7 @@ export function SignInForm() {
           onClick={() => handleOAuth("oauth_google")}
         >
           <GoogleIcon />
-          Google
+          {auth_google_button()}
         </Button>
         <Button
           type="button"
@@ -99,7 +119,7 @@ export function SignInForm() {
           onClick={() => handleOAuth("oauth_apple")}
         >
           <AppleIcon className="size-4" />
-          Apple
+          {auth_apple_button()}
         </Button>
       </div>
 
@@ -108,7 +128,7 @@ export function SignInForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">or</span>
+          <span className="bg-card px-2 text-muted-foreground">{auth_or_divider()}</span>
         </div>
       </div>
 
@@ -118,14 +138,14 @@ export function SignInForm() {
             htmlFor="sign-in-email"
             className="text-sm font-medium text-foreground"
           >
-            Email
+            {email_label()}
           </label>
           <Input
             id="sign-in-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
+            placeholder={auth_email_placeholder()}
             autoComplete="email"
             required
           />
@@ -136,7 +156,7 @@ export function SignInForm() {
             htmlFor="sign-in-password"
             className="text-sm font-medium text-foreground"
           >
-            Password
+            {password_label()}
           </label>
           <Input
             id="sign-in-password"
@@ -183,7 +203,7 @@ export function SignUpForm() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(auth_passwords_mismatch());
       return;
     }
 
@@ -206,11 +226,11 @@ export function SignUpForm() {
       } else if (result.status === "complete" && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
       } else {
-        setError("Sign up failed. Please try again.");
+        setError(auth_sign_up_error());
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred";
+        err instanceof Error ? err.message : auth_unexpected_error();
       setError(message);
     } finally {
       setLoading(false);
@@ -228,11 +248,11 @@ export function SignUpForm() {
       if (result.status === "complete" && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
       } else {
-        setError("Verification failed. Please try again.");
+        setError(auth_verification_failed());
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred";
+        err instanceof Error ? err.message : auth_unexpected_error();
       setError(message);
     } finally {
       setLoading(false);
@@ -243,7 +263,7 @@ export function SignUpForm() {
     return (
       <form onSubmit={handleVerify} className="w-full space-y-4">
         <p className="text-sm text-muted-foreground">
-          Enter the verification code sent to {email}.
+          {auth_verification_code_sent({ email })}
         </p>
 
         <fieldset className="space-y-1.5">
@@ -251,14 +271,14 @@ export function SignUpForm() {
             htmlFor="sign-up-code"
             className="text-sm font-medium text-foreground"
           >
-            Verification code
+            {auth_verification_code_label()}
           </label>
           <Input
             id="sign-up-code"
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="000000"
+            placeholder={auth_verification_code_placeholder()}
             required
           />
         </fieldset>
@@ -266,7 +286,7 @@ export function SignUpForm() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? loading_label() : "Verify"}
+          {loading ? loading_label() : auth_verify_button()}
         </Button>
       </form>
     );
@@ -282,7 +302,7 @@ export function SignUpForm() {
           onClick={() => handleOAuth("oauth_google")}
         >
           <GoogleIcon />
-          Google
+          {auth_google_button()}
         </Button>
         <Button
           type="button"
@@ -291,7 +311,7 @@ export function SignUpForm() {
           onClick={() => handleOAuth("oauth_apple")}
         >
           <AppleIcon className="size-4" />
-          Apple
+          {auth_apple_button()}
         </Button>
       </div>
 
@@ -300,7 +320,7 @@ export function SignUpForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">or</span>
+          <span className="bg-card px-2 text-muted-foreground">{auth_or_divider()}</span>
         </div>
       </div>
 
@@ -310,14 +330,14 @@ export function SignUpForm() {
             htmlFor="sign-up-email"
             className="text-sm font-medium text-foreground"
           >
-            Email
+            {email_label()}
           </label>
           <Input
             id="sign-up-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
+            placeholder={auth_email_placeholder()}
             autoComplete="email"
             required
           />
@@ -328,7 +348,7 @@ export function SignUpForm() {
             htmlFor="sign-up-password"
             className="text-sm font-medium text-foreground"
           >
-            Password
+            {password_label()}
           </label>
           <Input
             id="sign-up-password"
@@ -345,7 +365,7 @@ export function SignUpForm() {
             htmlFor="sign-up-confirm"
             className="text-sm font-medium text-foreground"
           >
-            Confirm password
+            {confirm_label()}
           </label>
           <Input
             id="sign-up-confirm"

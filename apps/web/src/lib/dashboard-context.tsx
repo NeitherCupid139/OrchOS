@@ -443,6 +443,92 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Inbox: only needs problems + summary + shared data (no projects/localAgents)
+    if (activeView === "inbox") {
+      const inboxResults = await Promise.allSettled([
+        api.listRuntimes(),
+        api.getSettings(),
+        api.listOrganizations(),
+        api.getProblemSummary(),
+        api.listProblems(),
+      ]);
+
+      if (inboxResults[0].status === "fulfilled") {
+        applyRefreshResults({ runtimes: inboxResults[0].value });
+      }
+      if (inboxResults[1].status === "fulfilled") {
+        applyRefreshResults({ settings: inboxResults[1].value });
+      }
+      if (inboxResults[2].status === "fulfilled") {
+        applyRefreshResults({ organizations: inboxResults[2].value });
+      }
+      if (inboxResults[3].status === "fulfilled") {
+        applyRefreshResults({ problemSummary: inboxResults[3].value });
+      }
+      if (inboxResults[4].status === "fulfilled") {
+        applyRefreshResults({ problems: inboxResults[4].value });
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    // Bookmarks: only needs projects + shared data (no problems/localAgents)
+    if (activeView === "bookmarks") {
+      const bookmarkResults = await Promise.allSettled([
+        api.listRuntimes(),
+        api.listProjects(),
+        api.getSettings(),
+        api.listOrganizations(),
+      ]);
+
+      if (bookmarkResults[0].status === "fulfilled") {
+        applyRefreshResults({ runtimes: bookmarkResults[0].value });
+      }
+      if (bookmarkResults[1].status === "fulfilled") {
+        applyRefreshResults({ projects: bookmarkResults[1].value });
+      }
+      if (bookmarkResults[2].status === "fulfilled") {
+        applyRefreshResults({ settings: bookmarkResults[2].value });
+      }
+      if (bookmarkResults[3].status === "fulfilled") {
+        applyRefreshResults({ organizations: bookmarkResults[3].value });
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    // Observability: needs problems + summary + shared data
+    if (activeView === "observability") {
+      const obsResults = await Promise.allSettled([
+        api.listRuntimes(),
+        api.getSettings(),
+        api.listOrganizations(),
+        api.getProblemSummary(),
+        api.listProblems(),
+      ]);
+
+      if (obsResults[0].status === "fulfilled") {
+        applyRefreshResults({ runtimes: obsResults[0].value });
+      }
+      if (obsResults[1].status === "fulfilled") {
+        applyRefreshResults({ settings: obsResults[1].value });
+      }
+      if (obsResults[2].status === "fulfilled") {
+        applyRefreshResults({ organizations: obsResults[2].value });
+      }
+      if (obsResults[3].status === "fulfilled") {
+        applyRefreshResults({ problemSummary: obsResults[3].value });
+      }
+      if (obsResults[4].status === "fulfilled") {
+        applyRefreshResults({ problems: obsResults[4].value });
+      }
+
+      setLoading(false);
+      return;
+    }
+
     await refreshAll();
   }, [activeView, applyRefreshResults, refreshAll, shouldLoadProjects, shouldLoadProblems]);
 

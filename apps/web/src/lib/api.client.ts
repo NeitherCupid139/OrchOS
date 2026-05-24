@@ -1,6 +1,7 @@
 import { orpc } from "@/lib/orpc/client";
 
 import type {
+  ActivityHeatmapPoint,
   AgentMetrics,
   AgentTimelinePoint,
   BookmarkCategory,
@@ -626,5 +627,14 @@ export const api = {
     return (await orpc.observability.agentTimeline({
       range: timeRange as "24h" | "7d" | "30d",
     })) as AgentTimelinePoint[];
+  },
+  getActivityHeatmap: async (
+    timeRange: string,
+    metric: "messages" | "toolCalls" | "tokens" = "toolCalls",
+  ): Promise<ActivityHeatmapPoint[]> => {
+    return (await orpc.observability.activityHeatmap({
+      range: timeRange as "24h" | "7d" | "30d",
+      metric,
+    })) as ActivityHeatmapPoint[];
   },
 };

@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react";
 
 import { copy_file_content, loading } from "@/paraglide/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { getSharedHighlighter } from "@/lib/shiki-singleton";
+import { ensureLanguage, getSharedHighlighter } from "@/lib/shiki-singleton";
 
 function escapeHtml(value: string) {
   return value
@@ -83,9 +83,11 @@ export function ChatCodeBlock({ code, language }: { code: string; language?: str
     async function highlight() {
       try {
         dispatch({ type: "SET_LOADING" });
+        const normalizedLang = normalizeCodeLanguage(language || "text");
+        await ensureLanguage(normalizedLang);
         const highlighter = await getSharedHighlighter();
         const highlightedHtml = highlighter.codeToHtml(code, {
-          lang: normalizeCodeLanguage(language || "text"),
+          lang: normalizedLang,
           theme: resolvedTheme === "dark" ? "github-dark" : "github-light",
         });
 

@@ -162,6 +162,13 @@ export interface TimeSeriesPoint {
   issues: number;
 }
 
+export interface ActivityHeatmapPoint {
+  dayOfWeek: number;
+  hour: number;
+  value: number;
+  label: string;
+}
+
 export interface AgentTimelinePoint {
   time: number;
   label: string;

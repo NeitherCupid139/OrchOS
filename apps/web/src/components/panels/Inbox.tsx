@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,105 @@ const sourceConfig: Record<
     borderClass: "border-amber-500/20",
   },
 };
+
+interface InboxItemProps {
+  item: Problem;
+  isFocused: boolean;
+  isConverting: boolean;
+  onConvert: (id: string, suggestedGoal?: string) => void;
+  onDismiss: (id: string) => void;
+}
+
+const InboxItem = memo(function InboxItem({
+  item,
+  isFocused,
+  isConverting,
+  onConvert,
+  onDismiss,
+}: InboxItemProps) {
+  const source = item.source as InboxSource;
+  const config = sourceConfig[source];
+  const SourceIcon = config.icon;
+
+  return (
+    <div
+      className={cn(
+        "transition-colors hover:bg-accent/30",
+        isFocused && "ring-1 ring-in-ring ring-primary/30",
+      )}
+    >
+      <div className={cn("group flex gap-3 px-4 py-3", config.bgClass)}>
+        <HugeiconsIcon
+          icon={SourceIcon}
+          className={cn("mt-0.5 size-4 shrink-0", config.colorClass)}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">{item.title}</span>
+            <Badge
+              variant="outline"
+              className="text-[9px] uppercase tracking-wider px-1.5 py-0"
+            >
+              {config.label}
+            </Badge>
+            {item.priority === "critical" && (
+              <Badge
+                variant="destructive"
+                className="text-[9px] uppercase tracking-wider px-1.5 py-0"
+              >
+                {critical()}
+              </Badge>
+            )}
+          </div>
+          {item.context && (
+            <p className="mt-1 text-xs text-muted-foreground truncate">{item.context}</p>
+          )}
+          {item.suggestedGoal && (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5">
+              <HugeiconsIcon
+                icon={Target01Icon}
+                className="size-3.5 shrink-0 text-primary/60"
+              />
+              <span className="text-xs text-primary/80">
+                {suggested()}
+                <span className="font-medium text-primary">{item.suggestedGoal}</span>
+              </span>
+            </div>
+          )}
+          <div className="mt-2.5 flex items-center gap-2">
+            <button
+              onClick={() => onConvert(item.id, item.suggestedGoal)}
+              disabled={isConverting}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                isConverting
+                  ? "bg-muted text-muted-foreground cursor-wait"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
+            >
+              <HugeiconsIcon icon={Target01Icon} className="size-3.5" />
+              {isConverting ? converting() : convert_to_goal()}
+            </button>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger className="rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground">
+                <HugeiconsIcon icon={MoreHorizontal} className="size-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-36">
+                <DropdownMenuItem onClick={() => onDismiss(item.id)}>
+                  <HugeiconsIcon icon={ViewOffIcon} className="size-3.5" />
+                  {dismiss()}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="shrink-0 text-[10px] text-muted-foreground tabular-nums self-start mt-0.5">
+          {item.createdAt.split("T")[1]?.slice(0, 5) || ""}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export function Inbox({
   problems,
@@ -140,106 +239,16 @@ export function Inbox({
 
       <ScrollArea className="flex-1">
         <div className="divide-y divide-border/50">
-          {inboxItems.map((item, idx) => {
-            const source = item.source as InboxSource;
-            const config = sourceConfig[source];
-            const SourceIcon = config.icon;
-            const isFocused = idx === focusedIndex;
-            const isConverting = convertingId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                className={cn(
-                  "transition-colors hover:bg-accent/30",
-                  isFocused && "ring-1 ring-in-ring ring-primary/30",
-                )}
-              >
-                <div className={cn("group flex gap-3 px-4 py-3", config.bgClass)}>
-                  {/* Source Icon */}
-                  <HugeiconsIcon
-                    icon={SourceIcon}
-                    className={cn("mt-0.5 size-4 shrink-0", config.colorClass)}
-                  />
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{item.title}</span>
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] uppercase tracking-wider px-1.5 py-0"
-                      >
-                        {config.label}
-                      </Badge>
-                      {item.priority === "critical" && (
-                        <Badge
-                          variant="destructive"
-                          className="text-[9px] uppercase tracking-wider px-1.5 py-0"
-                        >
-                          {critical()}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Context */}
-                    {item.context && (
-                      <p className="mt-1 text-xs text-muted-foreground truncate">{item.context}</p>
-                    )}
-
-                    {/* Suggested Goal */}
-                    {item.suggestedGoal && (
-                      <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5">
-                        <HugeiconsIcon
-                          icon={Target01Icon}
-                          className="size-3.5 shrink-0 text-primary/60"
-                        />
-                        <span className="text-xs text-primary/80">
-                          {suggested()}
-                          <span className="font-medium text-primary">{item.suggestedGoal}</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Primary Action: Convert to Goal */}
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <button
-                        onClick={() => handleConvert(item.id, item.suggestedGoal)}
-                        disabled={isConverting}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                          isConverting
-                            ? "bg-muted text-muted-foreground cursor-wait"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90",
-                        )}
-                      >
-                        <HugeiconsIcon icon={Target01Icon} className="size-3.5" />
-                        {isConverting ? converting() : convert_to_goal()}
-                      </button>
-
-                      {/* Dismiss */}
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger className="rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground">
-                          <HugeiconsIcon icon={MoreHorizontal} className="size-3.5" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="min-w-36">
-                          <DropdownMenuItem onClick={() => onDismiss(item.id)}>
-                            <HugeiconsIcon icon={ViewOffIcon} className="size-3.5" />
-                            {dismiss()}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-
-                  {/* Timestamp */}
-                  <div className="shrink-0 text-[10px] text-muted-foreground tabular-nums self-start mt-0.5">
-                    {item.createdAt.split("T")[1]?.slice(0, 5) || ""}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {inboxItems.map((item, idx) => (
+            <InboxItem
+              key={item.id}
+              item={item}
+              isFocused={idx === focusedIndex}
+              isConverting={convertingId === item.id}
+              onConvert={handleConvert}
+              onDismiss={onDismiss}
+            />
+          ))}
 
           {inboxItems.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">

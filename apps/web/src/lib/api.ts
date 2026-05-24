@@ -30,6 +30,7 @@ const READ_CACHE_TTL: Record<string, number> = {
   getObservabilityMetrics: 30_000,
   getAgentMetrics: 30_000,
   getAgentTimeline: 30_000,
+  getActivityHeatmap: 30_000,
   browseDirectory: 10_000,
 };
 

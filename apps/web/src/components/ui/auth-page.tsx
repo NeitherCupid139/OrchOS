@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeftIcon } from "lucide-react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
-import { auth_legal_and, auth_legal_prefix, auth_legal_suffix, home, privacy_intro, privacy_policy, privacy_section_clerk_body, privacy_section_clerk_title, privacy_section_collect_body, privacy_section_collect_title, privacy_section_contact_body, privacy_section_contact_title, privacy_section_use_body, privacy_section_use_title, sign_in_desc, sign_in_title, sign_up_desc, sign_up_title, terms_intro, terms_of_service, terms_section_accounts_body, terms_section_accounts_title, terms_section_contact_body, terms_section_contact_title, terms_section_content_body, terms_section_content_title, terms_section_use_body, terms_section_use_title } from "@/paraglide/messages";
+import { auth_legal_and, auth_legal_prefix, home, privacy_intro, privacy_policy, privacy_section_clerk_body, privacy_section_clerk_title, privacy_section_collect_body, privacy_section_collect_title, privacy_section_contact_body, privacy_section_contact_title, privacy_section_use_body, privacy_section_use_title, sign_in_desc, sign_in_title, sign_up_desc, sign_up_title, terms_intro, terms_of_service, terms_section_accounts_body, terms_section_accounts_title, terms_section_contact_body, terms_section_contact_title, terms_section_content_body, terms_section_content_title, terms_section_use_body, terms_section_use_title } from "@/paraglide/messages";
 
 interface AuthPageProps {
   mode: "signIn" | "signUp";
@@ -111,8 +111,7 @@ export function AuthPage({ mode, children }: AuthPageProps) {
               className="underline underline-offset-4 transition-colors hover:text-white"
             >
               {privacy_policy()}
-            </button>{" "}
-            {auth_legal_suffix()}
+            </button>
           </p>
         </div>
       </section>

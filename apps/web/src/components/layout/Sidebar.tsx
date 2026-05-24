@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useClerk, useOrganization, useUser } from "@clerk/clerk-react";
@@ -111,9 +111,9 @@ export function Sidebar({
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
   const [showExpandedContent, setShowExpandedContent] = useState(!collapsed);
-  const filteredOrganizations = organizations.filter((org) =>
+  const filteredOrganizations = useMemo(() => organizations.filter((org) =>
     org.name.toLowerCase().includes(orgSearch.trim().toLowerCase()),
-  );
+  ), [organizations, orgSearch]);
 
   const navigate = useNavigate();
   const showShortcutHints = useUIStore((s) => s.settings?.showShortcutHints ?? false);
@@ -156,7 +156,7 @@ export function Sidebar({
     return () => window.clearTimeout(timer);
   }, [collapsed]);
 
-  const sections: SidebarSection[] = [
+  const sections: SidebarSection[] = useMemo(() => [
     {
       label: "",
       items: [
@@ -221,7 +221,7 @@ export function Sidebar({
         },
       ],
     },
-  ];
+  ], [_locale]);
 
   return (
     <TooltipProvider delay={0}>

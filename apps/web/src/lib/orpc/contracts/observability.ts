@@ -15,6 +15,13 @@ export const timeSeriesPointSchema = z.object({
   issues: z.number(),
 });
 
+export const activityHeatmapPointSchema = z.object({
+  dayOfWeek: z.number(),
+  hour: z.number(),
+  value: z.number(),
+  label: z.string(),
+});
+
 export const agentTimelinePointSchema = z.object({
   time: z.number(),
   label: z.string(),
@@ -86,4 +93,12 @@ export const observabilityContract = {
       }),
     )
     .output(z.array(agentTimelinePointSchema)),
+  activityHeatmap: oc
+    .input(
+      z.object({
+        range: observabilityRangeSchema.optional(),
+        metric: z.enum(["messages", "toolCalls", "tokens"]).optional(),
+      }),
+    )
+    .output(z.array(activityHeatmapPointSchema)),
 };

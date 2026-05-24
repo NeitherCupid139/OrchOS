@@ -231,6 +231,69 @@ export const observabilityRouter = {
 
     return buckets;
   }),
+  activityHeatmap: os.observability.activityHeatmap.handler(async ({ input }) => {
+    const range = input.range ?? "24h";
+    const metric = input.metric ?? "toolCalls";
+    const db = await getLocalDb();
+    const rangeDate = getRangeDate(range);
+
+    const allMessages = await db.select().from(messages).all();
+
+    const filteredMessages = allMessages.filter(
+      (m) => m.role === "assistant" && new Date(m.createdAt) >= rangeDate,
+    );
+
+    // Initialize a 7 (days) x 24 (hours) grid
+    const grid = new Map<string, { value: number }>();
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        grid.set(`${d}-${h}`, { value: 0 });
+      }
+    }
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    for (const msg of filteredMessages) {
+      const dt = new Date(msg.createdAt);
+      const dayOfWeek = dt.getDay(); // 0=Sun, 6=Sat
+      const hour = dt.getHours();
+      const key = `${dayOfWeek}-${hour}`;
+      const cell = grid.get(key);
+      if (!cell) continue;
+
+      switch (metric) {
+        case "messages":
+          cell.value += 1;
+          break;
+        case "tokens":
+          if (msg.tokens) cell.value += Number(msg.tokens);
+          break;
+        case "toolCalls":
+        default: {
+          const trace = parseTrace(msg.trace);
+          for (const entry of trace) {
+            if (entry.kind === "tool") cell.value += 1;
+          }
+          break;
+        }
+      }
+    }
+
+    const result: { dayOfWeek: number; hour: number; value: number; label: string }[] = [];
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        const cell = grid.get(`${d}-${h}`)!;
+        result.push({
+          dayOfWeek: d,
+          hour: h,
+          value: cell.value,
+          label: `${dayNames[d]} ${String(h).padStart(2, "0")}:00`,
+        });
+      }
+    }
+
+    return result;
+  }),
 };
 
 function parsePayload(payload: string): Record<string, unknown> {

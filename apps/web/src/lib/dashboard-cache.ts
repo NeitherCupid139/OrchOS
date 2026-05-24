@@ -67,19 +67,18 @@ export const useDashboardCache = create<DashboardCacheState & DashboardCacheActi
     }),
     {
       name: "orchos-dashboard-cache",
-      version: 1,
+      version: 2,
+      /**
+       * Only persist essential data for fast initial render.
+       * Large/frequently-changing collections (problems, mcpServers, etc.)
+       * are fetched fresh on each visit — persisting them causes unnecessary
+       * localStorage writes on every dashboard refresh.
+       */
       partialize: (state) => ({
-        goals: state.goals,
-        agents: state.agents,
         runtimes: state.runtimes,
-        projects: state.projects,
         organizations: state.organizations,
-        problems: state.problems,
+        projects: state.projects,
         problemSummary: state.problemSummary,
-        rules: state.rules,
-        commands: state.commands,
-        mcpServers: state.mcpServers,
-        skills: state.skills,
         settings: state.settings,
       }),
     },

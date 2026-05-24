@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { api, type Conversation, type ConversationMessage } from "@/lib/api";
 
+/** Maximum number of conversations whose messages we keep in memory. */
+const MAX_CACHED_MESSAGE_SETS = 5;
+
 export interface ConversationFlowDraft {
   id: string;
   role: "assistant";
@@ -138,12 +141,26 @@ export const useConversationStore = create<
     const request = (async () => {
       try {
         const msgs = await api.getConversationMessages(conversationId);
-        set((state) => ({
-          messagesByConversationId: {
+        set((state) => {
+          const next = {
             ...state.messagesByConversationId,
             [conversationId]: msgs,
-          },
-        }));
+          };
+          // LRU eviction: keep only the most recent N conversations' messages
+          const ids = Object.keys(next);
+          if (ids.length > MAX_CACHED_MESSAGE_SETS) {
+            // Evict oldest entries (those not recently accessed)
+            // We keep the current one + most recent N-1 others
+            const keepIds = new Set(
+              ids.slice(-MAX_CACHED_MESSAGE_SETS)
+            );
+            keepIds.add(conversationId);
+            for (const id of ids) {
+              if (!keepIds.has(id)) delete next[id];
+            }
+          }
+          return { messagesByConversationId: next };
+        });
       } catch (err) {
         console.error("Failed to load messages:", err);
       } finally {
