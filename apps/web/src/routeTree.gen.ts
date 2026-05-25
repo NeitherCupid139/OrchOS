@@ -29,8 +29,11 @@ import { Route as DashboardCalendarRouteImport } from './routes/dashboard/calend
 import { Route as DashboardBookmarksRouteImport } from './routes/dashboard/bookmarks'
 import { Route as DashboardBoardRouteImport } from './routes/dashboard/board'
 import { Route as DashboardAgentsRouteImport } from './routes/dashboard/agents'
+import { Route as ApiWebhookRouteImport } from './routes/api.webhook'
 import { Route as ApiTurnstileVerifyRouteImport } from './routes/api.turnstile-verify'
 import { Route as ApiGithubStarsRouteImport } from './routes/api.github-stars'
+import { Route as ApiCustomerPortalRouteImport } from './routes/api.customer-portal'
+import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 
@@ -134,6 +137,11 @@ const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiWebhookRoute = ApiWebhookRouteImport.update({
+  id: '/api/webhook',
+  path: '/api/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTurnstileVerifyRoute = ApiTurnstileVerifyRouteImport.update({
   id: '/api/turnstile-verify',
   path: '/api/turnstile-verify',
@@ -142,6 +150,16 @@ const ApiTurnstileVerifyRoute = ApiTurnstileVerifyRouteImport.update({
 const ApiGithubStarsRoute = ApiGithubStarsRouteImport.update({
   id: '/api/github-stars',
   path: '/api/github-stars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCustomerPortalRoute = ApiCustomerPortalRouteImport.update({
+  id: '/api/customer-portal',
+  path: '/api/customer-portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
+  id: '/api/checkout',
+  path: '/api/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -168,8 +186,11 @@ export interface FileRoutesByFullPath {
   '/sso-callback': typeof SsoCallbackRoute
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checkout': typeof ApiCheckoutRoute
+  '/api/customer-portal': typeof ApiCustomerPortalRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
+  '/api/webhook': typeof ApiWebhookRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -193,8 +214,11 @@ export interface FileRoutesByTo {
   '/sso-callback': typeof SsoCallbackRoute
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checkout': typeof ApiCheckoutRoute
+  '/api/customer-portal': typeof ApiCustomerPortalRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
+  '/api/webhook': typeof ApiWebhookRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -220,8 +244,11 @@ export interface FileRoutesById {
   '/sso-callback': typeof SsoCallbackRoute
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checkout': typeof ApiCheckoutRoute
+  '/api/customer-portal': typeof ApiCustomerPortalRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
+  '/api/webhook': typeof ApiWebhookRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -248,8 +275,11 @@ export interface FileRouteTypes {
     | '/sso-callback'
     | '/terms'
     | '/api/chat'
+    | '/api/checkout'
+    | '/api/customer-portal'
     | '/api/github-stars'
     | '/api/turnstile-verify'
+    | '/api/webhook'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -273,8 +303,11 @@ export interface FileRouteTypes {
     | '/sso-callback'
     | '/terms'
     | '/api/chat'
+    | '/api/checkout'
+    | '/api/customer-portal'
     | '/api/github-stars'
     | '/api/turnstile-verify'
+    | '/api/webhook'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -299,8 +332,11 @@ export interface FileRouteTypes {
     | '/sso-callback'
     | '/terms'
     | '/api/chat'
+    | '/api/checkout'
+    | '/api/customer-portal'
     | '/api/github-stars'
     | '/api/turnstile-verify'
+    | '/api/webhook'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -326,8 +362,11 @@ export interface RootRouteChildren {
   SsoCallbackRoute: typeof SsoCallbackRoute
   TermsRoute: typeof TermsRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiCheckoutRoute: typeof ApiCheckoutRoute
+  ApiCustomerPortalRoute: typeof ApiCustomerPortalRoute
   ApiGithubStarsRoute: typeof ApiGithubStarsRoute
   ApiTurnstileVerifyRoute: typeof ApiTurnstileVerifyRoute
+  ApiWebhookRoute: typeof ApiWebhookRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
@@ -473,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgentsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/webhook': {
+      id: '/api/webhook'
+      path: '/api/webhook'
+      fullPath: '/api/webhook'
+      preLoaderRoute: typeof ApiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/turnstile-verify': {
       id: '/api/turnstile-verify'
       path: '/api/turnstile-verify'
@@ -485,6 +531,20 @@ declare module '@tanstack/react-router' {
       path: '/api/github-stars'
       fullPath: '/api/github-stars'
       preLoaderRoute: typeof ApiGithubStarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/customer-portal': {
+      id: '/api/customer-portal'
+      path: '/api/customer-portal'
+      fullPath: '/api/customer-portal'
+      preLoaderRoute: typeof ApiCustomerPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/checkout': {
+      id: '/api/checkout'
+      path: '/api/checkout'
+      fullPath: '/api/checkout'
+      preLoaderRoute: typeof ApiCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -545,8 +605,11 @@ const rootRouteChildren: RootRouteChildren = {
   SsoCallbackRoute: SsoCallbackRoute,
   TermsRoute: TermsRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiCheckoutRoute: ApiCheckoutRoute,
+  ApiCustomerPortalRoute: ApiCustomerPortalRoute,
   ApiGithubStarsRoute: ApiGithubStarsRoute,
   ApiTurnstileVerifyRoute: ApiTurnstileVerifyRoute,
+  ApiWebhookRoute: ApiWebhookRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport
