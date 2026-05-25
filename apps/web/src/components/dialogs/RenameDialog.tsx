@@ -104,7 +104,7 @@ export function RenameDialog({
           type="text"
           defaultValue={initialValue}
           placeholder={placeholder}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
         />
         {showIconPicker && (
           <div className="space-y-2">

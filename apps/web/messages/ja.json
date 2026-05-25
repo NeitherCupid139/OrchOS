@@ -58,6 +58,7 @@
   "agent_request": "エージェントリクエスト",
   "agent_name": "エージェント名",
   "agent_name_placeholder": "例: コードレビュアー",
+  "agent_provider_placeholder": "プロバイダーを選択",
   "agent_register_failed": "エージェントの登録に失敗しました",
   "agent_registered": "{name}が正常に登録されました",
   "agent_removed": "エージェントを削除しました",

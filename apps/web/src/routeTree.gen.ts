@@ -29,6 +29,7 @@ import { Route as DashboardCalendarRouteImport } from './routes/dashboard/calend
 import { Route as DashboardBookmarksRouteImport } from './routes/dashboard/bookmarks'
 import { Route as DashboardBoardRouteImport } from './routes/dashboard/board'
 import { Route as DashboardAgentsRouteImport } from './routes/dashboard/agents'
+import { Route as ApiTurnstileVerifyRouteImport } from './routes/api.turnstile-verify'
 import { Route as ApiGithubStarsRouteImport } from './routes/api.github-stars'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
@@ -133,6 +134,11 @@ const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiTurnstileVerifyRoute = ApiTurnstileVerifyRouteImport.update({
+  id: '/api/turnstile-verify',
+  path: '/api/turnstile-verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGithubStarsRoute = ApiGithubStarsRouteImport.update({
   id: '/api/github-stars',
   path: '/api/github-stars',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
+  '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
+  '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/github-stars': typeof ApiGithubStarsRoute
+  '/api/turnstile-verify': typeof ApiTurnstileVerifyRoute
   '/dashboard/agents': typeof DashboardAgentsRoute
   '/dashboard/board': typeof DashboardBoardRoute
   '/dashboard/bookmarks': typeof DashboardBookmarksRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/chat'
     | '/api/github-stars'
+    | '/api/turnstile-verify'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/chat'
     | '/api/github-stars'
+    | '/api/turnstile-verify'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/chat'
     | '/api/github-stars'
+    | '/api/turnstile-verify'
     | '/dashboard/agents'
     | '/dashboard/board'
     | '/dashboard/bookmarks'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiGithubStarsRoute: typeof ApiGithubStarsRoute
+  ApiTurnstileVerifyRoute: typeof ApiTurnstileVerifyRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
@@ -460,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgentsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/turnstile-verify': {
+      id: '/api/turnstile-verify'
+      path: '/api/turnstile-verify'
+      fullPath: '/api/turnstile-verify'
+      preLoaderRoute: typeof ApiTurnstileVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github-stars': {
       id: '/api/github-stars'
       path: '/api/github-stars'
@@ -526,6 +546,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiChatRoute: ApiChatRoute,
   ApiGithubStarsRoute: ApiGithubStarsRoute,
+  ApiTurnstileVerifyRoute: ApiTurnstileVerifyRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport

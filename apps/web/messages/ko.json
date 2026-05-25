@@ -58,6 +58,7 @@
   "agent_request": "에이전트 요청",
   "agent_name": "에이전트 이름",
   "agent_name_placeholder": "예: 코드 리뷰어",
+  "agent_provider_placeholder": "공급자 선택",
   "agent_register_failed": "에이전트 등록 실패",
   "agent_registered": "{name}이(가) 성공적으로 등록되었습니다",
   "agent_removed": "에이전트가 제거되었습니다",

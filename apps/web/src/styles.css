@@ -203,7 +203,7 @@ html.theme-switching *::after {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   button:not(:disabled),
@@ -268,18 +268,17 @@ html.theme-switching *::after {
 }
 
 /*
- * Global focus ring fallback for interactive elements that don't have their own
- * focus styling (raw <button>, [role="button"], etc.). Elements with component-level
- * focus:ring-* classes already have higher specificity and won't be affected.
+ * Global focus indicator — thin dashed blue outline for keyboard accessibility.
+ * Only applies to native interactive elements. Component-level classes take precedence.
  */
 @layer base {
-  button:focus-visible,
-  [role="button"]:focus-visible,
-  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):focus,
-  textarea:focus,
-  select:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 0.5px var(--ring);
+  :where(button):focus-visible,
+  :where([role="button"]):focus-visible,
+  :where(input):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):focus-visible,
+  :where(textarea):focus-visible,
+  :where(select):focus-visible {
+    outline: 0.5px dashed #3b82f6;
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }

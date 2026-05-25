@@ -236,7 +236,7 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect, onOpen }: Cust
     >
       <DropdownMenuTrigger
         onClick={(e) => e.stopPropagation()}
-        className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+        className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
@@ -295,7 +295,7 @@ function SearchEngineSelector({ engines, selectedEngineId, onSelect }: SearchEng
     <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         onClick={(e) => e.stopPropagation()}
-        className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:ring-offset-0"
+        className="flex h-7 w-36 cursor-default items-center justify-between gap-1.5 rounded-full border border-input bg-transparent py-2 pe-2 ps-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
@@ -745,6 +745,7 @@ export function ChatArea({
                       type="button"
                       onClick={() => handleRemoveFile(index)}
                       className="absolute -right-1 -top-1 rounded-full border border-border bg-background p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:border-destructive/30 hover:bg-destructive/10"
+           tabIndex={-1}
                     >
                       <HugeiconsIcon icon={Delete02Icon} className="size-3 text-muted-foreground" />
                     </button>

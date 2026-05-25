@@ -57,6 +57,7 @@
   "agent_request": "代理請求",
   "agent_name": "代理名稱",
   "agent_name_placeholder": "例如：程式碼審核員",
+  "agent_provider_placeholder": "選擇提供商",
   "agent_register_failed": "註冊失敗",
   "agent_registered": "{name} 註冊成功",
   "agent_removed": "代理已移除",

@@ -57,7 +57,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, observability, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_disabled, profile_status_enabled, profile_status_unverified, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, view, welcome_desc, welcome_to_orchos, workspace } from "@/paraglide/messages";
+import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, observability, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_enabled, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, view, welcome_desc, welcome_to_orchos, workspace, auth_verify_button } from "@/paraglide/messages";
 import { isClerkConfigured } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
@@ -423,7 +423,7 @@ export function Sidebar({
                         to={to}
                         preload="intent"
                         className={cn(
-                          "flex h-10 items-center rounded-md transition-colors",
+                          "flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
                           collapsed
                             ? "mx-auto size-10 justify-center gap-0 px-0"
                             : "w-full gap-2.5 px-2.5 text-sm",
@@ -987,6 +987,18 @@ function ProfileEditDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Security action states
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationCodeSent, setVerificationCodeSent] = useState(false);
+  const [addingPassword, setAddingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
+  const [twoFactorStep, setTwoFactorStep] = useState<"idle" | "showQr" | "verify">("idle");
+  const [twoFactorSecret, setTwoFactorSecret] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [securityError, setSecurityError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!open) return;
     setFirstName(clerkUser?.firstName || "");
@@ -995,6 +1007,16 @@ function ProfileEditDialog({
     setActiveTab("profile");
     setSaving(false);
     setError(null);
+    setVerifyingEmail(false);
+    setVerificationCode("");
+    setVerificationCodeSent(false);
+    setAddingPassword(false);
+    setNewPassword("");
+    setEnablingTwoFactor(false);
+    setTwoFactorStep("idle");
+    setTwoFactorSecret("");
+    setTotpCode("");
+    setSecurityError(null);
   }, [clerkUser, open]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1026,6 +1048,104 @@ function ProfileEditDialog({
 
   const displayEmail =
     clerkUser?.primaryEmailAddress?.emailAddress || fallbackEmail;
+
+  // ── Security action handlers ──
+
+  const handleSendVerificationCode = async () => {
+    if (!clerkUser?.primaryEmailAddress) return;
+    setSecurityError(null);
+    setVerifyingEmail(true);
+    try {
+      await clerkUser.primaryEmailAddress.prepareVerification({
+        strategy: "email_code",
+      });
+      setVerificationCodeSent(true);
+    } catch (err) {
+      setSecurityError(
+        err instanceof Error ? err.message : "Failed to send verification code",
+      );
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!clerkUser?.primaryEmailAddress || !verificationCode.trim()) return;
+    setSecurityError(null);
+    setVerifyingEmail(true);
+    try {
+      const result = await clerkUser.primaryEmailAddress.attemptVerification({
+        code: verificationCode,
+      });
+      if (result.verification.status === "verified") {
+        setVerificationCodeSent(false);
+        setVerificationCode("");
+        await clerkUser.reload();
+      }
+    } catch (err) {
+      setSecurityError(
+        err instanceof Error ? err.message : "Failed to verify email",
+      );
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  const handleAddPassword = async () => {
+    if (!clerkUser || !newPassword.trim()) return;
+    setSecurityError(null);
+    setSaving(true);
+    try {
+      await clerkUser.updatePassword({
+        newPassword,
+        signOutOfOtherSessions: false,
+      });
+      setAddingPassword(false);
+      setNewPassword("");
+      await clerkUser.reload();
+    } catch (err) {
+      setSecurityError(
+        err instanceof Error ? err.message : "Failed to add password",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEnableTwoFactor = async () => {
+    if (!clerkUser) return;
+    setSecurityError(null);
+    setEnablingTwoFactor(true);
+    try {
+      const totp = await clerkUser.createTOTP();
+      setTwoFactorSecret(totp.secret ?? "");
+      setTwoFactorStep("showQr");
+    } catch (err) {
+      setSecurityError(
+        err instanceof Error ? err.message : "Failed to start 2FA setup",
+      );
+    } finally {
+      setEnablingTwoFactor(false);
+    }
+  };
+
+  const handleVerifyTwoFactor = async () => {
+    if (!clerkUser || !totpCode.trim()) return;
+    setSecurityError(null);
+    setEnablingTwoFactor(true);
+    try {
+      await clerkUser.verifyTOTP({ code: totpCode });
+      setTwoFactorStep("idle");
+      setTotpCode("");
+      await clerkUser.reload();
+    } catch (err) {
+      setSecurityError(
+        err instanceof Error ? err.message : "Failed to verify 2FA code",
+      );
+    } finally {
+      setEnablingTwoFactor(false);
+    }
+  };
   const canEdit = !!clerkUser;
   const displayName = clerkUser?.fullName || fallbackName;
   const activeTabLabel =
@@ -1145,7 +1265,7 @@ function ProfileEditDialog({
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -1156,7 +1276,7 @@ function ProfileEditDialog({
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             disabled={!canEdit || saving}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -1169,7 +1289,7 @@ function ProfileEditDialog({
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           disabled={!canEdit || saving}
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-[0.5px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
                     </div>
@@ -1208,7 +1328,11 @@ function ProfileEditDialog({
                           {profile_security_section()}
                         </p>
                       </div>
+                      {securityError ? (
+                        <p className="text-sm text-destructive">{securityError}</p>
+                      ) : null}
                       <div className="space-y-3 pt-1">
+                        {/* Email Verification */}
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
@@ -1218,19 +1342,41 @@ function ProfileEditDialog({
                               {profile_email_verification_desc()}
                             </p>
                           </div>
-                          <span
-                            className={cn(
-                              "rounded-md px-2.5 py-1 text-[10px] font-medium",
-                              emailVerified
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {emailVerified
-                              ? profile_status_verified()
-                              : profile_status_unverified()}
-                          </span>
+                          {emailVerified ? (
+                            <span className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                              {profile_status_verified()}
+                            </span>
+                          ) : verificationCodeSent ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                placeholder="000000"
+                                maxLength={6}
+                                className="w-20 rounded-md border border-border bg-background px-2 py-1 text-center text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleVerifyEmail}
+                                disabled={verifyingEmail || !verificationCode.trim()}
+                                className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                              >
+                                {verifyingEmail ? "…" : auth_verify_button()}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleSendVerificationCode}
+                              disabled={verifyingEmail}
+                              className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              {verifyingEmail ? "…" : auth_verify_button()}
+                            </button>
+                          )}
                         </div>
+                        {/* Password */}
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
@@ -1240,19 +1386,39 @@ function ProfileEditDialog({
                               {profile_password_signin_desc()}
                             </p>
                           </div>
-                          <span
-                            className={cn(
-                              "rounded-md px-2.5 py-1 text-[10px] font-medium",
-                              hasPassword
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {hasPassword
-                              ? profile_status_enabled()
-                              : profile_status_disabled()}
-                          </span>
+                          {hasPassword ? (
+                            <span className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                              {profile_status_enabled()}
+                            </span>
+                          ) : addingPassword ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-28 rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddPassword}
+                                disabled={saving || !newPassword.trim()}
+                                className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                              >
+                                {saving ? "…" : save()}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setAddingPassword(true)}
+                              className="rounded-md px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            >
+                              + {profile_password_signin()}
+                            </button>
+                          )}
                         </div>
+                        {/* Two-Factor */}
                         <div className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-2.5">
                           <div>
                             <p className="text-sm text-foreground">
@@ -1262,18 +1428,55 @@ function ProfileEditDialog({
                               {profile_two_factor_desc()}
                             </p>
                           </div>
-                          <span
-                            className={cn(
-                              "rounded-md px-2.5 py-1 text-[10px] font-medium",
-                              hasTwoFactor
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {hasTwoFactor
-                              ? profile_status_enabled()
-                              : profile_status_disabled()}
-                          </span>
+                          {hasTwoFactor ? (
+                            <span className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                              {profile_status_enabled()}
+                            </span>
+                          ) : twoFactorStep === "showQr" ? (
+                            <div className="space-y-2">
+                              {twoFactorSecret ? (
+                                <>
+                                  <p className="text-[10px] text-muted-foreground text-center">
+                                    Scan with authenticator app
+                                  </p>
+                                  <div className="mx-auto flex size-24 items-center justify-center rounded-lg border border-border bg-white p-2">
+                                    <img
+                                      src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(twoFactorSecret)}`}
+                                      alt="2FA QR Code"
+                                      className="size-20"
+                                    />
+                                  </div>
+                                </>
+                              ) : null}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={totpCode}
+                                  onChange={(e) => setTotpCode(e.target.value)}
+                                  placeholder="000000"
+                                  maxLength={6}
+                                  className="w-20 rounded-md border border-border bg-background px-2 py-1 text-center text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleVerifyTwoFactor}
+                                  disabled={enablingTwoFactor || !totpCode.trim()}
+                                  className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                >
+                                  {enablingTwoFactor ? "…" : auth_verify_button()}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleEnableTwoFactor}
+                              disabled={enablingTwoFactor}
+                              className="rounded-md px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            >
+                              + {profile_two_factor()}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

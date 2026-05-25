@@ -62,14 +62,14 @@ function HomePageInner() {
               <img
                 src="/hero/hero.png"
                 alt="OrchOS Hero"
-                className="h-full w-full object-cover object-top dark:hidden"
+                className="h-full w-full object-contain sm:object-cover object-top dark:hidden"
                 loading="lazy"
                 decoding="async"
               />
               <img
                 src="/hero/hero-dark.png"
                 alt="OrchOS Hero"
-                className="hidden h-full w-full object-cover object-top dark:block"
+                className="hidden h-full w-full object-contain sm:object-cover object-top dark:block"
                 loading="lazy"
                 decoding="async"
               />

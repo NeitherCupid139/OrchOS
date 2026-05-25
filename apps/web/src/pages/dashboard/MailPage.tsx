@@ -787,7 +787,7 @@ export function MailPage() {
                     }))
                   }
                   placeholder={email_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
@@ -801,7 +801,7 @@ export function MailPage() {
                     }))
                   }
                   placeholder={display_name_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
@@ -815,7 +815,7 @@ export function MailPage() {
                     }))
                   }
                   placeholder={username_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                 />
               </label>
               <label className="grid gap-1.5 text-sm">
@@ -831,7 +831,7 @@ export function MailPage() {
                       }))
                     }
                     placeholder={password_placeholder()}
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                   />
                   <button
                     type="button"
@@ -858,7 +858,7 @@ export function MailPage() {
                         }))
                       }
                       placeholder={smtp_host_placeholder()}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                     />
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -873,7 +873,7 @@ export function MailPage() {
                           }))
                         }
                         placeholder={smtp_port_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                       />
                     </label>
                     <label className="flex items-center gap-2 text-sm pt-5">
@@ -908,7 +908,7 @@ export function MailPage() {
                         }))
                       }
                       placeholder={imap_host_placeholder()}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                     />
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -923,7 +923,7 @@ export function MailPage() {
                           }))
                         }
                         placeholder={imap_port_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                       />
                     </label>
                     <label className="flex items-center gap-2 text-sm pt-5">

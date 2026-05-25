@@ -62,6 +62,7 @@
   "agent_model_placeholder": "e.g. cloud/claude-sonnet-4",
   "agent_name": "Agent Name",
   "agent_name_placeholder": "e.g. Code Reviewer",
+  "agent_provider_placeholder": "Select a provider",
   "agent_register_failed": "Failed to register agent",
   "agent_registered": "{name} registered successfully",
   "agent_removed": "Agent removed",

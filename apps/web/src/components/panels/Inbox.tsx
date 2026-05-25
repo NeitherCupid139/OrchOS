@@ -136,7 +136,7 @@ const InboxItem = memo(function InboxItem({
               {isConverting ? converting() : convert_to_goal()}
             </button>
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger className="rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground">
+              <DropdownMenuTrigger className="rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground" tabIndex={-1}>
                 <HugeiconsIcon icon={MoreHorizontal} className="size-3.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-36">

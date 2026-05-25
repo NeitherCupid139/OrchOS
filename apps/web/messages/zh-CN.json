@@ -62,6 +62,7 @@
   "agent_request": "代理请求",
   "agent_name": "代理名称",
   "agent_name_placeholder": "例如：代码审核员",
+  "agent_provider_placeholder": "选择提供商",
   "agent_register_failed": "注册失败",
   "agent_registered": "{name} 注册成功",
   "agent_removed": "代理已移除",

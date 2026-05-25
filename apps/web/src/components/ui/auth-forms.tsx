@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import { getTurnstileSiteKey } from "@/lib/turnstile";
 import { cn } from "@/lib/utils";
 import {
   auth_apple_button,
@@ -67,6 +69,8 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = getTurnstileSiteKey().length > 0;
 
   if (!isLoaded) return null;
 
@@ -170,7 +174,15 @@ export function SignInForm() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <div className="flex justify-center">
+          <TurnstileWidget
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={loading || (turnstileEnabled && !turnstileToken)}>
           {loading ? loading_label() : sign_in()}
         </Button>
       </form>
@@ -185,6 +197,8 @@ export function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = getTurnstileSiteKey().length > 0;
   const verifyingRef = useRef(false);
   const [code, setCode] = useState("");
 
@@ -379,7 +393,15 @@ export function SignUpForm() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <div className="flex justify-center">
+          <TurnstileWidget
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={loading || (turnstileEnabled && !turnstileToken)}>
           {loading ? loading_label() : sign_up()}
         </Button>
       </form>

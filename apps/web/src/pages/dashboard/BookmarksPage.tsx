@@ -613,6 +613,7 @@ const BookmarkCard = memo(function BookmarkCard({
             type="button"
             variant="ghost"
             size="icon-xs"
+            tabIndex={-1}
             disabled={pinPending}
             onClick={() => onTogglePin(categoryId, bookmark.id, bookmark.pinned)}
             className={cn(bookmark.pinned && "text-primary", pinPending && "opacity-70")}
@@ -624,6 +625,7 @@ const BookmarkCard = memo(function BookmarkCard({
             type="button"
             variant="ghost"
             size="icon-xs"
+            tabIndex={-1}
             onClick={() => onEdit(bookmark.id, bookmark.title, bookmark.url, bookmark.icon)}
             title={edit_bookmark()}
           >
@@ -633,6 +635,7 @@ const BookmarkCard = memo(function BookmarkCard({
             type="button"
             variant="ghost"
             size="icon-xs"
+            tabIndex={-1}
             onClick={() => onDelete(bookmark.id)}
             className="hover:text-destructive"
             title={delete_bookmark()}
@@ -1131,6 +1134,7 @@ export function BookmarksPage() {
                                       type="button"
                                       variant="ghost"
                                       size="icon-xs"
+                                      tabIndex={-1}
                                       onClick={() => setRenameCategoryId(category.id)}
                                     >
                                       <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
@@ -1147,6 +1151,7 @@ export function BookmarksPage() {
                                       type="button"
                                       variant="ghost"
                                       size="icon-xs"
+                                      tabIndex={-1}
                                       onClick={() => setDeleteCategoryId(category.id)}
                                       className="hover:text-destructive"
                                     >
@@ -1166,24 +1171,12 @@ export function BookmarksPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3 py-8 text-center">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted/60">
-                      <HugeiconsIcon icon={Folder01Icon} className="size-6 text-muted-foreground/60" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">{bookmarks_workspace()}</p>
-                      <p className="text-xs text-muted-foreground/60 px-3">{new_category_desc()}</p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCreateCategory}
-                      className="mt-1"
-                    >
-                      <HugeiconsIcon icon={Add01Icon} className="size-4" />
-                      {new_category()}
-                    </Button>
+                  <div className="py-6 text-center">
+                    <HugeiconsIcon
+                      icon={Folder01Icon}
+                      className="mx-auto mb-1.5 size-5 text-muted-foreground/30"
+                    />
+                    <p className="text-xs text-muted-foreground">{new_category_desc()}</p>
                   </div>
                 )}
             </div>
@@ -1242,7 +1235,7 @@ export function BookmarksPage() {
         <ScrollAreaPrimitive.Root className="relative h-full">
           <ScrollAreaPrimitive.Viewport
             ref={viewportRef}
-            className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[0.5px] focus-visible:ring-ring/20 focus-visible:outline-1"
+            className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2 focus-visible:outline-1"
           >
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 p-6">
               {loading ? (
@@ -1460,7 +1453,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1468,7 +1461,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
         </div>
@@ -1557,7 +1550,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.title}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, title: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -1565,7 +1558,7 @@ export function BookmarksPage() {
             <input
               value={bookmarkDraft.url}
               onChange={(event) => setBookmarkDraft((current) => ({ ...current, url: event.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
         </div>
@@ -1675,7 +1668,7 @@ export function BookmarksPage() {
               value={createCategoryName}
               onChange={(event) => setCreateCategoryName(event.target.value)}
               placeholder={category_name()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

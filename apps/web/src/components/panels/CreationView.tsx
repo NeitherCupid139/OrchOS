@@ -431,7 +431,7 @@ export function CreationView(props?: CreationViewProps | null) {
                     tabIndex={0}
                     aria-pressed={isActive}
                     className={cn(
-                      "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      "group flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors outline-none",
                       isActive
                         ? "bg-accent font-medium text-accent-foreground"
                         : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
@@ -465,6 +465,7 @@ export function CreationView(props?: CreationViewProps | null) {
                                 });
                               }}
                               className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
+               tabIndex={-1}
                             >
                               <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
                             </Button>
@@ -487,6 +488,7 @@ export function CreationView(props?: CreationViewProps | null) {
                                 setDeleteConfirmOpen(true);
                               }}
                               className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+               tabIndex={-1}
                             >
                               <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
                             </Button>

@@ -14,7 +14,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
 import { Claude, DeepSeek, Gemini, OpenAI, OpenCode, OpenRouter } from "@lobehub/icons";
-import { add, agent_removed, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, provider as providerLabel, resize_agents_sidebar, save, url } from "@/paraglide/messages";
+import { add, agent_provider_placeholder, agent_removed, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, provider as providerLabel, resize_agents_sidebar, save, url } from "@/paraglide/messages";
 
 const PROVIDERS = [
   { id: "opencode-go", name: "OpenCode Go", url: "https://opencode.ai/zen/go/v1", icon: OpenCode },
@@ -353,6 +353,7 @@ export function AgentsPage() {
                         type="button"
                         variant="ghost"
                         size="icon-xs"
+                        tabIndex={-1}
                         aria-label={edit()}
                         onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onClick={(e) => {
@@ -374,6 +375,7 @@ export function AgentsPage() {
                         type="button"
                         variant="ghost"
                         size="icon-xs"
+                        tabIndex={-1}
                         aria-label={delete_message()}
                         onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onClick={async (e) => {
@@ -496,7 +498,7 @@ export function AgentsPage() {
               value={agentForm.name}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
               placeholder={custom_agent_name_placeholder()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
           <div className="grid gap-2 text-sm">
@@ -523,7 +525,7 @@ export function AgentsPage() {
                           const Icon = selected.icon;
                           return <><Icon className="size-4 shrink-0" />{selected.name}</>;
                         }
-                        return <span className="text-muted-foreground">Select a provider</span>;
+                        return <span className="text-muted-foreground">{agent_provider_placeholder()}</span>;
                       })()}
                     </span>
                   </SelectTrigger>
@@ -550,7 +552,7 @@ export function AgentsPage() {
                     value={agentForm.url}
                     onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
                     placeholder={custom_agent_url_placeholder()}
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                   />
                   <div className="absolute right-1 top-1/2 -translate-y-1/2">
                     <Tooltip>
@@ -581,7 +583,7 @@ export function AgentsPage() {
               value={agentForm.apiKey}
               onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
               placeholder={api_key_placeholder()}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-[0.5px] focus:ring-ring/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
           <label className="grid gap-2 text-sm">
