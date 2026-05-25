@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AppleSwitch } from "@/components/unlumen-ui/apple-switch";
+import { useLocale } from "@/lib/i18n-provider";
 import {
   pricing_hero_title,
   pricing_hero_desc,
@@ -44,7 +45,6 @@ import {
   pricing_feature_agents_label,
   pricing_feature_column,
   pricing_feature_unlimited_agents,
-  pricing_per_month,
   pricing_pro_feature_agents,
   pricing_pro_feature_web_search,
   pricing_pro_feature_everything_free,
@@ -63,6 +63,8 @@ import {
   pricing_faq_answer4,
 } from "@/paraglide/messages";
 
+const GITHUB_REPO = "https://github.com/NeitherCupid139/OrchOS";
+
 export const Route = createFileRoute("/pricing")({
   component: Pricing,
 });
@@ -78,116 +80,128 @@ type Tier = {
   buttonVariant: "default" | "outline";
   popular: boolean;
   features: string[];
+  href: string;
 };
 
-const TIERS: Tier[] = [
-  {
-    key: "oss",
-    title: pricing_oss_title(),
-    desc: pricing_oss_desc(),
-    price: pricing_oss_price(),
-    priceYearly: pricing_oss_price(),
-    billing: "",
-    buttonLabel: pricing_oss_cta(),
-    buttonVariant: "outline",
-    popular: false,
-    features: [
-      pricing_feature_unlimited_agents(),
-      pricing_oss_feature_core(),
-      pricing_oss_feature_self_hosted(),
-      pricing_oss_feature_community(),
-    ],
-  },
-  {
-    key: "free",
-    title: pricing_free_title(),
-    desc: pricing_free_desc(),
-    price: pricing_free_price(),
-    priceYearly: pricing_free_price(),
-    billing: "",
-    buttonLabel: pricing_free_cta(),
-    buttonVariant: "outline",
-    popular: false,
-    features: [
-      pricing_feature_agents({ count: "5" }),
-      pricing_free_feature_core(),
-      pricing_free_feature_cloud(),
-      pricing_free_feature_sync(),
-      pricing_free_feature_tokens(),
-    ],
-  },
-  {
-    key: "pro",
-    title: pricing_pro_title(),
-    desc: pricing_pro_desc(),
-    price: pricing_pro_price(),
-    priceYearly: pricing_pro_price_yearly(),
-    billing: pricing_billed_monthly(),
-    buttonLabel: pricing_btn_get_started(),
-    buttonVariant: "default",
-    popular: true,
-    features: [
-      pricing_pro_feature_agents(),
-      pricing_pro_feature_everything_free(),
-      pricing_pro_feature_web_search(),
-      pricing_feature_api(),
-      pricing_pro_feature_priority_support(),
-      pricing_pro_feature_tokens(),
-    ],
-  },
-];
+function useTiers(): Tier[] {
+  const { locale } = useLocale();
+  return useMemo(() => [
+    {
+      key: "oss",
+      title: pricing_oss_title(),
+      desc: pricing_oss_desc(),
+      price: pricing_oss_price(),
+      priceYearly: pricing_oss_price(),
+      billing: "",
+      buttonLabel: pricing_oss_cta(),
+      buttonVariant: "outline" as const,
+      popular: false,
+      href: GITHUB_REPO,
+      features: [
+        pricing_feature_unlimited_agents(),
+        pricing_oss_feature_core(),
+        pricing_oss_feature_self_hosted(),
+        pricing_oss_feature_community(),
+      ],
+    },
+    {
+      key: "free",
+      title: pricing_free_title(),
+      desc: pricing_free_desc(),
+      price: pricing_free_price(),
+      priceYearly: pricing_free_price(),
+      billing: "",
+      buttonLabel: pricing_free_cta(),
+      buttonVariant: "outline" as const,
+      popular: false,
+      href: "/sign-up",
+      features: [
+        pricing_feature_agents({ count: "5" }),
+        pricing_free_feature_core(),
+        pricing_free_feature_cloud(),
+        pricing_free_feature_sync(),
+        pricing_free_feature_tokens(),
+      ],
+    },
+    {
+      key: "pro",
+      title: pricing_pro_title(),
+      desc: pricing_pro_desc(),
+      price: pricing_pro_price(),
+      priceYearly: pricing_pro_price_yearly(),
+      billing: pricing_billed_monthly(),
+      buttonLabel: pricing_btn_get_started(),
+      buttonVariant: "default" as const,
+      popular: true,
+      href: "/sign-up",
+      features: [
+        pricing_pro_feature_agents(),
+        pricing_pro_feature_everything_free(),
+        pricing_pro_feature_web_search(),
+        pricing_feature_api(),
+        pricing_pro_feature_priority_support(),
+        pricing_pro_feature_tokens(),
+      ],
+    },
+  ], [locale]);
+}
 
-const COMPARE_FEATURES = [
-  {
-    label: pricing_feature_agents_label(),
-    oss: "Unlimited",
-    free: "10",
-    pro: "10",
-  },
-  {
-    label: pricing_feature_bookmarks(),
-    oss: true,
-    free: true,
-    pro: true,
-  },
-  {
-    label: pricing_feature_calendar(),
-    oss: true,
-    free: true,
-    pro: true,
-  },
-  {
-    label: pricing_feature_mail(),
-    oss: true,
-    free: true,
-    pro: true,
-  },
-  {
-    label: pricing_feature_kanban(),
-    oss: true,
-    free: true,
-    pro: true,
-  },
-  {
-    label: pricing_feature_api(),
-    oss: false,
-    free: false,
-    pro: true,
-  },
-  {
-    label: pricing_pro_feature_priority_support(),
-    oss: false,
-    free: false,
-    pro: true,
-  },
-];
+function useCompareFeatures() {
+  const { locale } = useLocale();
+  return useMemo(() => [
+    {
+      label: pricing_feature_agents_label(),
+      oss: "Unlimited",
+      free: "10",
+      pro: "10",
+    },
+    {
+      label: pricing_feature_bookmarks(),
+      oss: true,
+      free: true,
+      pro: true,
+    },
+    {
+      label: pricing_feature_calendar(),
+      oss: true,
+      free: true,
+      pro: true,
+    },
+    {
+      label: pricing_feature_mail(),
+      oss: true,
+      free: true,
+      pro: true,
+    },
+    {
+      label: pricing_feature_kanban(),
+      oss: true,
+      free: true,
+      pro: true,
+    },
+    {
+      label: pricing_feature_api(),
+      oss: false,
+      free: false,
+      pro: true,
+    },
+    {
+      label: pricing_pro_feature_priority_support(),
+      oss: false,
+      free: false,
+      pro: true,
+    },
+  ], [locale]);
+}
 
-const FAQS = [
-  { q: pricing_faq_question1, a: pricing_faq_answer1 },
-  { q: pricing_faq_question2, a: pricing_faq_answer2 },
-  { q: pricing_faq_question3, a: pricing_faq_answer3 },
-  { q: pricing_faq_question4, a: pricing_faq_answer4 },
-];
+function useFaqs() {
+  return [
+    { q: pricing_faq_question1, a: pricing_faq_answer1 },
+    { q: pricing_faq_question2, a: pricing_faq_answer2 },
+    { q: pricing_faq_question3, a: pricing_faq_answer3 },
+    { q: pricing_faq_question4, a: pricing_faq_answer4 },
+  ];
+}
 
 function CheckIcon({ className }: { className?: string }) {
   return (
@@ -226,6 +240,9 @@ function MinusIcon({ className }: { className?: string }) {
 
 function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const tiers = useTiers();
+  const compareFeatures = useCompareFeatures();
+  const faqs = useFaqs();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -252,7 +269,7 @@ function Pricing() {
         <section className="px-6 pb-16 sm:px-10 lg:px-14">
           <div className="mx-auto max-w-6xl">
             <div className="mx-auto grid gap-6 md:grid-cols-3">
-              {TIERS.map((tier) => (
+              {tiers.map((tier) => (
                 <div
                   key={tier.key}
                   className={cn(
@@ -300,7 +317,6 @@ function Pricing() {
                         <span className="text-4xl font-bold text-foreground">
                           {yearly ? tier.priceYearly : tier.price}
                         </span>
-                        <span className="text-sm text-muted-foreground">{pricing_per_month()}</span>
                       </div>
                       {tier.key === "pro" ? (
                         <div className="flex items-center gap-2">
@@ -336,12 +352,27 @@ function Pricing() {
                     ))}
                   </ul>
 
-                  <Button
-                    variant={tier.buttonVariant}
-                    className="w-full"
-                  >
-                    {tier.buttonLabel}
-                  </Button>
+                  {tier.key === "oss" ? (
+                    <Button
+                      variant={tier.buttonVariant}
+                      className="w-full"
+                      asChild
+                    >
+                      <a href={tier.href} target="_blank" rel="noopener noreferrer">
+                        {tier.buttonLabel}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={tier.buttonVariant}
+                      className="w-full"
+                      asChild
+                    >
+                      <Link to={tier.href}>
+                        {tier.buttonLabel}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -374,7 +405,7 @@ function Pricing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {COMPARE_FEATURES.map((feat, i) => (
+                  {compareFeatures.map((feat, i) => (
                     <tr
                       key={i}
                       className="border-b border-border/50 transition-colors hover:bg-muted/30"
@@ -418,7 +449,7 @@ function Pricing() {
               {pricing_section_faq_desc()}
             </p>
             <div className="space-y-4">
-              {FAQS.map((faq, i) => (
+              {faqs.map((faq, i) => (
                 <div
                   key={i}
                   className="rounded-xl border border-border bg-card"

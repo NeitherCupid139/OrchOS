@@ -105,11 +105,15 @@ export function getHydratedClientLocale() {
   return activeLocale;
 }
 
-export function syncRuntimeLocale(locale: Locale) {
+export function syncActiveLocale(locale: Locale) {
   activeLocale = locale;
-  writeStoredLocale(locale);
   if (typeof document !== "undefined") {
     document.documentElement.lang = locale;
   }
   setParaglideLocale(locale, { reload: false });
+}
+
+export function syncRuntimeLocale(locale: Locale) {
+  syncActiveLocale(locale);
+  writeStoredLocale(locale);
 }

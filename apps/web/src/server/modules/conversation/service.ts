@@ -93,8 +93,15 @@ export abstract class ConversationService {
     return ConversationService.mapRow(row);
   }
 
+  private static readonly DEFAULT_LIST_LIMIT = 500;
+
   static async list(db: AppDb): Promise<Conversation[]> {
-    const rows = await db.select().from(conversations).orderBy(desc(conversations.updatedAt)).all();
+    const rows = await db
+      .select()
+      .from(conversations)
+      .orderBy(desc(conversations.updatedAt))
+      .limit(ConversationService.DEFAULT_LIST_LIMIT)
+      .all();
     return rows.map(ConversationService.mapRow);
   }
 

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, createContext, use, type ReactNode } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useUIStore } from "@/lib/store";
-import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
+import { getHydratedClientLocale, getInitialLocale, syncRuntimeLocale, syncActiveLocale } from "@/lib/i18n-runtime";
 import type { Locale } from "@/lib/i18n";
 
 interface I18nContextValue {
@@ -25,7 +25,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const [locale, setLocaleState] = useState(() => getInitialLocale());
 
-  syncRuntimeLocale(locale);
+  // Sync paraglide runtime locale BEFORE children render (cheap — no localStorage)
+  syncActiveLocale(locale);
+
+  // Persist to localStorage after paint (expensive — JSON parse/stringify)
+  useEffect(() => {
+    syncRuntimeLocale(locale);
+  }, [locale]);
 
   // Apply any persisted client locale after hydration.
   useEffect(() => {

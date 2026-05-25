@@ -55,8 +55,10 @@ async function getClientApi(): Promise<ClientApi> {
   return client;
 }
 
-// Cache method references after first resolution to avoid Proxy overhead
+// Cache method references after first resolution to avoid Proxy overhead.
+// LRU-bounded to prevent unbounded closure accumulation.
 const methodCache = new Map<string, (...args: unknown[]) => unknown>();
+const MAX_METHOD_CACHE_SIZE = 30;
 
 function createCachedProxyMethod(property: string): (...args: unknown[]) => unknown {
   const cached = methodCache.get(property);
@@ -85,6 +87,12 @@ function createCachedProxyMethod(property: string): (...args: unknown[]) => unkn
     invalidateDependentCaches(property);
     return (value as (...fnArgs: unknown[]) => unknown)(...args);
   };
+
+  // LRU eviction: if at capacity, remove the oldest entry
+  if (methodCache.size >= MAX_METHOD_CACHE_SIZE) {
+    const firstKey = methodCache.keys().next().value;
+    if (firstKey !== undefined) methodCache.delete(firstKey);
+  }
 
   methodCache.set(property, fn);
   return fn;

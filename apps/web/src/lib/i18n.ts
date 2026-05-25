@@ -3,6 +3,7 @@ import type { Locale } from "@/paraglide/runtime";
 import { m } from "@/paraglide/messages";
 
 export { getLocale, setLocale, m };
+export { syncActiveLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
 export type { Locale };
 
 export const AVAILABLE_LOCALES = [

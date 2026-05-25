@@ -26,6 +26,28 @@ if (!isWithoutCloudflare) {
 }
 
 const config = defineConfig(({ isSsrBuild }) => ({
+  build: isSsrBuild
+    ? undefined
+    : {
+        target: "es2022",
+        cssMinify: "lightningcss",
+        rollupOptions: {
+          output: {
+            manualChunks(id: string) {
+              if (id.includes("node_modules/shiki")) return "shiki";
+              if (id.includes("node_modules/recharts")) return "recharts";
+              if (id.includes("node_modules/react-markdown") || id.includes("node_modules/remark-gfm"))
+                return "markdown";
+              if (
+                id.includes("node_modules/@hugeicons/core-free-icons") ||
+                id.includes("node_modules/@hugeicons/react")
+              )
+                return "icons";
+              if (id.includes("node_modules/@lobehub/icons")) return "lobeicons";
+            },
+          },
+        },
+      },
   resolve: {
     tsconfigPaths: true,
     alias: isSsrBuild && !isWithoutCloudflare

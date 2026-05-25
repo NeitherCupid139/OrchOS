@@ -4,30 +4,28 @@ import {
 } from "@/server/modules/custom-agents/openai-compatible";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getLocalDb } from "@/server/runtime/local-db";
+import { createServiceCache } from "@/server/service-cache";
+
+const getService = createServiceCache((db) => new CustomAgentService(db));
 
 export const customAgentsRouter = {
   list: os.customAgents.list.handler(async () => {
-    const service = new CustomAgentService(await getLocalDb());
-    return service.list();
+    return getService(await getLocalDb()).list();
   }),
   getDefault: os.customAgents.getDefault.handler(async () => {
-    const service = new CustomAgentService(await getLocalDb());
-    return { agentId: await service.getDefaultAgentId() };
+    return { agentId: await getService(await getLocalDb()).getDefaultAgentId() };
   }),
   setDefault: os.customAgents.setDefault.handler(async ({ input }) => {
-    const service = new CustomAgentService(await getLocalDb());
-    return { agentId: await service.setDefaultAgentId(input.agentId) };
+    return { agentId: await getService(await getLocalDb()).setDefaultAgentId(input.agentId) };
   }),
   models: os.customAgents.models.handler(async ({ input }) => {
     return fetchOpenAICompatibleModels(fetch, input);
   }),
   create: os.customAgents.create.handler(async ({ input }) => {
-    const service = new CustomAgentService(await getLocalDb());
-    return service.create(input);
+    return getService(await getLocalDb()).create(input);
   }),
   update: os.customAgents.update.handler(async ({ input }) => {
-    const service = new CustomAgentService(await getLocalDb());
-    return service.update(input.id, {
+    return getService(await getLocalDb()).update(input.id, {
       name: input.name,
       url: input.url,
       apiKey: input.apiKey,
@@ -35,7 +33,6 @@ export const customAgentsRouter = {
     });
   }),
   delete: os.customAgents.delete.handler(async ({ input }) => {
-    const service = new CustomAgentService(await getLocalDb());
-    return service.remove(input.id);
+    return getService(await getLocalDb()).remove(input.id);
   }),
 };

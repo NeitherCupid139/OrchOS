@@ -106,6 +106,28 @@ function buildMessageParts(message: ConversationMessage): ConversationUiPart[] {
   return parts;
 }
 
+/**
+ * Weak LRU cache for buildMessageParts results.
+ * Avoids re-parsing message traces on every render.
+ */
+const partsCache = new Map<string, ConversationUiPart[]>();
+const MAX_PARTS_CACHE = 200;
+
+function getCachedParts(message: ConversationMessage): ConversationUiPart[] {
+  const key = `${message.id}:${message.content?.length ?? 0}:${(message.trace ?? []).length}`;
+  const cached = partsCache.get(key);
+  if (cached) return cached;
+
+  const parts = buildMessageParts(message);
+
+  if (partsCache.size >= MAX_PARTS_CACHE) {
+    const firstKey = partsCache.keys().next().value;
+    if (firstKey !== undefined) partsCache.delete(firstKey);
+  }
+  partsCache.set(key, parts);
+  return parts;
+}
+
 export function mapConversationMessagesToUiMessages(messages: ConversationMessage[]): UIMessage[] {
   return messages.map((message) => ({
     id: message.id,
@@ -121,7 +143,7 @@ export function mapConversationMessagesToUiMessages(messages: ConversationMessag
       clarificationQuestions: message.clarificationQuestions,
       createdAt: message.createdAt,
     },
-    parts: buildMessageParts(message) as UIMessage["parts"],
+    parts: getCachedParts(message) as UIMessage["parts"],
   }));
 }
 

@@ -33,13 +33,24 @@ const LAZY_LANGS = new Set([
   "md",
 ]);
 
+/** Maximum number of additional languages to keep loaded beyond the core set. */
+const MAX_EXTRA_LANGS = 6;
+
 let highlighterPromise: Promise<Highlighter> | null = null;
+let highlighterInstance: Highlighter | null = null;
+
+/** Tracks loaded languages outside core set, with access timestamps for LRU eviction. */
+const loadedExtraLangs = new Map<string, number>();
+const coreLangSet = new Set<string>(CORE_LANGS);
 
 export function getSharedHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
       langs: [...CORE_LANGS],
       themes: ["github-dark", "github-light"],
+    });
+    highlighterPromise.then((h) => {
+      highlighterInstance = h;
     });
   }
   return highlighterPromise;
@@ -48,15 +59,66 @@ export function getSharedHighlighter(): Promise<Highlighter> {
 /**
  * Ensure a language grammar is loaded. Called by ChatCodeBlock
  * before highlighting unknown languages.
+ *
+ * When the number of loaded extra languages exceeds MAX_EXTRA_LANGS,
+ * the least-recently-used language is evicted.
  */
 export async function ensureLanguage(lang: string): Promise<void> {
-  if ((CORE_LANGS as readonly string[]).includes(lang) || !LAZY_LANGS.has(lang)) return;
+  if (coreLangSet.has(lang) || !LAZY_LANGS.has(lang)) return;
 
   const highlighter = await getSharedHighlighter();
+
+  // Already loaded — update timestamp
+  if (loadedExtraLangs.has(lang)) {
+    loadedExtraLangs.set(lang, Date.now());
+    return;
+  }
+
+  // Evict LRU if at capacity
+  if (loadedExtraLangs.size >= MAX_EXTRA_LANGS) {
+    let oldestLang: string | null = null;
+    let oldestTime = Infinity;
+    for (const [loadedLang, ts] of loadedExtraLangs) {
+      if (ts < oldestTime) {
+        oldestTime = ts;
+        oldestLang = loadedLang;
+      }
+    }
+    if (oldestLang) {
+      loadedExtraLangs.delete(oldestLang);
+    }
+  }
+
   try {
     await highlighter.loadLanguage(lang as Parameters<typeof highlighter.loadLanguage>[0]);
+    loadedExtraLangs.set(lang, Date.now());
     LAZY_LANGS.delete(lang);
   } catch {
     // Language not available — fall back to plain text
+  }
+}
+
+/**
+ * Release the highlighter instance to free WASM/grammar memory.
+ * Call when the user navigates away from a view that uses code highlighting.
+ */
+export function disposeHighlighter(): void {
+  if (highlighterInstance) {
+    try {
+      highlighterInstance.dispose?.();
+    } catch {
+      // best-effort
+    }
+  }
+  highlighterInstance = null;
+  highlighterPromise = null;
+  loadedExtraLangs.clear();
+
+  // Restore lazy language set so they can be loaded again if needed
+  for (const lang of [
+    "tsx", "jsx", "css", "scss", "html", "xml", "diff",
+    "yaml", "python", "rust", "go", "sql", "shell", "md",
+  ]) {
+    LAZY_LANGS.add(lang);
   }
 }

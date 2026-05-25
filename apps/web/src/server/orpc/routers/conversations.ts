@@ -7,6 +7,11 @@ import {
 import { ConversationService, type Message } from "@/server/modules/conversation/service";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getLocalDb } from "@/server/runtime/local-db";
+import { createServiceCache } from "@/server/service-cache";
+
+// Module-level service cache — services are stateless, avoid per-request instantiation.
+const getCustomAgentService = createServiceCache((db) => new CustomAgentService(db));
+const getAgentToolService = createServiceCache((db) => new AgentToolService(db));
 
 type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
@@ -45,7 +50,7 @@ function safeParseJsonObject(value: string) {
 
 async function getCustomAgentConfig(customAgentId: string) {
   const db = await getLocalDb();
-  const agentService = new CustomAgentService(db);
+  const agentService = getCustomAgentService(db);
   const agents = await agentService.list();
   const agent = agents.find((item) => item.id === customAgentId);
   if (!agent) {
@@ -227,7 +232,7 @@ async function runCustomAgentConversation(input: {
   retry?: boolean;
 }) {
   const { db, agent } = await getCustomAgentConfig(input.customAgentId);
-  const toolService = new AgentToolService(db);
+  const toolService = getAgentToolService(db);
 
   if (input.retry) {
     await ConversationService.deleteLastAssistantMessage(db, input.conversationId);

@@ -111,6 +111,8 @@ function problemToThread(row: Record<string, unknown>): InboxThread {
   };
 }
 
+export const INBOX_LIST_LIMIT = 500;
+
 export const InboxService = {
   async list(db: AppDb, filters?: ListThreadsFilters): Promise<InboxThread[]> {
     const conditions = [
@@ -137,6 +139,7 @@ export const InboxService = {
       .from(problems)
       .where(and(...conditions))
       .orderBy(desc(problems.createdAt))
+      .limit(INBOX_LIST_LIMIT)
       .all();
 
     return rows.map((row) =>

@@ -1,16 +1,13 @@
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, lazy, Suspense, type ComponentType } from "react";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useAuth } from "@clerk/clerk-react";
 import { isClerkConfigured } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ActivityPanel } from "@/components/panels/ActivityPanel";
-import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { Toolbar } from "@/components/layout/Toolbar";
-import { CreateBoardConversationDialog } from "@/components/dialogs/CreateBoardConversationDialog";
-import { OnboardingChangelogDialog } from "@/components/dialogs/OnboardingChangelogDialog";
 import { useUIStore } from "@/lib/store";
 import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
 import { Search01Icon } from "@hugeicons/core-free-icons";
@@ -23,6 +20,21 @@ import {
   isCapabilityView,
 } from "@/lib/capability-routing";
 import { checking_auth, search_bookmarks } from "@/paraglide/messages";
+
+// Lazy-loaded dialogs — only loaded when first opened, ~115KB deferred from initial bundle
+const SettingsDialog = lazy(() =>
+  import("@/components/dialogs/SettingsDialog").then((m) => ({ default: m.SettingsDialog })),
+);
+const CreateBoardConversationDialog = lazy(() =>
+  import("@/components/dialogs/CreateBoardConversationDialog").then((m) => ({
+    default: m.CreateBoardConversationDialog,
+  })),
+);
+const OnboardingChangelogDialog = lazy(() =>
+  import("@/components/dialogs/OnboardingChangelogDialog").then((m) => ({
+    default: m.OnboardingChangelogDialog,
+  })),
+);
 
 const ACTIVITY_PANEL_TRANSITION_MS = 320;
 const ACTIVITY_PANEL_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -385,42 +397,52 @@ function DashboardContentInner() {
           <ActivityPanel problems={problems} collapsed={!activityPanelOpen} />
         </div>
         {showSettingsDialog && (
-          <SettingsDialog
-            open={showSettingsDialog}
-            onClose={() => {
-              setShowSettingsDialog(false);
-              setSettingsDefaultTab("general");
-              setUiPreviewTarget(null);
-            }}
-            settings={settings}
-            onSettingsChange={useUIStore.getState().setSettings}
-            defaultTab={settingsDefaultTab}
-          />
+          <Suspense fallback={null}>
+            <SettingsDialog
+              open={showSettingsDialog}
+              onClose={() => {
+                setShowSettingsDialog(false);
+                setSettingsDefaultTab("general");
+                setUiPreviewTarget(null);
+              }}
+              settings={settings}
+              onSettingsChange={useUIStore.getState().setSettings}
+              defaultTab={settingsDefaultTab}
+            />
+          </Suspense>
         )}
-        <CreateBoardConversationDialog
-          open={createBoardDialogOpen}
-          onClose={() => setCreateBoardDialogOpen(false)}
-          onSubmit={async (values) => {
-            createBoardTask({
-              title: values.title,
-              description: values.description,
-              projectId: values.projectId,
-              dueDate: values.dueDate,
-              priority: values.priority,
-              tags: values.tags,
-              subtasks: values.subtasks,
-            });
-          }}
-        />
-        <OnboardingChangelogDialog
-          open={firstTimeOnboardingOpen}
-          onClose={() => {
-            setFirstTimeOnboardingOpen(false);
-            try {
-              localStorage.setItem(ONBOARDING_SEEN_KEY, "1");
-            } catch {}
-          }}
-        />
+        <Suspense fallback={null}>
+          {createBoardDialogOpen && (
+            <CreateBoardConversationDialog
+              open={createBoardDialogOpen}
+              onClose={() => setCreateBoardDialogOpen(false)}
+              onSubmit={async (values) => {
+                createBoardTask({
+                  title: values.title,
+                  description: values.description,
+                  projectId: values.projectId,
+                  dueDate: values.dueDate,
+                  priority: values.priority,
+                  tags: values.tags,
+                  subtasks: values.subtasks,
+                });
+              }}
+            />
+          )}
+        </Suspense>
+        <Suspense fallback={null}>
+          {firstTimeOnboardingOpen && (
+            <OnboardingChangelogDialog
+              open={firstTimeOnboardingOpen}
+              onClose={() => {
+                setFirstTimeOnboardingOpen(false);
+                try {
+                  localStorage.setItem(ONBOARDING_SEEN_KEY, "1");
+                } catch {}
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     </>
   );

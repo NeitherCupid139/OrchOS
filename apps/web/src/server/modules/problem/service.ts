@@ -42,12 +42,18 @@ interface CreateProblemData {
   actions?: string[];
 }
 
+const DEFAULT_LIST_LIMIT = 500;
+
 export const ProblemService = {
   async list(
     db: AppDb,
     filters?: { status?: ProblemStatus; priority?: ProblemPriority },
   ): Promise<Problem[]> {
-    let query = db.select().from(problems).orderBy(desc(problems.createdAt));
+    let query = db
+      .select()
+      .from(problems)
+      .orderBy(desc(problems.createdAt))
+      .limit(DEFAULT_LIST_LIMIT);
     const conditions = [];
     if (filters?.status) conditions.push(eq(problems.status, filters.status));
     if (filters?.priority) conditions.push(eq(problems.priority, filters.priority));
