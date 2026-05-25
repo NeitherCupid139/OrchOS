@@ -7,9 +7,6 @@ on:
 
 env:
   VITE_ENABLE_PRO: "true"
-  # The public repo's deploy key secrets:
-  #   DEPLOY_KEY:       SSH deploy key for the orchos-pro private repo
-  #   CLOUDFLARE_API_TOKEN: Cloudflare API token for wrangler
 
 jobs:
   deploy:
@@ -17,9 +14,34 @@ jobs:
     steps:
       - name: Checkout public repo
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      # ── Private submodule authentication ──
+      # GitHub recommends Fine-Grained PATs or GitHub Apps for repo-level access.
+      #
+      # Option A (recommended): Fine-Grained PAT with access to orchos-pro only
+      #   - Create at: https://github.com/settings/tokens?type=beta
+      #   - Repository access: Only select repos → NeitherCupid139/orchos-pro
+      #   - Permissions: Contents (Read-only)
+      #   - Store as: GH_PRO_PAT (repo secret)
+      #
+      # Option B: GitHub App installation token
+      #   - Create a GitHub App with Contents:Read on orchos-pro
+      #   - Use tibdex/github-app-token to generate token
+      #
+      # Option C: SSH Deploy Key (legacy)
+      #   - Generate ssh-keygen -t ed25519 -C "deploy@orchos"
+      #   - Add public key to orchos-pro → Settings → Deploy Keys
+      #   - Store private key as: DEPLOY_KEY (repo secret)
+      #   - Uncomment the ssh-key line in checkout step above
+
+      - name: Authenticate private submodule (PAT)
+        if: secrets.GH_PRO_PAT != ''
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/orchos-pro".insteadOf "https://github.com/NeitherCupid139/orchos-pro"
+          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/orchos-pro".insteadOf "git@github.com:NeitherCupid139/orchos-pro.git"
+
+      - name: Initialize submodules
+        run: git submodule update --init --recursive
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
