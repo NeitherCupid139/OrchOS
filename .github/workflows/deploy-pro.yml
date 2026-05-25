@@ -20,7 +20,7 @@ jobs:
       #
       # Option A (recommended): Fine-Grained PAT with access to orchos-pro only
       #   - Create at: https://github.com/settings/tokens?type=beta
-      #   - Repository access: Only select repos → NeitherCupid139/orchos-pro
+      #   - Repository access: Only select repos → NeitherCupid139/OrchOS-Pro
       #   - Permissions: Contents (Read-only)
       #   - Store as: GH_PRO_PAT (repo secret)
       #
@@ -37,8 +37,8 @@ jobs:
       - name: Authenticate private submodule (PAT)
         if: secrets.GH_PRO_PAT != ''
         run: |
-          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/orchos-pro".insteadOf "https://github.com/NeitherCupid139/orchos-pro"
-          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/orchos-pro".insteadOf "git@github.com:NeitherCupid139/orchos-pro.git"
+          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/OrchOS-Pro".insteadOf "https://github.com/NeitherCupid139/OrchOS-Pro"
+          git config --global url."https://x-access-token:${{ secrets.GH_PRO_PAT }}@github.com/NeitherCupid139/OrchOS-Pro".insteadOf "git@github.com:NeitherCupid139/OrchOS-Pro.git"
 
       - name: Initialize submodules
         run: git submodule update --init --recursive

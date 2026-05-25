@@ -22,10 +22,10 @@ echo "→ Configuring submodule auth..."
 
 # If GH_PRO_PAT is set, rewrite the submodule URL to use token auth
 if [ -n "${GH_PRO_PAT:-}" ]; then
-  git config --global url."https://x-access-token:${GH_PRO_PAT}@github.com/NeitherCupid139/orchos-pro".insteadOf \
-    "https://github.com/NeitherCupid139/orchos-pro"
-  git config --global url."https://x-access-token:${GH_PRO_PAT}@github.com/NeitherCupid139/orchos-pro".insteadOf \
-    "git@github.com:NeitherCupid139/orchos-pro.git"
+  git config --global url."https://x-access-token:${GH_PRO_PAT}@github.com/NeitherCupid139/OrchOS-Pro".insteadOf \
+    "https://github.com/NeitherCupid139/OrchOS-Pro"
+  git config --global url."https://x-access-token:${GH_PRO_PAT}@github.com/NeitherCupid139/OrchOS-Pro".insteadOf \
+    "git@github.com:NeitherCupid139/OrchOS-Pro.git"
 fi
 
 echo "→ Updating submodules..."

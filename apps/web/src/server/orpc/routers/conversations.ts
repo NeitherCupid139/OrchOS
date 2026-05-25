@@ -1,4 +1,5 @@
 import { os } from "@/server/orpc/base";
+import { authenticateORPCRequest } from "@/server/orpc/context";
 import { AgentToolService, type AgentToolDefinition } from "@/server/modules/agent/service";
 import {
   inferOpenAICompatibleOperationForModel,
@@ -8,6 +9,9 @@ import { ConversationService, type Message } from "@/server/modules/conversation
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getLocalDb } from "@/server/runtime/local-db";
 import { createServiceCache } from "@/server/service-cache";
+import { checkCredits, deductCredits } from "@/server/credits-client";
+import { subscriptions } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 
 // Module-level service cache — services are stateless, avoid per-request instantiation.
 const getCustomAgentService = createServiceCache((db) => new CustomAgentService(db));
@@ -453,8 +457,58 @@ export const conversationsRouter = {
 
     return ConversationService.getMessages(await getLocalDb(), input.id);
   }),
-  sendMessage: os.conversations.sendMessage.handler(async ({ input }) => {
-    return sendConversationMessage(input.id, input.content, input.customAgentId);
+  sendMessage: os.conversations.sendMessage.handler(async ({ input, context }) => {
+    // Credits check before sending
+    try {
+      const auth = await authenticateORPCRequest(context.request);
+      const userId = auth?.userId;
+
+      if (userId) {
+        const db = await getLocalDb();
+        const sub = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.userId, userId))
+          .get();
+
+        if (sub) {
+          const plan = sub.plan as "free" | "pro";
+          const balance = Number(sub.creditsBalance);
+
+          const creditCheck = await checkCredits(userId, plan, balance);
+          if (!creditCheck.allowed) {
+            throw new Error(creditCheck.reason);
+          }
+        }
+      }
+    } catch (error) {
+      // Re-throw credits errors; pass through others
+      if (error instanceof Error && error.message.includes("credits")) {
+        throw error;
+      }
+    }
+
+    const message = await sendConversationMessage(input.id, input.content, input.customAgentId);
+
+    // Post-response: deduct credits if tokens were consumed
+    try {
+      const auth = await authenticateORPCRequest(context.request);
+      if (auth?.userId && message.tokens && message.tokens > 0) {
+        await deductCredits(
+          {
+            apiEndpoint: process.env.CREDITS_API_ENDPOINT ?? "",
+            apiKey: process.env.CREDITS_API_KEY ?? "",
+          },
+          auth.userId,
+          message.tokens,
+          "agent_message",
+        );
+      }
+    } catch {
+      // Deduction failure is non-fatal — the request already succeeded
+    }
+
+    return message;
   }),
   retryMessage: os.conversations.retryMessage.handler(async ({ input }) => {
     return retryConversationMessage(input.id, input.customAgentId);
