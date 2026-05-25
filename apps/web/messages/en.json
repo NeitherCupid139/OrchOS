@@ -70,7 +70,7 @@
   "agent_role_placeholder": "e.g. Code review & suggestions",
   "agent_runtime": "Runtime",
   "agent_runtime_placeholder": "Select a runtime",
-  "agents": "Agents",
+  "agent_url_help": "Point to an OpenAI-compatible API endpoint, e.g.",  "agents": "Agents",
   "agents_already_registered": "All agents are already registered",
   "agents_label": "Agents",
   "agents_registered": "{count} agent(s) registered successfully",

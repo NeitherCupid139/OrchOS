@@ -14,7 +14,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
 import { Claude, DeepSeek, Gemini, OpenAI, OpenCode, OpenRouter } from "@lobehub/icons";
-import { add, agent_provider_placeholder, agent_removed, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, provider as providerLabel, resize_agents_sidebar, save, url } from "@/paraglide/messages";
+import { add, agent_provider_placeholder, agent_removed, agent_url_help, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, provider as providerLabel, resize_agents_sidebar, save, url } from "@/paraglide/messages";
 
 const PROVIDERS = [
   { id: "opencode-go", name: "OpenCode Go", url: "https://opencode.ai/zen/go/v1", icon: OpenCode },
@@ -569,7 +569,7 @@ export function AgentsPage() {
                         }
                       />
                       <TooltipContent side="top" className="max-w-64">
-                        Point to an OpenAI-compatible API endpoint, e.g. <code className="text-[10px] opacity-70">https://api.example.com/v1</code>
+                        {agent_url_help()} <code className="text-[10px] opacity-70">https://api.example.com/v1</code>
                       </TooltipContent>
                     </Tooltip>
                   </div>

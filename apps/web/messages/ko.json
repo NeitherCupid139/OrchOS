@@ -66,6 +66,7 @@
   "agent_role_placeholder": "예: 코드 리뷰 및 제안",
   "agent_runtime": "런타임",
   "agent_runtime_placeholder": "런타임 선택",
+  "agent_url_help": "OpenAI 호환 API 엔드포인트를 가리킵니다. 예:",
   "agents": "에이전트",
   "agents_already_registered": "모든 에이전트가 이미 등록되어 있습니다",
   "agents_label": "에이전트",

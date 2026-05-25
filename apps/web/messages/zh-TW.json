@@ -65,7 +65,7 @@
   "agent_role_placeholder": "例如：程式碼審核與建議",
   "agent_runtime": "執行時",
   "agent_runtime_placeholder": "選擇執行時",
-  "agents": "代理",
+  "agent_url_help": "指向與 OpenAI 相容的 API 端點，例如",  "agents": "代理",
   "agents_already_registered": "所有代理均已註冊",
   "agents_label": "代理",
   "agents_registered": "{count} 個代理註冊成功",

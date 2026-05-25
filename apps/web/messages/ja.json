@@ -66,7 +66,7 @@
   "agent_role_placeholder": "例: コードレビューと提案",
   "agent_runtime": "ランタイム",
   "agent_runtime_placeholder": "ランタイムを選択",
-  "agents": "エージェント",
+  "agent_url_help": "OpenAI 互換の API エンドポイントを指定します。例:",  "agents": "エージェント",
   "agents_already_registered": "すべてのエージェントが既に登録されています",
   "agents_label": "エージェント",
   "agents_registered": "{count}個のエージェントが正常に登録されました",
