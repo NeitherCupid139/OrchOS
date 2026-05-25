@@ -633,4 +633,12 @@ export const api = {
       metric,
     })) as ActivityHeatmapPoint[];
   },
+
+  // Subscription / Credits (pro feature — public returns null, private implements)
+  getSubscription: async () => {
+    return (await orpc.subscription.get({})) as unknown;
+  },
+  getCreditUsage: async (limit = 50, offset = 0) => {
+    return (await orpc.subscription.usage({ limit, offset })) as unknown;
+  },
 };

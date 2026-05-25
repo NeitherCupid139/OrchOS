@@ -12,3 +12,4 @@ export { problemsRouter } from "./problems";
 export { projectsRouter } from "./projects";
 export { runtimesRouter } from "./runtimes";
 export { settingsRouter } from "./settings";
+export { subscriptionRouter } from "./subscription";

@@ -31,6 +31,8 @@ const READ_CACHE_TTL: Record<string, number> = {
   getAgentMetrics: 30_000,
   getAgentTimeline: 30_000,
   getActivityHeatmap: 30_000,
+  getSubscription: 60_000,
+  getCreditUsage: 30_000,
   browseDirectory: 10_000,
 };
 

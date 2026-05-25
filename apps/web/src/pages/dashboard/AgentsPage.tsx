@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, InformationCircleIcon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, AiBrain01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, InformationCircleIcon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useLocation } from "@tanstack/react-router";
 import { toast } from "@/components/ui/toast";
 import { useUIStore } from "@/lib/store";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { LocalDevicesView } from "@/components/panels/LocalDevicesView";
+import { ObservabilityView } from "@/components/panels/ObservabilityView";
 import { api, type CustomAgent } from "@/lib/api";
+import { getBuiltInAgent } from "@/lib/built-in-agent";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,12 +39,16 @@ function ProviderIcon({ url, className }: { url: string; className?: string }) {
 }
 
 export function AgentsPage() {
+  const location = useLocation();
+  const agentsView = new URLSearchParams(location.search).get("view") === "observability" ? "observability" : "config";
   const { loading } = useDashboard();
 
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
+  const builtInAgent = useMemo(() => getBuiltInAgent(), []);
   const [defaultCustomAgentId, setDefaultCustomAgentId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<
     | { kind: "custom"; id: string }
+    | { kind: "builtin" }
     | null
   >(null);
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
@@ -53,6 +60,8 @@ export function AgentsPage() {
   useEffect(() => {
     void loadCustomAgents();
     void api.getDefaultCustomAgentId().then(setDefaultCustomAgentId).catch(() => {});
+    // Select the built-in agent by default
+    setSelectedItem({ kind: "builtin" });
   }, []);
 
   async function loadCustomAgents() {
@@ -75,6 +84,9 @@ export function AgentsPage() {
 
   const selectedAgent = useMemo(() => {
     if (!selectedItem) return null;
+    if (selectedItem.kind === "builtin") {
+      return { kind: "builtin" as const, agent: builtInAgent };
+    }
     const agent = customAgents.find((item) => item.id === selectedItem.id);
     return agent ? { kind: "custom" as const, agent } : null;
   }, [customAgents, selectedItem]);
@@ -318,6 +330,34 @@ export function AgentsPage() {
         >
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-0.5 p-1.5">
+              {/* Built-in agent — always shown first */}
+              <div
+                onClick={() => setSelectedItem({ kind: "builtin" })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedItem({ kind: "builtin" });
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                className={cn(
+                  "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
+                  selectedItem?.kind === "builtin"
+                    ? "bg-accent text-foreground"
+                    : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
+                )}
+              >
+                <HugeiconsIcon icon={AiBrain01Icon} className="size-3.5 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="truncate text-xs leading-5">{builtInAgent.name}</div>
+                  <div className="truncate text-[11px] leading-4 text-muted-foreground">{builtInAgent.model}</div>
+                </div>
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary shrink-0">
+                  {builtInAgent.badge}
+                </span>
+              </div>
+
               {customAgents.map((agent) => (
                 <div
                   key={agent.id}
@@ -459,13 +499,17 @@ export function AgentsPage() {
             <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
           </Tooltip>
         ) : null}
-        <LocalDevicesView
-          loading={loading}
-          onConnectClick={handleOpenConnect}
-          selectedAgent={selectedAgent}
-          defaultCustomAgentId={defaultCustomAgentId}
-          onSetDefaultCustomAgent={handleSetDefaultCustomAgent}
-        />
+        {agentsView === "observability" ? (
+          <ObservabilityView />
+        ) : (
+          <LocalDevicesView
+            loading={loading}
+            onConnectClick={handleOpenConnect}
+            selectedAgent={selectedAgent}
+            defaultCustomAgentId={defaultCustomAgentId}
+            onSetDefaultCustomAgent={handleSetDefaultCustomAgent}
+          />
+        )}
       </div>
 
       <AppDialog

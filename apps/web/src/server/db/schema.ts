@@ -151,6 +151,37 @@ export const bookmarkCategories = sqliteTable(
   (t) => [index("idx_bookmark_categories_sort_order").on(t.sortOrder)],
 );
 
+export const subscriptions = sqliteTable("subscriptions", {
+  userId: text("user_id").primaryKey(),
+  plan: text("plan").notNull().default("free"),
+  creditsBalance: text("credits_balance").notNull().default("0"),
+  creditsTotal: text("credits_total").notNull().default("0"),
+  tokensUsed: text("tokens_used").notNull().default("0"),
+  periodStart: text("period_start"),
+  periodEnd: text("period_end"),
+  status: text("status").notNull().default("active"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const creditUsage = sqliteTable(
+  "credit_usage",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    action: text("action").notNull(),
+    tokens: text("tokens").notNull().default("0"),
+    credits: text("credits").notNull().default("0"),
+    metadata: text("metadata").notNull().default("{}"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_credit_usage_user_id").on(t.userId),
+    index("idx_credit_usage_action").on(t.action),
+    index("idx_credit_usage_created_at").on(t.createdAt),
+  ],
+);
+
 export const bookmarks = sqliteTable(
   "bookmarks",
   {

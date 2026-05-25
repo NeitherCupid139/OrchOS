@@ -14,6 +14,7 @@ import {
   projectsRouter,
   runtimesRouter,
   settingsRouter,
+  subscriptionRouter,
 } from "@/server/orpc/routers";
 
 export const appRouter = os.router({
@@ -31,4 +32,5 @@ export const appRouter = os.router({
   runtimes: runtimesRouter,
   localAgents: localAgentsRouter,
   integrations: integrationsRouter,
+  subscription: subscriptionRouter,
 });

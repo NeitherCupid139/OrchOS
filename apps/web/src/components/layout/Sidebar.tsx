@@ -26,7 +26,6 @@ import {
   MoreHorizontal,
   Edit02Icon,
   Delete02Icon,
-  AiBrain01Icon,
   ComputerIcon,
   UserCircleIcon,
   Logout03Icon,
@@ -57,7 +56,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, observability, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_enabled, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, view, welcome_desc, welcome_to_orchos, workspace, auth_verify_button } from "@/paraglide/messages";
+import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_enabled, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, view, welcome_desc, welcome_to_orchos, workspace, auth_verify_button } from "@/paraglide/messages";
 import { isClerkConfigured } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
@@ -203,7 +202,7 @@ export function Sidebar({
       ],
     },
     {
-      label: observability(),
+      label: agents(),
       items: [
         {
           id: "agents",
@@ -211,13 +210,6 @@ export function Sidebar({
           icon: ComputerIcon,
           label: agents(),
           shortcut: "6",
-        },
-        {
-          id: "observability",
-          to: "/dashboard/observability",
-          icon: AiBrain01Icon,
-          label: observability(),
-          shortcut: "7",
         },
       ],
     },

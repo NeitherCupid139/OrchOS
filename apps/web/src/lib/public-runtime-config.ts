@@ -2,6 +2,7 @@ export interface PublicRuntimeConfig {
   clerkPublishableKey: string;
   enableWebsocket: boolean;
   turnstileSiteKey: string;
+  builtinAgentUrl?: string;
 }
 
 declare global {
@@ -29,6 +30,7 @@ function getFallbackConfig(): PublicRuntimeConfig {
     clerkPublishableKey: "",
     enableWebsocket: false,
     turnstileSiteKey: "",
+    builtinAgentUrl: undefined,
   };
 }
 
@@ -37,6 +39,7 @@ function readServerPublicRuntimeConfig(): PublicRuntimeConfig {
     clerkPublishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY?.trim() ?? "",
     enableWebsocket: readBoolean(process.env.ENABLE_WEBSOCKET),
     turnstileSiteKey: process.env.VITE_TURNSTILE_SITE_KEY?.trim() ?? "",
+    builtinAgentUrl: process.env.PUBLIC_BUILTIN_AGENT_URL?.trim() || undefined,
   };
 }
 

@@ -12,6 +12,7 @@ import { plannerContract } from "./planner";
 import { projectsContract } from "./projects";
 import { runtimesContract } from "./runtimes";
 import { settingsContract } from "./settings";
+import { subscriptionContract } from "./subscription";
 
 export const appContract = {
   projects: projectsContract,
@@ -28,6 +29,7 @@ export const appContract = {
   runtimes: runtimesContract,
   localAgents: localAgentsContract,
   integrations: integrationsContract,
+  subscription: subscriptionContract,
 };
 
 export type AppContract = typeof appContract;

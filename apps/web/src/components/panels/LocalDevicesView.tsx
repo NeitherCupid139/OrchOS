@@ -11,11 +11,13 @@ import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CustomAgent, LocalAgentProfile } from "@/lib/api";
+import type { BuiltInAgent } from "@/lib/built-in-agent";
 import { api_key, app_version, connect_agent, connect_local_device, created, default_agent, device_id, endpoint, last_seen, loading_devices, model, no_runtimes_reported, offline, online, pair_any_machine_desc, registered, runtimes, set_as_default, unknown, unknown_platform, unset_default } from "@/paraglide/messages";
 
 type SelectedAgent =
   | { kind: "custom"; agent: CustomAgent }
   | { kind: "local"; agent: LocalAgentProfile }
+  | { kind: "builtin"; agent: BuiltInAgent }
   | null;
 
 interface LocalDevicesViewProps {
@@ -37,6 +39,38 @@ export function LocalDevicesView({
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">{loading_devices()}</div>
+      </div>
+    );
+  }
+
+  if (selectedAgent?.kind === "builtin") {
+    const { agent } = selectedAgent;
+
+    return (
+      <div className="flex min-h-0 flex-1 bg-background p-6">
+        <section className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={ComputerIcon} className="size-5" />
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                  {agent.badge}
+                </span>
+              </div>
+              <h2 className="mt-4 text-xl font-semibold text-foreground">{agent.name}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pre-configured agent. Available to all users. Usage limits apply based on your plan.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DetailCard label="Endpoint" value={agent.url} mono />
+            <DetailCard label="Model" value={agent.model} mono />
+          </div>
+        </section>
       </div>
     );
   }
