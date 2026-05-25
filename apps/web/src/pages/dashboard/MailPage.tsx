@@ -286,7 +286,8 @@ export function MailPage() {
     );
   }
 
-  function handleProviderChange(providerId: string) {
+  function handleProviderChange(providerId: string | null) {
+    if (!providerId) return;
     setSelectedProviderId(providerId);
     const provider = getEmailProvider(providerId);
     if (provider) {

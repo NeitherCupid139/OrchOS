@@ -22,6 +22,13 @@
       "when": 1778076000000,
       "tag": "0002_local_agents_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1779697715193,
+      "tag": "0003_broad_karen_page",
+      "breakpoints": true
     }
   ]
 }

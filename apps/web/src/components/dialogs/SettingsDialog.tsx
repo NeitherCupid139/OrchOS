@@ -358,7 +358,8 @@ export function SettingsDialog({
   }
 
   /** Apply a provider's settings to the edit form */
-  function applyProviderToEditForm(providerId: string) {
+  function applyProviderToEditForm(providerId: string | null) {
+    if (!providerId) return;
     setSelectedEditProviderId(providerId);
     const provider = getEmailProvider(providerId);
     if (provider) {
