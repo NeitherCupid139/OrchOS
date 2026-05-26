@@ -202,17 +202,32 @@ const ToastContainer = () => {
               });
             }}
           >
-            {/* Progress bar */}
+            {/* Circular progress ring */}
             {!toast.preserve && !toast.exiting && (
-              <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl overflow-hidden">
-                <div
-                  key={toast.progressKey}
-                  className={cn("h-full rounded-full", progressColor)}
+              <svg
+                key={toast.progressKey}
+                className="absolute inset-0 size-full pointer-events-none"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+              >
+                <rect
+                  x="1"
+                  y="1"
+                  width="98"
+                  height="98"
+                  rx="9"
+                  ry="9"
+                  fill="none"
+                  className={progressColor}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
                   style={{
-                    animation: `toast-progress ${toast.remaining ?? 3000}ms linear forwards`,
+                    strokeDasharray: 388,
+                    animation: `toast-ring ${toast.remaining ?? 3000}ms linear forwards`,
                   }}
                 />
-              </div>
+              </svg>
             )}
 
             <div className="relative px-4 py-3">
@@ -221,7 +236,8 @@ const ToastContainer = () => {
                   className={cn(
                     "size-5 shrink-0 mt-0.5",
                     color,
-                    toast.exiting && "opacity-0 transition-opacity duration-150",
+                    toast.exiting &&
+                      "opacity-0 transition-opacity duration-150",
                   )}
                 />
                 <p className="flex-1 text-sm leading-snug text-foreground min-w-0 break-words pt-px">
@@ -231,11 +247,16 @@ const ToastContainer = () => {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => toastStore.remove(toast.id)}
-                  className="shrink-0 -mr-1.5 -mt-1.5 text-muted-foreground/60 hover:text-foreground after:absolute after:inset-0"
+                  className="shrink-0 -mr-1.5 self-start text-muted-foreground/60 hover:text-foreground after:absolute after:inset-0"
                   aria-label="Close"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path
+                      d="M4 4L10 10M10 4L4 10"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </BaseButton>
               </div>
@@ -304,10 +325,20 @@ interface Message {
 
 export const useToasts = () => {
   return {
-    message: useCallback(({ text, preserve, action, onAction, onUndoAction }: Message) => {
-      mountContainer();
-      toastStore.add(text, "message", preserve, action, onAction, onUndoAction);
-    }, []),
+    message: useCallback(
+      ({ text, preserve, action, onAction, onUndoAction }: Message) => {
+        mountContainer();
+        toastStore.add(
+          text,
+          "message",
+          preserve,
+          action,
+          onAction,
+          onUndoAction,
+        );
+      },
+      [],
+    ),
     success: useCallback((text: string) => {
       mountContainer();
       toastStore.add(text, "success");

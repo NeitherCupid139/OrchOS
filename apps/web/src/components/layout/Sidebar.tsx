@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useClerk, useOrganization, useUser } from "@clerk/clerk-react";
@@ -14,6 +14,7 @@ import {
   InfoCardDismiss,
 } from "@/components/ui/info-card";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   DashboardCircleIcon,
   CommandIcon,
@@ -36,6 +37,7 @@ import {
   SidebarLeft01Icon,
   SidebarRight01Icon,
   Add01Icon,
+  CrownIcon,
 } from "@hugeicons/core-free-icons";
 import {
   DropdownMenu,
@@ -56,13 +58,78 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agents, board, bookmarks, calendar, cancel, collapse_sidebar, create_space, creation, delete as delete_message, delete_space, dismiss, edit, expand_sidebar, log_out, mail, profile_basic_info, profile_basic_info_desc, profile_email_verification, profile_email_verification_desc, profile_first_name, profile_last_name, profile_login_email, profile_login_email_desc, profile_no_email, profile_password_signin, profile_password_signin_desc, profile_saving, profile_security_section, profile_settings, profile_status_enabled, profile_status_verified, profile_tab_profile, profile_tab_security, profile_two_factor, profile_two_factor_desc, profile_username, rename, rename_space, save, select_organization, settings as settings_label, space_created, space_launcher_all, space_launcher_search_placeholder, space_name_placeholder, user as user_label, view, welcome_desc, welcome_to_orchos, workspace, auth_verify_button } from "@/paraglide/messages";
+import {
+  agents,
+  board,
+  bookmarks,
+  calendar,
+  cancel,
+  collapse_sidebar,
+  create_space,
+  creation,
+  delete as delete_message,
+  delete_space,
+  dismiss,
+  edit,
+  expand_sidebar,
+  log_out,
+  mail,
+  profile_basic_info,
+  profile_basic_info_desc,
+  profile_email_verification,
+  profile_email_verification_desc,
+  profile_first_name,
+  profile_last_name,
+  profile_login_email,
+  profile_login_email_desc,
+  profile_no_email,
+  profile_password_signin,
+  profile_password_signin_desc,
+  profile_saving,
+  profile_security_section,
+  profile_settings,
+  profile_status_enabled,
+  profile_status_verified,
+  profile_tab_profile,
+  profile_tab_security,
+  profile_two_factor,
+  profile_two_factor_desc,
+  profile_tab_membership,
+  profile_username,
+  profile_membership_plan,
+  profile_membership_plan_desc,
+  profile_membership_credits,
+  profile_membership_credits_desc,
+  profile_membership_tokens_used,
+  profile_membership_tokens_used_desc,
+  profile_membership_upgrade,
+  profile_membership_upgrade_desc,
+  profile_membership_manage,
+  profile_membership_view_usage,
+  rename,
+  rename_space,
+  save,
+  select_organization,
+  settings as settings_label,
+  space_created,
+  space_launcher_all,
+  space_launcher_search_placeholder,
+  space_name_placeholder,
+  user as user_label,
+  view,
+  welcome_desc,
+  welcome_to_orchos,
+  workspace,
+  auth_verify_button,
+} from "@/paraglide/messages";
 import { isClerkConfigured } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
 import type { Organization, SidebarView } from "@/lib/types";
 import { OnboardingChangelogDialog } from "@/components/dialogs/OnboardingChangelogDialog";
 import { toast } from "@/components/ui/toast";
+import { api } from "@/lib/api";
+import { isProEnabled } from "@/lib/pro-loader";
 
 interface SidebarSection {
   label: string;
@@ -108,17 +175,46 @@ export function Sidebar({
   const effectiveCollapsed = isMobile ? false : collapsed;
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [targetOrganizationId, setTargetOrganizationId] = useState<string | null>(null);
+  const [targetOrganizationId, setTargetOrganizationId] = useState<
+    string | null
+  >(null);
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
-  const [showExpandedContent, setShowExpandedContent] = useState(!effectiveCollapsed);
-  const filteredOrganizations = useMemo(() => organizations.filter((org) =>
-    org.name.toLowerCase().includes(orgSearch.trim().toLowerCase()),
-  ), [organizations, orgSearch]);
+  const [showExpandedContent, setShowExpandedContent] =
+    useState(!effectiveCollapsed);
+  const filteredOrganizations = useMemo(
+    () =>
+      organizations.filter((org) =>
+        org.name.toLowerCase().includes(orgSearch.trim().toLowerCase()),
+      ),
+    [organizations, orgSearch],
+  );
 
   const navigate = useNavigate();
-  const showShortcutHints = useUIStore((s) => s.settings?.showShortcutHints ?? false);
+  const showShortcutHints = useUIStore(
+    (s) => s.settings?.showShortcutHints ?? false,
+  );
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  // Clear pending nav when the active view changes (navigation completed)
+  useEffect(() => {
+    setPendingNav(null);
+  }, [activeView]);
+
+  function handleNavClick(id: string) {
+    setPendingNav(id);
+    clearTimeout(pendingTimerRef.current);
+    // Safety timeout to clear if navigation fails
+    pendingTimerRef.current = setTimeout(() => setPendingNav(null), 4000);
+  }
+
+  useEffect(() => {
+    return () => clearTimeout(pendingTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const shortcutMap: Record<string, string> = {
@@ -132,7 +228,11 @@ export function Sidebar({
     };
 
     function handleKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey) {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        !event.altKey
+      ) {
         const path = shortcutMap[event.key];
         if (path) {
           event.preventDefault();
@@ -158,65 +258,68 @@ export function Sidebar({
     return () => window.clearTimeout(timer);
   }, [effectiveCollapsed]);
 
-  const sections: SidebarSection[] = useMemo(() => [
-    {
-      label: "",
-      items: [
-        {
-          id: "creation",
-          to: "/dashboard/creation",
-          icon: Chat01Icon,
-          label: creation(),
-          shortcut: "1",
-        },
-        {
-          id: "bookmarks",
-          to: "/dashboard/bookmarks",
-          icon: Bookmark01Icon,
-          label: bookmarks(),
-          shortcut: "2",
-        },
-      ],
-    },
-    {
-      label: workspace(),
-      items: [
-        {
-          id: "board",
-          to: "/dashboard/board",
-          icon: DashboardCircleIcon,
-          label: board(),
-          shortcut: "3",
-        },
-        {
-          id: "calendar",
-          to: "/dashboard/calendar",
-          icon: Calendar03Icon,
-          label: calendar(),
-          shortcut: "4",
-        },
-        {
-          id: "mail",
-          to: "/dashboard/mail",
-          icon: Mail01Icon,
-          label: mail(),
-          shortcut: "5",
-        },
-      ],
-    },
-    {
-      label: agents(),
-      items: [
-        {
-          id: "agents",
-          to: "/dashboard/agents",
-          icon: ComputerIcon,
-          label: agents(),
-          shortcut: "6",
-        },
-      ],
-    },
-  ], [_locale]);
+  const sections: SidebarSection[] = useMemo(
+    () => [
+      {
+        label: "",
+        items: [
+          {
+            id: "creation",
+            to: "/dashboard/creation",
+            icon: Chat01Icon,
+            label: creation(),
+            shortcut: "1",
+          },
+          {
+            id: "bookmarks",
+            to: "/dashboard/bookmarks",
+            icon: Bookmark01Icon,
+            label: bookmarks(),
+            shortcut: "2",
+          },
+        ],
+      },
+      {
+        label: workspace(),
+        items: [
+          {
+            id: "board",
+            to: "/dashboard/board",
+            icon: DashboardCircleIcon,
+            label: board(),
+            shortcut: "3",
+          },
+          {
+            id: "calendar",
+            to: "/dashboard/calendar",
+            icon: Calendar03Icon,
+            label: calendar(),
+            shortcut: "4",
+          },
+          {
+            id: "mail",
+            to: "/dashboard/mail",
+            icon: Mail01Icon,
+            label: mail(),
+            shortcut: "5",
+          },
+        ],
+      },
+      {
+        label: agents(),
+        items: [
+          {
+            id: "agents",
+            to: "/dashboard/agents",
+            icon: ComputerIcon,
+            label: agents(),
+            shortcut: "6",
+          },
+        ],
+      },
+    ],
+    [_locale],
+  );
 
   return (
     <TooltipProvider delay={0}>
@@ -227,7 +330,12 @@ export function Sidebar({
         )}
       >
         {/* Organization Selector */}
-        <div className={cn("relative flex h-11 items-center border-b border-border", effectiveCollapsed ? "px-0" : "px-2")}>
+        <div
+          className={cn(
+            "relative flex h-11 items-center border-b border-border",
+            effectiveCollapsed ? "px-0" : "px-2",
+          )}
+        >
           <div
             className={cn(
               "flex min-w-0 flex-1 items-center gap-2 transition-opacity duration-300 ease-out",
@@ -262,56 +370,60 @@ export function Sidebar({
                 </div>
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>{space_launcher_all()}</DropdownMenuLabel>
-                  {filteredOrganizations.length > 0 ? (
-                    filteredOrganizations.map((org) => (
-                      <DropdownMenuItem
-                        key={org.id}
-                        onClick={() => onOrganizationChange(org.id)}
-                      >
-                        <span className="flex-1">{org.name}</span>
-                        <div className="mr-1 flex items-center gap-1 opacity-0 transition-opacity group-data-[highlighted]/dropdown-menu-item:opacity-100">
-                          <button
-                            type="button"
-                            aria-label={edit()}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              setTargetOrganizationId(org.id);
-                              setRenameOpen(true);
-                            }}
-                            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          >
-                            <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={delete_message()}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              setTargetOrganizationId(org.id);
-                              setDeleteConfirmOpen(true);
-                            }}
-                            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
-                          >
-                            <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                          </button>
-                        </div>
-                        {org.id === activeOrganizationId && (
-                          <HugeiconsIcon
-                            icon={Tick02Icon}
-                            className="size-4 text-primary"
-                          />
-                        )}
-                      </DropdownMenuItem>
-                    ))
-                  ) : null}
+                  {filteredOrganizations.length > 0
+                    ? filteredOrganizations.map((org) => (
+                        <DropdownMenuItem
+                          key={org.id}
+                          onClick={() => onOrganizationChange(org.id)}
+                        >
+                          <span className="flex-1">{org.name}</span>
+                          <div className="mr-1 flex items-center gap-1 opacity-0 transition-opacity group-data-[highlighted]/dropdown-menu-item:opacity-100">
+                            <button
+                              type="button"
+                              aria-label={edit()}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setTargetOrganizationId(org.id);
+                                setRenameOpen(true);
+                              }}
+                              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            >
+                              <HugeiconsIcon
+                                icon={Edit02Icon}
+                                className="size-3.5"
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={delete_message()}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setTargetOrganizationId(org.id);
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                            >
+                              <HugeiconsIcon
+                                icon={Delete02Icon}
+                                className="size-3.5"
+                              />
+                            </button>
+                          </div>
+                          {org.id === activeOrganizationId && (
+                            <HugeiconsIcon
+                              icon={Tick02Icon}
+                              className="size-4 text-primary"
+                            />
+                          )}
+                        </DropdownMenuItem>
+                      ))
+                    : null}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel>
-                    {create_space()}
-                  </DropdownMenuLabel>
+                  <DropdownMenuLabel>{create_space()}</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => setCreateOrgOpen(true)}>
                     <HugeiconsIcon icon={Add01Icon} className="size-3.5" />
                     {create_space()}
@@ -325,10 +437,12 @@ export function Sidebar({
                   <HugeiconsIcon icon={MoreHorizontal} className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-36">
-                  <DropdownMenuItem onClick={() => {
-                    setTargetOrganizationId(activeOrganizationId);
-                    setRenameOpen(true);
-                  }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setTargetOrganizationId(activeOrganizationId);
+                      setRenameOpen(true);
+                    }}
+                  >
                     <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
                     {rename()}
                   </DropdownMenuItem>
@@ -354,14 +468,22 @@ export function Sidebar({
                   <button
                     {...props}
                     onClick={onToggleCollapse}
-                    aria-label={effectiveCollapsed ? expand_sidebar() : collapse_sidebar()}
+                    aria-label={
+                      effectiveCollapsed ? expand_sidebar() : collapse_sidebar()
+                    }
                     className={cn(
                       "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
-                      effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
+                      effectiveCollapsed
+                        ? "left-1/2 -translate-x-1/2"
+                        : "right-1.5",
                     )}
                   >
                     <HugeiconsIcon
-                      icon={effectiveCollapsed ? SidebarRight01Icon : SidebarLeft01Icon}
+                      icon={
+                        effectiveCollapsed
+                          ? SidebarRight01Icon
+                          : SidebarLeft01Icon
+                      }
                       className="size-4"
                     />
                   </button>
@@ -414,11 +536,13 @@ export function Sidebar({
                     badgeCritical,
                   }) => {
                     const isActive = activeView === id;
+                    const isPending = pendingNav === id;
                     const navItem = (
                       <Link
                         key={id}
                         to={to}
                         preload="intent"
+                        onClick={() => handleNavClick(id)}
                         className={cn(
                           "flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
                           effectiveCollapsed
@@ -429,10 +553,20 @@ export function Sidebar({
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                         )}
                       >
-                        <HugeiconsIcon
-                          icon={Icon}
-                          className="size-4 shrink-0"
-                        />
+                        {isPending ? (
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center">
+                            <Spinner
+                              size="sm"
+                              name="braille"
+                              className="leading-none"
+                            />
+                          </span>
+                        ) : (
+                          <HugeiconsIcon
+                            icon={Icon}
+                            className="size-4 shrink-0"
+                          />
+                        )}
                         <span
                           className={cn(
                             "text-left overflow-hidden whitespace-nowrap transition-[opacity,width] duration-300 ease-out",
@@ -443,23 +577,25 @@ export function Sidebar({
                         >
                           {label}
                         </span>
-                        {showExpandedContent && shortcut && showShortcutHints && (
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium tabular-nums transition-opacity duration-300 ease-out opacity-100 delay-220",
-                              isActive
-                                ? "border-sidebar-foreground/15 bg-sidebar-background/60 text-sidebar-foreground/60"
-                                : "border-border/60 bg-background/70 text-muted-foreground",
-                            )}
-                            aria-label={`Shortcut ${shortcut}`}
-                          >
-                            <HugeiconsIcon
-                              icon={CommandIcon}
-                              className="size-3 shrink-0"
-                            />
-                            {shortcut}
-                          </span>
-                        )}
+                        {showExpandedContent &&
+                          shortcut &&
+                          showShortcutHints && (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium tabular-nums transition-opacity duration-300 ease-out opacity-100 delay-220",
+                                isActive
+                                  ? "border-sidebar-foreground/15 bg-sidebar-background/60 text-sidebar-foreground/60"
+                                  : "border-border/60 bg-background/70 text-muted-foreground",
+                              )}
+                              aria-label={`Shortcut ${shortcut}`}
+                            >
+                              <HugeiconsIcon
+                                icon={CommandIcon}
+                                className="size-3 shrink-0"
+                              />
+                              {shortcut}
+                            </span>
+                          )}
                         {badge != null && badge > 0 && (
                           <span
                             className={cn(
@@ -959,7 +1095,7 @@ interface ProfileEditDialogProps {
   fallbackEmail: string;
 }
 
-type ProfileDialogTab = "profile" | "security";
+type ProfileDialogTab = "profile" | "security" | "membership";
 
 const profileTabDefs: {
   id: ProfileDialogTab;
@@ -968,6 +1104,7 @@ const profileTabDefs: {
 }[] = [
   { id: "profile", icon: UserCircleIcon, label: profile_tab_profile },
   { id: "security", icon: Key01Icon, label: profile_tab_security },
+  { id: "membership", icon: CrownIcon, label: profile_tab_membership },
 ];
 
 function ProfileEditDialog({
@@ -991,10 +1128,35 @@ function ProfileEditDialog({
   const [addingPassword, setAddingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
-  const [twoFactorStep, setTwoFactorStep] = useState<"idle" | "showQr" | "verify">("idle");
+  const [twoFactorStep, setTwoFactorStep] = useState<
+    "idle" | "showQr" | "verify"
+  >("idle");
   const [twoFactorSecret, setTwoFactorSecret] = useState("");
   const [totpCode, setTotpCode] = useState("");
   const [securityError, setSecurityError] = useState<string | null>(null);
+
+  // Membership / Subscription state
+  const [subLoading, setSubLoading] = useState(false);
+  const [subscription, setSubscription] = useState<{
+    userId: string;
+    plan: "free" | "pro";
+    creditsBalance: number;
+    creditsTotal: number;
+    tokensUsed: number;
+    periodStart: string | null;
+    periodEnd: string | null;
+    status: string;
+  } | null>(null);
+  const [creditUsage, setCreditUsage] = useState<{
+    items: Array<{
+      id: string;
+      action: string;
+      tokens: number;
+      credits: number;
+      createdAt: string;
+    }>;
+    total: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -1015,6 +1177,32 @@ function ProfileEditDialog({
     setTotpCode("");
     setSecurityError(null);
   }, [clerkUser, open]);
+
+  // Fetch subscription data when membership tab is active
+  useEffect(() => {
+    if (!open || activeTab !== "membership") return;
+    let cancelled = false;
+    setSubLoading(true);
+    async function load() {
+      try {
+        const sub = (await api.getSubscription()) as typeof subscription;
+        if (!cancelled) setSubscription(sub);
+      } catch {
+        /* subscription not available */
+      }
+      try {
+        const usage = (await api.getCreditUsage(20)) as typeof creditUsage;
+        if (!cancelled) setCreditUsage(usage);
+      } catch {
+        /* usage not available */
+      }
+      if (!cancelled) setSubLoading(false);
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, activeTab]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -1235,7 +1423,12 @@ function ProfileEditDialog({
                   className="shrink-0 text-muted-foreground/60 hover:text-foreground"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path
+                      d="M4 4L10 10M10 4L4 10"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </Button>
               </div>
@@ -1326,7 +1519,9 @@ function ProfileEditDialog({
                         </p>
                       </div>
                       {securityError ? (
-                        <p className="text-sm text-destructive">{securityError}</p>
+                        <p className="text-sm text-destructive">
+                          {securityError}
+                        </p>
                       ) : null}
                       <div className="space-y-3 pt-1">
                         {/* Email Verification */}
@@ -1348,7 +1543,9 @@ function ProfileEditDialog({
                               <input
                                 type="text"
                                 value={verificationCode}
-                                onChange={(e) => setVerificationCode(e.target.value)}
+                                onChange={(e) =>
+                                  setVerificationCode(e.target.value)
+                                }
                                 placeholder="000000"
                                 maxLength={6}
                                 className="w-20 rounded-md border border-border bg-background px-2 py-1 text-center text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
@@ -1356,7 +1553,9 @@ function ProfileEditDialog({
                               <button
                                 type="button"
                                 onClick={handleVerifyEmail}
-                                disabled={verifyingEmail || !verificationCode.trim()}
+                                disabled={
+                                  verifyingEmail || !verificationCode.trim()
+                                }
                                 className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                               >
                                 {verifyingEmail ? "…" : auth_verify_button()}
@@ -1457,10 +1656,14 @@ function ProfileEditDialog({
                                 <button
                                   type="button"
                                   onClick={handleVerifyTwoFactor}
-                                  disabled={enablingTwoFactor || !totpCode.trim()}
+                                  disabled={
+                                    enablingTwoFactor || !totpCode.trim()
+                                  }
                                   className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                 >
-                                  {enablingTwoFactor ? "…" : auth_verify_button()}
+                                  {enablingTwoFactor
+                                    ? "…"
+                                    : auth_verify_button()}
                                 </button>
                               </div>
                             </div>
@@ -1479,10 +1682,191 @@ function ProfileEditDialog({
                     </div>
                   </div>
                 )}
+
+                {activeTab === "membership" && (
+                  <div className="space-y-4">
+                    {/* Plan overview */}
+                    <div className="rounded-lg border border-border/50 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <HugeiconsIcon
+                          icon={CrownIcon}
+                          className="size-4 text-amber-500"
+                        />
+                        <p className="text-sm font-medium text-foreground">
+                          {profile_membership_plan()}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        {profile_membership_plan_desc()}
+                      </p>
+
+                      {subLoading ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Spinner size="sm" />
+                        </div>
+                      ) : subscription ? (
+                        <div className="space-y-3">
+                          {/* Plan badge */}
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+                                subscription.plan === "pro"
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              <HugeiconsIcon
+                                icon={CrownIcon}
+                                className="size-3"
+                              />
+                              {subscription.plan === "pro" ? "Pro" : "Free"}
+                            </span>
+                            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                              {subscription.status}
+                            </span>
+                          </div>
+
+                          {/* Credits usage bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {profile_membership_credits()}
+                              </span>
+                              <span className="text-xs font-medium text-foreground">
+                                {subscription.creditsBalance} /{" "}
+                                {subscription.creditsTotal}
+                              </span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-500",
+                                  subscription.creditsTotal > 0 &&
+                                    subscription.creditsBalance /
+                                      subscription.creditsTotal <
+                                      0.2
+                                    ? "bg-destructive"
+                                    : subscription.creditsTotal > 0 &&
+                                        subscription.creditsBalance /
+                                          subscription.creditsTotal <
+                                          0.5
+                                      ? "bg-amber-500"
+                                      : "bg-emerald-500",
+                                )}
+                                style={{
+                                  width: `${subscription.creditsTotal > 0 ? Math.max(2, (subscription.creditsBalance / subscription.creditsTotal) * 100) : 0}%`,
+                                }}
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              {profile_membership_credits_desc()}
+                            </p>
+                          </div>
+
+                          {/* Tokens used */}
+                          <div className="rounded-lg border border-border/50 px-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {profile_membership_tokens_used()}
+                              </span>
+                              <span className="text-xs font-medium text-foreground">
+                                {(
+                                  subscription.tokensUsed || 0
+                                ).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {profile_membership_tokens_used_desc()}
+                            </p>
+                          </div>
+
+                          {/* Period info */}
+                          {subscription.periodStart &&
+                            subscription.periodEnd && (
+                              <div className="text-[11px] text-muted-foreground">
+                                {subscription.periodStart} →{" "}
+                                {subscription.periodEnd}
+                              </div>
+                            )}
+
+                          {/* Upgrade CTA for free users */}
+                          {subscription.plan === "free" && isProEnabled() && (
+                            <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3">
+                              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                {profile_membership_upgrade()}
+                              </p>
+                              <p className="mt-1 text-[11px] text-amber-600/80 dark:text-amber-400/70">
+                                {profile_membership_upgrade_desc()}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-muted-foreground">
+                            {profile_membership_plan_desc()}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground/60">
+                            Subscription info is not available.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recent credit usage */}
+                    {creditUsage && creditUsage.items.length > 0 && (
+                      <div className="rounded-lg border border-border/50 p-4">
+                        <p className="text-sm font-medium text-foreground mb-3">
+                          {profile_membership_view_usage()}
+                        </p>
+                        <div className="space-y-2">
+                          {creditUsage.items.slice(0, 10).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between rounded-md border border-border/30 px-3 py-2"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs text-foreground">
+                                  {item.action}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground/60">
+                                  {new Date(
+                                    item.createdAt,
+                                  ).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="ml-3 shrink-0 text-right">
+                                <p className="text-xs font-medium text-foreground">
+                                  {item.credits.toLocaleString()} credits
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {item.tokens.toLocaleString()} tokens
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Manage link */}
+                    <div className="text-center pt-2">
+                      <Link
+                        to="/pricing"
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {profile_membership_manage()}
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex h-24 items-center justify-end gap-2 border-t border-border px-6 py-4">
-                <DialogPrimitive.Close render={<Button type="button" variant="outline" />}>
+                <DialogPrimitive.Close
+                  render={<Button type="button" variant="outline" />}
+                >
                   {cancel()}
                 </DialogPrimitive.Close>
                 <Button

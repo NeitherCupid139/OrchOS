@@ -6,13 +6,7 @@ import {
   CodeIcon,
   Wrench01Icon,
 } from "@hugeicons/core-free-icons";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   obs_activity_heatmap,
   obs_agent_timeline,
@@ -21,14 +15,11 @@ import {
   obs_failed_tool_calls,
   obs_heatmap_legend_high,
   obs_heatmap_legend_low,
-  obs_heatmap_metric_messages,
-  obs_heatmap_metric_tool_calls,
-  obs_heatmap_metric_tokens,
   obs_heatmap_no_data,
   obs_heatmap_title,
   obs_last_24h,
-  obs_last_30d,
   obs_last_7d,
+  obs_last_30d,
   obs_no_agent_activity,
   obs_success_rate,
   obs_successful_tool_calls,
@@ -37,7 +28,12 @@ import {
   observability,
   observability_desc,
 } from "@/paraglide/messages";
-import { api, type ActivityHeatmapPoint, type AgentMetrics, type AgentTimelinePoint } from "@/lib/api";
+import {
+  api,
+  type ActivityHeatmapPoint,
+  type AgentMetrics,
+  type AgentTimelinePoint,
+} from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -50,7 +46,6 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type TimeRange = "24h" | "7d" | "30d";
-type HeatmapMetric = "toolCalls" | "messages" | "tokens";
 
 function MetricCard({
   icon: Icon,
@@ -72,8 +67,12 @@ function MetricCard({
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs text-muted-foreground">{label}</p>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-lg font-semibold tabular-nums text-foreground">{value}</span>
-            {sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}
+            <span className="text-lg font-semibold tabular-nums text-foreground">
+              {value}
+            </span>
+            {sub ? (
+              <span className="text-[10px] text-muted-foreground">{sub}</span>
+            ) : null}
           </div>
         </div>
       </CardContent>
@@ -104,7 +103,7 @@ function heatmapColor(value: number, max: number): string {
     return `oklch(${0.79 - s * 0.08} ${0.14 + s * 0.06} ${150 - s * 70})`;
   } else {
     const s = (t - 0.75) / 0.25;
-    return `oklch(${0.71 - s * 0.08} ${0.20 + s * 0.08} ${80 - s * 60})`;
+    return `oklch(${0.71 - s * 0.08} ${0.2 + s * 0.08} ${80 - s * 60})`;
   }
 }
 
@@ -113,15 +112,7 @@ function heatmapColor(value: number, max: number): string {
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => String(i));
 
-function ActivityHeatmap({
-  data,
-  metric,
-  onMetricChange,
-}: {
-  data: ActivityHeatmapPoint[];
-  metric: HeatmapMetric;
-  onMetricChange: (m: HeatmapMetric) => void;
-}) {
+function ActivityHeatmap({ data }: { data: ActivityHeatmapPoint[] }) {
   // Build 7×24 grid
   const grid = useMemo(() => {
     const map = new Map<string, number>();
@@ -147,36 +138,11 @@ function ActivityHeatmap({
 
   const hasData = data.some((p) => p.value > 0);
 
-  const metricOptions: { key: HeatmapMetric; label: string }[] = [
-    { key: "toolCalls", label: obs_heatmap_metric_tool_calls() },
-    { key: "messages", label: obs_heatmap_metric_messages() },
-    { key: "tokens", label: obs_heatmap_metric_tokens() },
-  ];
-
   return (
     <div className="rounded-xl bg-card py-4 ring-1 ring-foreground/10">
-      {/* Header row */}
-      <div className="flex items-center justify-between px-4">
-        <h3 className="font-heading text-sm leading-snug font-medium text-foreground">
-          {obs_activity_heatmap()}
-        </h3>
-        <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
-          {metricOptions.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => onMetricChange(opt.key)}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                metric === opt.key
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h3 className="font-heading text-sm leading-snug font-medium text-foreground px-4">
+        {obs_activity_heatmap()}
+      </h3>
 
       {/* Heatmap grid */}
       <div className="mt-4 overflow-x-auto px-4">
@@ -221,7 +187,7 @@ function ActivityHeatmap({
                 {row.cells.map((val, h) => (
                   <div
                     key={h}
-                    title={`${row.label} ${String(h).padStart(2, "0")}:00 — ${metric === "tokens" ? formatTokens(val) : val}`}
+                    title={`${row.label} ${String(h).padStart(2, "0")}:00 — ${formatTokens(val)}`}
                     className="relative aspect-square rounded-[3px] transition-transform hover:scale-125 hover:ring-1 hover:ring-foreground/30"
                     style={{ backgroundColor: heatmapColor(val, maxValue) }}
                   />
@@ -241,7 +207,9 @@ function ActivityHeatmap({
                   <div
                     key={t}
                     className="size-3 rounded-[2px]"
-                    style={{ backgroundColor: heatmapColor(t * maxValue, maxValue) }}
+                    style={{
+                      backgroundColor: heatmapColor(t * maxValue, maxValue),
+                    }}
                   />
                 ))}
               </div>
@@ -264,25 +232,33 @@ export function ObservabilityView() {
   const [agentMetrics, setAgentMetrics] = useState<AgentMetrics | null>(null);
   const [agentTimeline, setAgentTimeline] = useState<AgentTimelinePoint[]>([]);
   const [heatmapData, setHeatmapData] = useState<ActivityHeatmapPoint[]>([]);
-  const [heatmapMetric, setHeatmapMetric] = useState<HeatmapMetric>("toolCalls");
-
   useEffect(() => {
     api.getAgentMetrics(timeRange).then(setAgentMetrics).catch(console.error);
     api.getAgentTimeline(timeRange).then(setAgentTimeline).catch(console.error);
-    api.getActivityHeatmap(timeRange, heatmapMetric).then(setHeatmapData).catch(console.error);
-  }, [timeRange, heatmapMetric]);
+    api
+      .getActivityHeatmap(timeRange, "tokens")
+      .then(setHeatmapData)
+      .catch(console.error);
+  }, [timeRange]);
 
   // Agent metrics
   const totalToolCalls = agentMetrics?.totalToolCalls ?? 0;
   const successfulToolCalls = agentMetrics?.successfulToolCalls ?? 0;
   const failedToolCalls = agentMetrics?.failedToolCalls ?? 0;
   const totalTokens = agentMetrics?.totalTokens ?? 0;
-  const successRate = totalToolCalls > 0 ? Math.round((successfulToolCalls / totalToolCalls) * 100) : 0;
+  const successRate =
+    totalToolCalls > 0
+      ? Math.round((successfulToolCalls / totalToolCalls) * 100)
+      : 0;
 
-  const agentTimelineChartConfig = useMemo(() => ({
-    tokens: { label: obs_chart_tokens(), color: "var(--chart-3)" },
-    toolCalls: { label: obs_chart_tool_calls(), color: "var(--chart-1)" },
-  } satisfies ChartConfig), []);
+  const agentTimelineChartConfig = useMemo(
+    () =>
+      ({
+        tokens: { label: obs_chart_tokens(), color: "var(--chart-3)" },
+        toolCalls: { label: obs_chart_tool_calls(), color: "var(--chart-1)" },
+      }) satisfies ChartConfig,
+    [],
+  );
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -290,10 +266,17 @@ export function ObservabilityView() {
         <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold text-foreground">{observability()}</h1>
-              <p className="text-sm text-muted-foreground">{observability_desc()}</p>
+              <h1 className="text-lg font-semibold text-foreground">
+                {observability()}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {observability_desc()}
+              </p>
             </div>
-            <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+            <Tabs
+              value={timeRange}
+              onValueChange={(v) => setTimeRange(v as TimeRange)}
+            >
               <TabsList>
                 <TabsTrigger value="24h">{obs_last_24h()}</TabsTrigger>
                 <TabsTrigger value="7d">{obs_last_7d()}</TabsTrigger>
@@ -308,7 +291,11 @@ export function ObservabilityView() {
               icon={Wrench01Icon}
               label={obs_tool_calls()}
               value={totalToolCalls}
-              sub={successRate > 0 ? `${obs_success_rate()}: ${successRate}%` : undefined}
+              sub={
+                successRate > 0
+                  ? `${obs_success_rate()}: ${successRate}%`
+                  : undefined
+              }
             />
             <MetricCard
               icon={CheckmarkCircle01Icon}
@@ -328,39 +315,62 @@ export function ObservabilityView() {
           </div>
 
           {/* ── Activity Heatmap ── */}
-          <ActivityHeatmap
-            data={heatmapData}
-            metric={heatmapMetric}
-            onMetricChange={setHeatmapMetric}
-          />
+          <ActivityHeatmap data={heatmapData} />
 
           {/* ── Agent Timeline ── */}
-          {agentTimeline.length > 0
-            ? (
-              <div className="rounded-xl bg-card py-4 ring-1 ring-foreground/10">
-                <div className="px-4">
-                  <h3 className="font-heading text-sm leading-snug font-medium text-foreground">{obs_agent_timeline()}</h3>
-                </div>
-                <div className="px-4 pt-4">
-                  <ChartContainer config={agentTimelineChartConfig} className="h-[200px] w-full">
-                    <BarChart data={agentTimeline} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={10} interval="preserveStartEnd" />
-                      <YAxis tickLine={false} axisLine={false} fontSize={10} width={40} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <ChartLegend content={<ChartLegendContent />} />
-                      <Bar dataKey="tokens" fill="var(--color-tokens)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                      <Bar dataKey="toolCalls" fill="var(--color-toolCalls)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                    </BarChart>
-                  </ChartContainer>
-                </div>
+          {agentTimeline.length > 0 ? (
+            <div className="rounded-xl bg-card py-4 ring-1 ring-foreground/10">
+              <div className="px-4">
+                <h3 className="font-heading text-sm leading-snug font-medium text-foreground">
+                  {obs_agent_timeline()}
+                </h3>
               </div>
-            )
-            : agentMetrics
-              ? (
-                <div className="text-sm text-muted-foreground">{obs_no_agent_activity()}</div>
-              )
-              : null}
+              <div className="px-4 pt-4">
+                <ChartContainer
+                  config={agentTimelineChartConfig}
+                  className="h-[200px] w-full"
+                >
+                  <BarChart
+                    data={agentTimeline}
+                    margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={10}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={10}
+                      width={40}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Bar
+                      dataKey="tokens"
+                      fill="var(--color-tokens)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                    />
+                    <Bar
+                      dataKey="toolCalls"
+                      fill="var(--color-toolCalls)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+            </div>
+          ) : agentMetrics ? (
+            <div className="text-sm text-muted-foreground">
+              {obs_no_agent_activity()}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

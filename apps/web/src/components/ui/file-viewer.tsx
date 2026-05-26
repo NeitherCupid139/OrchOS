@@ -249,6 +249,14 @@ function ShikiViewer({
           font-size: 0.875rem;
           line-height: 1.55;
           white-space: pre;
+          word-break: normal;
+        }
+        @media (max-width: 768px) {
+          .shiki-viewer pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-x: hidden;
+          }
         }
         .shiki-viewer code {
           background: transparent;
@@ -257,7 +265,7 @@ function ShikiViewer({
           font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
           font-size: inherit;
           line-height: inherit;
-          white-space: pre;
+          white-space: inherit;
         }
         .shiki-viewer .line-numbers {
           display: flex;
@@ -437,7 +445,7 @@ function Folder({
     <AccordionPrimitive.Item value={value} className="relative overflow-hidden">
       <AccordionPrimitive.Trigger
         className={cn(
-          "flex w-full items-center gap-1 rounded-md px-2 py-1 text-left text-sm transition-colors",
+          "flex min-w-0 w-full items-center gap-1 rounded-md px-1.5 md:px-2 py-1 text-left text-sm transition-colors",
           isSelect && isSelectable && "bg-muted",
           !isSelectable
             ? "cursor-not-allowed opacity-50"
@@ -448,8 +456,8 @@ function Folder({
         onClick={() => handleExpand(value)}
       >
         {expandedItems?.includes(value)
-          ? (openIcon ?? <FolderOpenIcon className="size-4" />)
-          : (closeIcon ?? <FolderIcon className="size-4" />)}
+          ? (openIcon ?? <FolderOpenIcon className="size-4 shrink-0" />)
+          : (closeIcon ?? <FolderIcon className="size-4 shrink-0" />)}
         <span className="truncate">{element}</span>
       </AccordionPrimitive.Trigger>
       <AccordionPrimitive.Content className="relative overflow-hidden text-sm">
@@ -458,7 +466,7 @@ function Folder({
           type="multiple"
           className={cn(
             "flex flex-col gap-1 py-1",
-            direction === "rtl" ? "mr-5" : "ml-5",
+            direction === "rtl" ? "mr-3 md:mr-5" : "ml-3 md:ml-5",
           )}
           value={expandedItems}
         >
@@ -493,7 +501,7 @@ function File({
     <button
       disabled={!isSelectable}
       className={cn(
-        "flex w-full items-center gap-1 rounded-md px-2 py-1 text-left text-sm transition-colors",
+        "flex min-w-0 w-full items-center gap-1 rounded-md px-1.5 md:px-2 py-1 text-left text-sm transition-colors",
         isSelected && isSelectable && "bg-muted",
         !isSelectable
           ? "cursor-not-allowed opacity-50"
@@ -506,8 +514,8 @@ function File({
       }}
       type="button"
     >
-      {fileIcon ?? <FileIcon className="size-4" />}
-      <span className="truncate">{children}</span>
+      {fileIcon ?? <FileIcon className="size-4 shrink-0" />}
+      <span className="truncate min-w-0">{children}</span>
     </button>
   );
 }
@@ -560,7 +568,7 @@ function Tree({
       }}
     >
       <div className={cn("size-full", className)}>
-        <div className="relative h-full px-2">
+        <div className="relative h-full px-1.5 md:px-2">
           <AccordionPrimitive.Root
             type="multiple"
             value={expandedItems}
@@ -665,24 +673,24 @@ function FileTree({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <FileCode className="size-4" />
+      <div className="flex h-12 md:h-14 items-center justify-between gap-2 border-b border-border px-3 md:px-4">
+        <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
+          <div className="flex size-7 md:size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <FileCode className="size-3.5 md:size-4" />
           </div>
           <p className="truncate text-sm font-medium text-foreground">
             {component.name}
           </p>
         </div>
         {component.author ? (
-          <Badge variant="secondary" className="shrink-0">
+          <Badge variant="secondary" className="hidden sm:block shrink-0">
             {component.author}
           </Badge>
         ) : null}
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="px-3 py-2">
+        <div className="px-2 md:px-3 py-2">
           <Tree
             expandedItems={expandedItems}
             selectedId={selectedFile}
@@ -792,7 +800,20 @@ export default function ComponentFileViewer({
       return;
     }
 
-    void navigator.clipboard.writeText(selected.content);
+    if (!navigator.clipboard) {
+      // Fallback for insecure contexts
+      const textarea = document.createElement("textarea");
+      textarea.value = selected.content;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    } else {
+      void navigator.clipboard.writeText(selected.content);
+    }
+
     setCopied(true);
     toast.success(file_content_copied());
 

@@ -561,52 +561,46 @@ function DashboardContentInner() {
             />
           )}
         </div>
-        {showSettingsDialog && (
-          <Suspense fallback={null}>
-            <SettingsDialog
-              open={showSettingsDialog}
-              onClose={() => {
-                setShowSettingsDialog(false);
-                setSettingsDefaultTab("general");
-                setUiPreviewTarget(null);
-              }}
-              settings={settings}
-              onSettingsChange={useUIStore.getState().setSettings}
-              defaultTab={settingsDefaultTab}
-            />
-          </Suspense>
-        )}
         <Suspense fallback={null}>
-          {createBoardDialogOpen && (
-            <CreateBoardConversationDialog
-              open={createBoardDialogOpen}
-              onClose={() => setCreateBoardDialogOpen(false)}
-              onSubmit={async (values) => {
-                createBoardTask({
-                  title: values.title,
-                  description: values.description,
-                  projectId: values.projectId,
-                  dueDate: values.dueDate,
-                  priority: values.priority,
-                  tags: values.tags,
-                  subtasks: values.subtasks,
-                });
-              }}
-            />
-          )}
+          <SettingsDialog
+            open={showSettingsDialog}
+            onClose={() => {
+              setShowSettingsDialog(false);
+              setSettingsDefaultTab("general");
+              setUiPreviewTarget(null);
+            }}
+            settings={settings}
+            onSettingsChange={useUIStore.getState().setSettings}
+            defaultTab={settingsDefaultTab}
+          />
         </Suspense>
         <Suspense fallback={null}>
-          {firstTimeOnboardingOpen && (
-            <OnboardingChangelogDialog
-              open={firstTimeOnboardingOpen}
-              onClose={() => {
-                setFirstTimeOnboardingOpen(false);
-                try {
-                  localStorage.setItem(ONBOARDING_SEEN_KEY, "1");
-                } catch {}
-              }}
-            />
-          )}
+          <CreateBoardConversationDialog
+            open={createBoardDialogOpen}
+            onClose={() => setCreateBoardDialogOpen(false)}
+            onSubmit={async (values) => {
+              createBoardTask({
+                title: values.title,
+                description: values.description,
+                projectId: values.projectId,
+                dueDate: values.dueDate,
+                priority: values.priority,
+                tags: values.tags,
+                subtasks: values.subtasks,
+              });
+            }}
+          />
+        </Suspense>
+        <Suspense fallback={null}>
+          <OnboardingChangelogDialog
+            open={firstTimeOnboardingOpen}
+            onClose={() => {
+              setFirstTimeOnboardingOpen(false);
+              try {
+                localStorage.setItem(ONBOARDING_SEEN_KEY, "1");
+              } catch {}
+            }}
+          />
         </Suspense>
       </div>
     </>

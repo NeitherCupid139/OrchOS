@@ -100,13 +100,8 @@
   "board_today": "Today",
   "bookmark_count": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} bookmark",
         "countPlural=other": "{count} bookmarks"
@@ -176,13 +171,8 @@
   "calendar_month": "Month",
   "calendar_n_accounts": [
     {
-      "declarations": [
-        "input n",
-        "local nPlural = n: plural"
-      ],
-      "selectors": [
-        "nPlural"
-      ],
+      "declarations": ["input n", "local nPlural = n: plural"],
+      "selectors": ["nPlural"],
       "match": {
         "nPlural=one": "{n} account",
         "nPlural=other": "{n} accounts"
@@ -628,6 +618,18 @@
   "profile_two_factor": "Two-Factor Authentication",
   "profile_two_factor_desc": "Current two-factor authentication status from Clerk.",
   "profile_username": "Username",
+  "profile_tab_membership": "Membership",
+  "profile_membership_plan": "Subscription Plan",
+  "profile_membership_plan_desc": "Your current plan and usage limits.",
+  "profile_membership_credits": "Credits",
+  "profile_membership_credits_desc": "Remaining credits for this billing period.",
+  "profile_membership_tokens_used": "Tokens Used",
+  "profile_membership_tokens_used_desc": "Total tokens consumed this period.",
+  "profile_membership_status": "Status",
+  "profile_membership_upgrade": "Upgrade to Pro",
+  "profile_membership_upgrade_desc": "Get more credits, unlimited agents, and priority support.",
+  "profile_membership_manage": "Manage Subscription",
+  "profile_membership_view_usage": "View Credit Usage",
   "provider": "Provider",
   "prs": "PRs",
   "pull_request": "Pull Request",

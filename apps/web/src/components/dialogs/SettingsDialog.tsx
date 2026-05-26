@@ -10,7 +10,6 @@ import {
   UnfoldMoreIcon,
   Tick02Icon,
   InboxIcon,
-  GoogleIcon,
   Edit02Icon,
   EyeIcon,
   ViewOffSlashIcon,
@@ -121,9 +120,17 @@ import { NOTIFICATION_EVENTS, AVAILABLE_SOUNDS } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/ui/app-dialog";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { toast } from "@/components/ui/toast";
-import { ensureSystemNotificationAccess, sendTestNotification, canUseNotifications } from "@/lib/notifications";
+import {
+  ensureSystemNotificationAccess,
+  sendTestNotification,
+  canUseNotifications,
+} from "@/lib/notifications";
 
 const defaultEventSounds: Record<string, string> = {
   email: "bell",
@@ -165,7 +172,11 @@ type SettingsMailIntegration = {
   accounts?: MailIntegrationAccount[];
 };
 
-const tabDefs: { id: SettingsTab; icon: IconSvgElement; labelKey: () => string }[] = [
+const tabDefs: {
+  id: SettingsTab;
+  icon: IconSvgElement;
+  labelKey: () => string;
+}[] = [
   { id: "general", icon: SlidersHorizontalIcon, labelKey: general },
   { id: "notifications", icon: NotificationIcon, labelKey: notifications },
   { id: "mail", icon: InboxIcon, labelKey: mail },
@@ -275,31 +286,12 @@ export function SettingsDialog({
   defaultTab,
 }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
-
-  useEffect(() => {
-    if (open && defaultTab) {
-      setActiveTab(defaultTab);
-      if (defaultTab === "mail" && !mailState.loadingMail) {
-        dispatchMail({ type: "SET_LOADING" });
-        api
-          .listIntegrations()
-          .then((result) => {
-            dispatchMail({
-              type: "SET_INTEGRATIONS",
-              payload: result.filter(
-                (i) => i.id === "gmail" || i.id === "smtp-imap",
-              ) as SettingsMailIntegration[],
-            });
-          })
-          .catch(() => {
-            dispatchMail({ type: "LOAD_ERROR" });
-          });
-      }
-    }
-  }, [open, defaultTab]);
   const [mailState, dispatchMail] = useReducer(
     (
-      state: { mailIntegrations: SettingsMailIntegration[]; loadingMail: boolean },
+      state: {
+        mailIntegrations: SettingsMailIntegration[];
+        loadingMail: boolean;
+      },
       action:
         | { type: "SET_LOADING" }
         | { type: "SET_INTEGRATIONS"; payload: SettingsMailIntegration[] }
@@ -316,6 +308,28 @@ export function SettingsDialog({
     },
     { mailIntegrations: [], loadingMail: false },
   );
+
+  useEffect(() => {
+    if (open && defaultTab) {
+      setActiveTab(defaultTab);
+      if (defaultTab === "mail" && !mailState.loadingMail) {
+        dispatchMail({ type: "SET_LOADING" });
+        api
+          .listIntegrations()
+          .then((result) => {
+            dispatchMail({
+              type: "SET_INTEGRATIONS",
+              payload: result.filter(
+                (i) => i.id === "smtp-imap",
+              ) as SettingsMailIntegration[],
+            });
+          })
+          .catch(() => {
+            dispatchMail({ type: "LOAD_ERROR" });
+          });
+      }
+    }
+  }, [open, defaultTab]);
   const [editingMailAccount, setEditingMailAccount] = useState<{
     integrationId: string;
     account: MailIntegrationAccount;
@@ -346,13 +360,22 @@ export function SettingsDialog({
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(EMAIL_PROVIDERS[0].id);
+  const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(
+    EMAIL_PROVIDERS[0].id,
+  );
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
 
   /** Try to match current SMTP/IMAP settings to a known provider */
-  function detectProvider(host: string, port: number, imapHost: string): string {
+  function detectProvider(
+    host: string,
+    port: number,
+    imapHost: string,
+  ): string {
     const match = EMAIL_PROVIDERS.find(
-      (p) => p.smtp.host === host && p.smtp.port === port && p.imap.host === imapHost,
+      (p) =>
+        p.smtp.host === host &&
+        p.smtp.port === port &&
+        p.imap.host === imapHost,
     );
     return match?.id ?? CUSTOM_PROVIDER_ID;
   }
@@ -382,11 +405,16 @@ export function SettingsDialog({
   }, []);
 
   const handleToggle = async (
-    key: keyof Pick<ControlSettings, "showShortcutHints" | "useMixedScript" | "preferKanji">,
+    key: keyof Pick<
+      ControlSettings,
+      "showShortcutHints" | "useMixedScript" | "preferKanji"
+    >,
   ) => {
     if (!currentSettings) return;
     try {
-      const updated = await api.updateSettings({ [key]: !currentSettings[key] });
+      const updated = await api.updateSettings({
+        [key]: !currentSettings[key],
+      });
       const merged = { ...currentSettings, ...updated };
       onSettingsChange(merged);
     } catch (err) {
@@ -465,7 +493,10 @@ export function SettingsDialog({
     }
   };
 
-  const handleEventSoundFileChange = async (event: NotificationEvent, soundId: SoundId) => {
+  const handleEventSoundFileChange = async (
+    event: NotificationEvent,
+    soundId: SoundId,
+  ) => {
     if (!currentSettings) return;
     const updated = {
       ...currentSettings,
@@ -548,7 +579,9 @@ export function SettingsDialog({
       );
       dispatchMail({
         type: "SET_INTEGRATIONS",
-        payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)),
+        payload: mailState.mailIntegrations.map((i) =>
+          i.id === updated.id ? updated : i,
+        ),
       });
       setEditingMailAccount(null);
     } catch (err) {
@@ -556,17 +589,25 @@ export function SettingsDialog({
     }
   }, [editingMailAccount, editMailForm]);
 
-  const handleDeleteMailAccount = useCallback(async (integrationId: string, accountId: string) => {
-    try {
-      const updated = await api.deleteIntegrationAccount(integrationId, accountId);
-      dispatchMail({
-        type: "SET_INTEGRATIONS",
-        payload: mailState.mailIntegrations.map((i) => (i.id === updated.id ? updated : i)),
-      });
-    } catch (err) {
-      console.error("Failed to delete mail account:", err);
-    }
-  }, []);
+  const handleDeleteMailAccount = useCallback(
+    async (integrationId: string, accountId: string) => {
+      try {
+        const updated = await api.deleteIntegrationAccount(
+          integrationId,
+          accountId,
+        );
+        dispatchMail({
+          type: "SET_INTEGRATIONS",
+          payload: mailState.mailIntegrations.map((i) =>
+            i.id === updated.id ? updated : i,
+          ),
+        });
+      } catch (err) {
+        console.error("Failed to delete mail account:", err);
+      }
+    },
+    [],
+  );
 
   if (!open) return null;
 
@@ -585,15 +626,24 @@ export function SettingsDialog({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="flex h-[600px] w-full max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         {/* Left: Tabs */}
         <div className="flex w-48 shrink-0 flex-col border-r border-border bg-muted/30">
           <div className="flex h-12 items-center px-4">
-            <HugeiconsIcon icon={Settings02Icon} className="mr-2 size-4 text-muted-foreground" />
-            <span className="text-sm font-semibold text-foreground">{settings_label()}</span>
+            <HugeiconsIcon
+              icon={Settings02Icon}
+              className="mr-2 size-4 text-muted-foreground"
+            />
+            <span className="text-sm font-semibold text-foreground">
+              {settings_label()}
+            </span>
           </div>
           <nav className="flex-1 space-y-0.5 px-2 py-1">
             {tabDefs.map((tab) => {
@@ -611,7 +661,7 @@ export function SettingsDialog({
                           dispatchMail({
                             type: "SET_INTEGRATIONS",
                             payload: result.filter(
-                              (i) => i.id === "gmail" || i.id === "smtp-imap",
+                              (i) => i.id === "smtp-imap",
                             ) as SettingsMailIntegration[],
                           });
                         })
@@ -645,9 +695,20 @@ export function SettingsDialog({
             <h2 className="text-sm font-semibold text-foreground">
               {tabDefs.find((t) => t.id === activeTab)?.labelKey()}
             </h2>
-            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={close()} className="shrink-0 text-muted-foreground/60 hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label={close()}
+              className="shrink-0 text-muted-foreground/60 hover:text-foreground"
+            >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path
+                  d="M4 4L10 10M10 4L4 10"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </Button>
           </div>
@@ -659,12 +720,18 @@ export function SettingsDialog({
                 {/* Shortcut Hints */}
                 <div className="flex items-center justify-between">
                   <div className="max-w-[280px]">
-                    <span className="text-sm font-medium text-foreground">{shortcut_hints()}</span>
-                    <p className="text-xs text-muted-foreground">{shortcut_hints_desc()}</p>
+                    <span className="text-sm font-medium text-foreground">
+                      {shortcut_hints()}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {shortcut_hints_desc()}
+                    </p>
                   </div>
                   <AppleSwitch
                     checked={currentSettings.showShortcutHints}
-                    onCheckedChange={() => void handleToggle("showShortcutHints")}
+                    onCheckedChange={() =>
+                      void handleToggle("showShortcutHints")
+                    }
                     size="sm"
                     aria-label={shortcut_hints()}
                   />
@@ -673,17 +740,24 @@ export function SettingsDialog({
                 {/* Language */}
                 <div className="flex items-center justify-between">
                   <div className="max-w-[280px]">
-                    <span className="text-sm font-medium text-foreground">{language()}</span>
-                    <p className="text-xs text-muted-foreground">{language_desc()}</p>
+                    <span className="text-sm font-medium text-foreground">
+                      {language()}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {language_desc()}
+                    </p>
                   </div>
                   <Select
                     value={currentLocale}
-                    onValueChange={(value) => value && void handleLocaleChange(value)}
+                    onValueChange={(value) =>
+                      value && void handleLocaleChange(value)
+                    }
                   >
                     <SelectTrigger className="w-[160px]">
                       <SelectValue>
-                        {AVAILABLE_LOCALES.find((l) => l.value === currentLocale)?.label ||
-                          AVAILABLE_LOCALES[0].label}
+                        {AVAILABLE_LOCALES.find(
+                          (l) => l.value === currentLocale,
+                        )?.label || AVAILABLE_LOCALES[0].label}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -705,11 +779,15 @@ export function SettingsDialog({
                       <span className="text-sm font-medium text-foreground">
                         {use_mixed_script()}
                       </span>
-                      <p className="text-xs text-muted-foreground">{use_mixed_script_desc()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {use_mixed_script_desc()}
+                      </p>
                     </div>
                     <AppleSwitch
                       checked={Boolean(currentSettings.useMixedScript)}
-                      onCheckedChange={() => void handleToggle("useMixedScript")}
+                      onCheckedChange={() =>
+                        void handleToggle("useMixedScript")
+                      }
                       size="sm"
                       aria-label={use_mixed_script()}
                     />
@@ -720,8 +798,12 @@ export function SettingsDialog({
                 {currentLocale === "ja" && (
                   <div className="flex items-center justify-between">
                     <div className="max-w-[280px]">
-                      <span className="text-sm font-medium text-foreground">{prefer_kanji()}</span>
-                      <p className="text-xs text-muted-foreground">{prefer_kanji_desc()}</p>
+                      <span className="text-sm font-medium text-foreground">
+                        {prefer_kanji()}
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        {prefer_kanji_desc()}
+                      </p>
                     </div>
                     <AppleSwitch
                       checked={Boolean(currentSettings.preferKanji)}
@@ -742,11 +824,15 @@ export function SettingsDialog({
                     <span className="text-sm font-medium text-foreground">
                       {system_notifications()}
                     </span>
-                    <p className="text-xs text-muted-foreground">{system_notifications_desc()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {system_notifications_desc()}
+                    </p>
                   </div>
                   <AppleSwitch
                     checked={Boolean(currentSettings.notifications?.system)}
-                    onCheckedChange={() => void handleNotificationToggle("system")}
+                    onCheckedChange={() =>
+                      void handleNotificationToggle("system")
+                    }
                     size="sm"
                     aria-label={system_notifications()}
                   />
@@ -754,8 +840,12 @@ export function SettingsDialog({
                 {/* Test Notification */}
                 <div className="flex items-center justify-between">
                   <div className="max-w-[280px]">
-                    <span className="text-sm font-medium text-foreground">{notification_test_send()}</span>
-                    <p className="text-xs text-muted-foreground">{notification_test_send_desc()}</p>
+                    <span className="text-sm font-medium text-foreground">
+                      {notification_test_send()}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {notification_test_send_desc()}
+                    </p>
                   </div>
                   <Button
                     type="button"
@@ -776,16 +866,24 @@ export function SettingsDialog({
                 </div>
                 {/* Per-Event Sound Config */}
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-foreground">{event_sounds()}</span>
-                  <p className="text-xs text-muted-foreground">{event_sounds_desc()}</p>
+                  <span className="text-sm font-medium text-foreground">
+                    {event_sounds()}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {event_sounds_desc()}
+                  </p>
                   <div className="space-y-1.5 pt-1">
                     {NOTIFICATION_EVENTS.map((event) => {
                       const currentSoundId =
-                        currentSettings.notifications?.eventSoundFiles?.[event.id] ||
+                        currentSettings.notifications?.eventSoundFiles?.[
+                          event.id
+                        ] ||
                         (defaultEventSounds[event.id] as SoundId) ||
                         "bell";
                       const isEnabled =
-                        currentSettings.notifications?.eventSounds?.[event.id] !== false;
+                        currentSettings.notifications?.eventSounds?.[
+                          event.id
+                        ] !== false;
                       return (
                         <div
                           key={event.id}
@@ -803,7 +901,9 @@ export function SettingsDialog({
                                   !isEnabled && "cursor-not-allowed opacity-50",
                                 )}
                               >
-                                <span className="truncate">{getSoundLabel(currentSoundId)}</span>
+                                <span className="truncate">
+                                  {getSoundLabel(currentSoundId)}
+                                </span>
                                 <HugeiconsIcon
                                   icon={UnfoldMoreIcon}
                                   className="size-3 text-muted-foreground"
@@ -822,14 +922,30 @@ export function SettingsDialog({
                                     role="button"
                                     tabIndex={0}
                                     onClick={(e) => {
-                                      if ((e.target as HTMLElement).closest(".play-btn")) return;
-                                      handleEventSoundFileChange(event.id, sound.id);
+                                      if (
+                                        (e.target as HTMLElement).closest(
+                                          ".play-btn",
+                                        )
+                                      )
+                                        return;
+                                      handleEventSoundFileChange(
+                                        event.id,
+                                        sound.id,
+                                      );
                                     }}
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter" || e.key === " ") {
                                         e.preventDefault();
-                                        if ((e.target as HTMLElement).closest(".play-btn")) return;
-                                        handleEventSoundFileChange(event.id, sound.id);
+                                        if (
+                                          (e.target as HTMLElement).closest(
+                                            ".play-btn",
+                                          )
+                                        )
+                                          return;
+                                        handleEventSoundFileChange(
+                                          event.id,
+                                          sound.id,
+                                        );
                                       }
                                     }}
                                   >
@@ -838,7 +954,10 @@ export function SettingsDialog({
                                       className="play-btn rounded p-0.5 hover:bg-muted transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
                                       type="button"
                                     >
-                                      <HugeiconsIcon icon={VolumeHighIcon} className="size-3.5" />
+                                      <HugeiconsIcon
+                                        icon={VolumeHighIcon}
+                                        className="size-3.5"
+                                      />
                                     </button>
                                     <span className="flex-1 select-none">
                                       {getSoundLabel(sound.id)}
@@ -856,7 +975,9 @@ export function SettingsDialog({
                           </div>
                           <AppleSwitch
                             checked={isEnabled}
-                            onCheckedChange={() => void handleEventSoundToggle(event.id)}
+                            onCheckedChange={() =>
+                              void handleEventSoundToggle(event.id)
+                            }
                             size="sm"
                             aria-label={EVENT_LABELS[event.id]()}
                           />
@@ -872,8 +993,12 @@ export function SettingsDialog({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-medium text-foreground">{mail_accounts()}</span>
-                    <p className="text-xs text-muted-foreground">{mail_accounts_desc()}</p>
+                    <span className="text-sm font-medium text-foreground">
+                      {mail_accounts()}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {mail_accounts_desc()}
+                    </p>
                   </div>
                 </div>
 
@@ -887,7 +1012,9 @@ export function SettingsDialog({
                       icon={InboxIcon}
                       className="mx-auto size-5 text-muted-foreground/30 mb-2"
                     />
-                    <p className="text-sm text-muted-foreground">{no_mail_accounts_configured()}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {no_mail_accounts_configured()}
+                    </p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       {mail_accounts_empty_hint()}
                     </p>
@@ -897,13 +1024,11 @@ export function SettingsDialog({
                     {mailState.mailIntegrations.map((integration) => (
                       <div key={integration.id} className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                          <HugeiconsIcon
-                            icon={integration.id === "google-mail" ? GoogleIcon : InboxIcon}
-                            className="size-4"
-                          />
+                          <HugeiconsIcon icon={InboxIcon} className="size-4" />
                           {integration.name}
                         </div>
-                        {integration.accounts && integration.accounts.length > 0 ? (
+                        {integration.accounts &&
+                        integration.accounts.length > 0 ? (
                           <div className="space-y-1.5 pl-6">
                             {integration.accounts.map((account) => (
                               <div
@@ -926,14 +1051,22 @@ export function SettingsDialog({
                                           variant="ghost"
                                           size="icon-xs"
                                           onClick={() =>
-                                            handleEditMailAccount(integration.id, account)
+                                            handleEditMailAccount(
+                                              integration.id,
+                                              account,
+                                            )
                                           }
                                         >
-                                          <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                          <HugeiconsIcon
+                                            icon={Edit02Icon}
+                                            className="size-3.5"
+                                          />
                                         </Button>
                                       }
                                     />
-                                    <TooltipContent side="top">{edit()}</TooltipContent>
+                                    <TooltipContent side="top">
+                                      {edit()}
+                                    </TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -942,21 +1075,31 @@ export function SettingsDialog({
                                           variant="ghost"
                                           size="icon-xs"
                                           onClick={() =>
-                                            handleDeleteMailAccount(integration.id, account.id)
+                                            handleDeleteMailAccount(
+                                              integration.id,
+                                              account.id,
+                                            )
                                           }
                                         >
-                                          <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                                          <HugeiconsIcon
+                                            icon={Cancel01Icon}
+                                            className="size-3.5"
+                                          />
                                         </Button>
                                       }
                                     />
-                                    <TooltipContent side="top">{delete_message()}</TooltipContent>
+                                    <TooltipContent side="top">
+                                      {delete_message()}
+                                    </TooltipContent>
                                   </Tooltip>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-xs text-muted-foreground pl-6">{no_accounts()}</div>
+                          <div className="text-xs text-muted-foreground pl-6">
+                            {no_accounts()}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1003,35 +1146,50 @@ export function SettingsDialog({
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{display_name()}</span>
+                      <span className="text-muted-foreground">
+                        {display_name()}
+                      </span>
                       <input
                         value={editMailForm.displayName}
                         onChange={(e) =>
-                          setEditMailForm((f) => ({ ...f, displayName: e.target.value }))
+                          setEditMailForm((f) => ({
+                            ...f,
+                            displayName: e.target.value,
+                          }))
                         }
                         placeholder={display_name_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{username()}</span>
+                      <span className="text-muted-foreground">
+                        {username()}
+                      </span>
                       <input
                         value={editMailForm.username}
                         onChange={(e) =>
-                          setEditMailForm((f) => ({ ...f, username: e.target.value }))
+                          setEditMailForm((f) => ({
+                            ...f,
+                            username: e.target.value,
+                          }))
                         }
                         placeholder={username_placeholder()}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{password()}</span>
+                      <span className="text-muted-foreground">
+                        {password()}
+                      </span>
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
                           value={editMailForm.password}
                           onChange={(e) =>
-                            setEditMailForm((f) => ({ ...f, password: e.target.value }))
+                            setEditMailForm((f) => ({
+                              ...f,
+                              password: e.target.value,
+                            }))
                           }
                           placeholder={password_placeholder()}
                           className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
@@ -1052,8 +1210,13 @@ export function SettingsDialog({
 
                     {/* Provider selector */}
                     <div className="border-t border-border pt-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-3">{email_provider()}</p>
-                      <Select value={selectedEditProviderId} onValueChange={applyProviderToEditForm}>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">
+                        {email_provider()}
+                      </p>
+                      <Select
+                        value={selectedEditProviderId}
+                        onValueChange={applyProviderToEditForm}
+                      >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={email_provider()} />
                         </SelectTrigger>
@@ -1067,7 +1230,8 @@ export function SettingsDialog({
                           </SelectGroup>
                         </SelectContent>
                       </Select>
-                      {selectedEditProviderId && getEmailProvider(selectedEditProviderId)?.helpText ? (
+                      {selectedEditProviderId &&
+                      getEmailProvider(selectedEditProviderId)?.helpText ? (
                         <p className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2 text-xs leading-5 text-muted-foreground">
                           {getEmailProvider(selectedEditProviderId)!.helpText}
                         </p>
@@ -1080,11 +1244,16 @@ export function SettingsDialog({
                       </p>
                       <div className="space-y-3">
                         <label className="grid gap-1.5 text-sm">
-                          <span className="text-muted-foreground">{smtp_host()}</span>
+                          <span className="text-muted-foreground">
+                            {smtp_host()}
+                          </span>
                           <input
                             value={editMailForm.smtpHost}
                             onChange={(e) =>
-                              setEditMailForm((f) => ({ ...f, smtpHost: e.target.value }))
+                              setEditMailForm((f) => ({
+                                ...f,
+                                smtpHost: e.target.value,
+                              }))
                             }
                             placeholder="smtp.gmail.com"
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
@@ -1092,11 +1261,16 @@ export function SettingsDialog({
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                           <label className="grid gap-1.5 text-sm">
-                            <span className="text-muted-foreground">{smtp_port()}</span>
+                            <span className="text-muted-foreground">
+                              {smtp_port()}
+                            </span>
                             <input
                               value={editMailForm.smtpPort}
                               onChange={(e) =>
-                                setEditMailForm((f) => ({ ...f, smtpPort: e.target.value }))
+                                setEditMailForm((f) => ({
+                                  ...f,
+                                  smtpPort: e.target.value,
+                                }))
                               }
                               placeholder="587"
                               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
@@ -1107,11 +1281,16 @@ export function SettingsDialog({
                               type="checkbox"
                               checked={editMailForm.smtpSecure}
                               onChange={(e) =>
-                                setEditMailForm((f) => ({ ...f, smtpSecure: e.target.checked }))
+                                setEditMailForm((f) => ({
+                                  ...f,
+                                  smtpSecure: e.target.checked,
+                                }))
                               }
                               className="rounded border-border"
                             />
-                            <span className="text-muted-foreground">{use_tls_smtp()}</span>
+                            <span className="text-muted-foreground">
+                              {use_tls_smtp()}
+                            </span>
                           </label>
                         </div>
                       </div>
@@ -1123,11 +1302,16 @@ export function SettingsDialog({
                       </p>
                       <div className="space-y-3">
                         <label className="grid gap-1.5 text-sm">
-                          <span className="text-muted-foreground">{imap_host()}</span>
+                          <span className="text-muted-foreground">
+                            {imap_host()}
+                          </span>
                           <input
                             value={editMailForm.imapHost}
                             onChange={(e) =>
-                              setEditMailForm((f) => ({ ...f, imapHost: e.target.value }))
+                              setEditMailForm((f) => ({
+                                ...f,
+                                imapHost: e.target.value,
+                              }))
                             }
                             placeholder="imap.gmail.com"
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
@@ -1135,11 +1319,16 @@ export function SettingsDialog({
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                           <label className="grid gap-1.5 text-sm">
-                            <span className="text-muted-foreground">{imap_port()}</span>
+                            <span className="text-muted-foreground">
+                              {imap_port()}
+                            </span>
                             <input
                               value={editMailForm.imapPort}
                               onChange={(e) =>
-                                setEditMailForm((f) => ({ ...f, imapPort: e.target.value }))
+                                setEditMailForm((f) => ({
+                                  ...f,
+                                  imapPort: e.target.value,
+                                }))
                               }
                               placeholder="993"
                               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
@@ -1150,11 +1339,16 @@ export function SettingsDialog({
                               type="checkbox"
                               checked={editMailForm.imapSecure}
                               onChange={(e) =>
-                                setEditMailForm((f) => ({ ...f, imapSecure: e.target.checked }))
+                                setEditMailForm((f) => ({
+                                  ...f,
+                                  imapSecure: e.target.checked,
+                                }))
                               }
                               className="rounded border-border"
                             />
-                            <span className="text-muted-foreground">{use_tls_imap()}</span>
+                            <span className="text-muted-foreground">
+                              {use_tls_imap()}
+                            </span>
                           </label>
                         </div>
                       </div>
@@ -1178,7 +1372,8 @@ export function SettingsDialog({
                   <Select
                     value={currentSettings.sendShortcut}
                     onValueChange={(value) =>
-                      value && handleSendShortcutChange(value as "enter" | "cmd-enter")
+                      value &&
+                      handleSendShortcutChange(value as "enter" | "cmd-enter")
                     }
                   >
                     <SelectTrigger className="w-[160px]">
@@ -1206,7 +1401,9 @@ export function SettingsDialog({
                 <div className="flex items-center gap-3">
                   <img src="/logo.svg" alt="OrchOS" className="size-10" />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">OrchOS</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      OrchOS
+                    </p>
                     <p className="text-xs text-muted-foreground">v1.0.0</p>
                   </div>
                 </div>
@@ -1214,7 +1411,9 @@ export function SettingsDialog({
                   <p className="text-sm font-medium text-foreground">
                     {about_project_summary_title()}
                   </p>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{orchos_desc()}</p>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    {orchos_desc()}
+                  </p>
                 </div>
                 <div className="rounded-lg p-4">
                   <p className="text-sm font-medium text-foreground">
