@@ -2,7 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useState } from "react";
 import Header from "@/components/layout/Header";
-import { hero_line1, hero_line2, hero_line2_word, hero_line3, hero_subtitle, open_dashboard } from "@/paraglide/messages";
+import {
+  hero_line1,
+  hero_line2,
+  hero_line2_word,
+  hero_line3,
+  hero_subtitle,
+  open_dashboard,
+} from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
 import { FeaturesBento } from "@/components/ui/features-bento";
 import Footer from "@/components/layout/Footer";
@@ -22,6 +29,8 @@ function HomePageInner() {
               src="/hero/background.png"
               alt=""
               className="size-full object-cover"
+              width={1440}
+              height={900}
               decoding="async"
             />
           </div>
@@ -63,6 +72,8 @@ function HomePageInner() {
                 src="/hero/hero.png"
                 alt="OrchOS Hero"
                 className="h-full w-full object-contain sm:object-cover object-top dark:hidden"
+                width={1200}
+                height={800}
                 loading="lazy"
                 decoding="async"
               />
@@ -70,6 +81,8 @@ function HomePageInner() {
                 src="/hero/hero-dark.png"
                 alt="OrchOS Hero"
                 className="hidden h-full w-full object-contain sm:object-cover object-top dark:block"
+                width={1200}
+                height={800}
                 loading="lazy"
                 decoding="async"
               />

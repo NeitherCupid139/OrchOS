@@ -10,11 +10,22 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { api, type LocalAgentProfile, type ProblemSummary, type RuntimeProfile } from "@/lib/api";
+import {
+  api,
+  type LocalAgentProfile,
+  type ProblemSummary,
+  type RuntimeProfile,
+} from "@/lib/api";
 import type { AgentModelFilter } from "@/components/layout/Toolbar";
 import { useUIStore } from "@/lib/store";
 import { useDashboardCache } from "@/lib/dashboard-cache";
-import type { Project, Organization, Problem, ProblemStatus, ControlSettings } from "@/lib/types";
+import type {
+  Project,
+  Organization,
+  Problem,
+  ProblemStatus,
+  ControlSettings,
+} from "@/lib/types";
 import { workspace as workspaceMsg } from "@/paraglide/messages";
 
 interface DashboardState {
@@ -43,12 +54,21 @@ const initialDashboardState: DashboardState = {
   problems: [],
   problemSummary: {
     status: { open: 0, fixed: 0, ignored: 0, assigned: 0 },
-    inbox: { all: 0, github_pr: 0, github_issue: 0, mention: 0, agent_request: 0 },
+    inbox: {
+      all: 0,
+      github_pr: 0,
+      github_issue: 0,
+      mention: 0,
+      agent_request: 0,
+    },
     system: { critical: 0, warning: 0, info: 0 },
   },
 };
 
-function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
+function dashboardReducer(
+  state: DashboardState,
+  action: DashboardAction,
+): DashboardState {
   switch (action.type) {
     case "SET_ALL":
       return { ...state, ...action.payload };
@@ -101,7 +121,9 @@ function getViewFromPath(pathname: string): DashboardView {
     "observability",
     "agents",
   ];
-  return validViews.includes(segment as DashboardView) ? (segment as DashboardView) : "inbox";
+  return validViews.includes(segment as DashboardView)
+    ? (segment as DashboardView)
+    : "inbox";
 }
 
 interface InboxCounts {
@@ -161,7 +183,8 @@ const DashboardContext = createContext<DashboardContextType | null>(null);
 
 export function useDashboard() {
   const ctx = use(DashboardContext);
-  if (!ctx) throw new Error("useDashboard must be used within DashboardProvider");
+  if (!ctx)
+    throw new Error("useDashboard must be used within DashboardProvider");
   return ctx;
 }
 
@@ -170,38 +193,53 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const activeView = getViewFromPath(location.pathname);
 
   // Persisted state from zustand store
-  const {
-    activeOrganizationId,
-    setActiveOrganizationId,
-    settings: persistedSettings,
-    setSettings,
-  } = useUIStore();
+  const activeOrganizationId = useUIStore((s) => s.activeOrganizationId);
+  const setActiveOrganizationId = useUIStore((s) => s.setActiveOrganizationId);
+  const persistedSettings = useUIStore((s) => s.settings);
+  const setSettings = useUIStore((s) => s.setSettings);
 
   const initialCacheRef = useRef(useDashboardCache.getState());
   const initialCache = initialCacheRef.current;
 
   // Server data (hydrated from cache, then refreshed from API) — batched via useReducer
-  const [state, dispatch] = useReducer(dashboardReducer, initialDashboardState, () => ({
-    runtimes: initialCache.runtimes,
-    localAgents: [],
-    projects: initialCache.projects,
-    organizations: initialCache.organizations,
-    problems: initialCache.problems,
-    problemSummary: initialCache.problemSummary,
-  }));
+  const [state, dispatch] = useReducer(
+    dashboardReducer,
+    initialDashboardState,
+    () => ({
+      runtimes: initialCache.runtimes,
+      localAgents: [],
+      projects: initialCache.projects,
+      organizations: initialCache.organizations,
+      problems: initialCache.problems,
+      problemSummary: initialCache.problemSummary,
+    }),
+  );
 
-  const { runtimes, localAgents, projects, organizations, problems, problemSummary } = state;
+  const {
+    runtimes,
+    localAgents,
+    projects,
+    organizations,
+    problems,
+    problemSummary,
+  } = state;
 
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [uiPreviewTarget, setUiPreviewTarget] = useState<DashboardUiPreviewTarget | null>(null);
+  const [uiPreviewTarget, setUiPreviewTarget] =
+    useState<DashboardUiPreviewTarget | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const refreshQueuedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedViewsRef = useRef<Set<DashboardView>>(new Set());
-  const defaultOrganizationInFlightRef = useRef<Promise<Organization> | null>(null);
+  const defaultOrganizationInFlightRef = useRef<Promise<Organization> | null>(
+    null,
+  );
   const [loading, setLoading] = useState(() => {
-    return initialCache.runtimes.length === 0 && initialCache.organizations.length === 0;
+    return (
+      initialCache.runtimes.length === 0 &&
+      initialCache.organizations.length === 0
+    );
   });
 
   const inboxCounts = useMemo<InboxCounts>(() => {
@@ -230,7 +268,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     activeView === "calendar" ||
     activeView === "mail";
   const shouldLoadLocalAgents = activeView === "agents";
-  const shouldLoadProblems = activeView === "inbox" || activeView === "observability";
+  const shouldLoadProblems =
+    activeView === "inbox" || activeView === "observability";
   const agentModelCounts: AgentModelCounts = { all: 0, local: 0, cloud: 0 };
 
   const workspaceName = workspaceMsg();
@@ -257,7 +296,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_ORGANIZATIONS", payload: nextOrganizations });
       const currentOrgId = useUIStore.getState().activeOrganizationId;
       const hasCurrentOrganization = currentOrgId
-        ? nextOrganizations.some((organization) => organization.id === currentOrgId)
+        ? nextOrganizations.some(
+            (organization) => organization.id === currentOrgId,
+          )
         : false;
 
       if (nextOrganizations.length > 0 && !hasCurrentOrganization) {
@@ -276,7 +317,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       if (results.organizations) {
         applyOrganizationResult(results.organizations);
       }
-      if (results.problemSummary) updates.problemSummary = results.problemSummary;
+      if (results.problemSummary)
+        updates.problemSummary = results.problemSummary;
       if (results.problems) updates.problems = results.problems;
       if (results.settings) setSettings(results.settings);
       // Single dispatch for all state updates
@@ -298,7 +340,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     const results = await Promise.allSettled([
       api.listRuntimes(),
-      shouldLoadLocalAgents ? api.listLocalAgents() : Promise.resolve<LocalAgentProfile[]>([]),
+      shouldLoadLocalAgents
+        ? api.listLocalAgents()
+        : Promise.resolve<LocalAgentProfile[]>([]),
       shouldLoadProjects ? api.listProjects() : Promise.resolve<Project[]>([]),
       api.getSettings(),
       api.listOrganizations(),
@@ -312,14 +356,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (results[3].status === "fulfilled") fresh.settings = results[3].value;
     if (results[4].status === "fulfilled") {
       const organizations = results[4].value;
-      fresh.organizations = organizations.length > 0
-        ? organizations
-        : [await ensureDefaultOrganization()];
+      fresh.organizations =
+        organizations.length > 0
+          ? organizations
+          : [await ensureDefaultOrganization()];
     }
-    if (results[5].status === "fulfilled") fresh.problemSummary = results[5].value;
+    if (results[5].status === "fulfilled")
+      fresh.problemSummary = results[5].value;
     if (results[6].status === "fulfilled") fresh.problems = results[6].value;
     for (const r of results) {
-      if (r.status === "rejected") console.error("Failed to fetch data:", r.reason);
+      if (r.status === "rejected")
+        console.error("Failed to fetch data:", r.reason);
     }
     applyRefreshResults(fresh);
     setLoading(false);
@@ -367,6 +414,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     initializedViewsRef.current.add(activeView);
 
+    // Skip re-fetching core data (runtimes, settings, organizations) if
+    // we already have it from a previous view initialization.
+    const cache = useDashboardCache.getState();
+    const hasCoreData =
+      cache.runtimes.length > 0 && cache.organizations.length > 0;
+
+    const corePlaceholders = {
+      runtimes: Promise.resolve<RuntimeProfile[]>([]),
+      settings: Promise.resolve<ControlSettings | undefined>(undefined),
+      organizations: Promise.resolve<Organization[]>([]),
+    };
+
     if (
       activeView === "creation" ||
       activeView === "board" ||
@@ -374,15 +433,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       activeView === "mail"
     ) {
       const criticalResults = await Promise.allSettled([
-        api.listRuntimes(),
-        shouldLoadProjects ? api.listProjects() : Promise.resolve<Project[]>([]),
-        api.getSettings(),
-        api.listOrganizations(),
+        hasCoreData ? corePlaceholders.runtimes : api.listRuntimes(),
+        shouldLoadProjects
+          ? api.listProjects()
+          : Promise.resolve<Project[]>([]),
+        hasCoreData ? corePlaceholders.settings : api.getSettings(),
+        hasCoreData ? corePlaceholders.organizations : api.listOrganizations(),
         Promise.resolve([]),
       ]);
 
       if (criticalResults[0].status === "fulfilled") {
-        applyRefreshResults({ runtimes: criticalResults[0].value });
+        if (!hasCoreData) {
+          applyRefreshResults({ runtimes: criticalResults[0].value });
+        }
       } else {
         console.error("Failed to fetch runtimes:", criticalResults[0].reason);
       }
@@ -394,48 +457,60 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
 
       if (criticalResults[2].status === "fulfilled") {
-        applyRefreshResults({ settings: criticalResults[2].value });
+        if (!hasCoreData) {
+          applyRefreshResults({ settings: criticalResults[2].value });
+        }
       } else {
         console.error("Failed to fetch settings:", criticalResults[2].reason);
       }
 
       if (criticalResults[3].status === "fulfilled") {
-        applyRefreshResults({ organizations: criticalResults[3].value });
+        if (!hasCoreData) {
+          applyRefreshResults({ organizations: criticalResults[3].value });
+        }
       } else {
-        console.error("Failed to fetch organizations:", criticalResults[3].reason);
+        console.error(
+          "Failed to fetch organizations:",
+          criticalResults[3].reason,
+        );
       }
 
       setLoading(false);
 
-      void Promise.allSettled([api.getProblemSummary()]).then((backgroundResults) => {
-        if (backgroundResults[0].status === "fulfilled") {
-          applyRefreshResults({ problemSummary: backgroundResults[0].value });
-        } else {
-          console.error("Failed to fetch problem summary:", backgroundResults[0].reason);
-        }
-      });
+      void Promise.allSettled([api.getProblemSummary()]).then(
+        (backgroundResults) => {
+          if (backgroundResults[0].status === "fulfilled") {
+            applyRefreshResults({ problemSummary: backgroundResults[0].value });
+          } else {
+            console.error(
+              "Failed to fetch problem summary:",
+              backgroundResults[0].reason,
+            );
+          }
+        },
+      );
 
       return;
     }
 
     if (activeView === "agents") {
       const deviceResults = await Promise.allSettled([
-        api.listRuntimes(),
+        hasCoreData ? corePlaceholders.runtimes : api.listRuntimes(),
         api.listLocalAgents(),
-        api.getSettings(),
-        api.listOrganizations(),
+        hasCoreData ? corePlaceholders.settings : api.getSettings(),
+        hasCoreData ? corePlaceholders.organizations : api.listOrganizations(),
       ]);
 
-      if (deviceResults[0].status === "fulfilled") {
+      if (deviceResults[0].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ runtimes: deviceResults[0].value });
       }
       if (deviceResults[1].status === "fulfilled") {
         applyRefreshResults({ localAgents: deviceResults[1].value });
       }
-      if (deviceResults[2].status === "fulfilled") {
+      if (deviceResults[2].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ settings: deviceResults[2].value });
       }
-      if (deviceResults[3].status === "fulfilled") {
+      if (deviceResults[3].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ organizations: deviceResults[3].value });
       }
 
@@ -446,20 +521,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     // Inbox: only needs problems + summary + shared data (no projects/localAgents)
     if (activeView === "inbox") {
       const inboxResults = await Promise.allSettled([
-        api.listRuntimes(),
-        api.getSettings(),
-        api.listOrganizations(),
+        hasCoreData ? corePlaceholders.runtimes : api.listRuntimes(),
+        hasCoreData ? corePlaceholders.settings : api.getSettings(),
+        hasCoreData ? corePlaceholders.organizations : api.listOrganizations(),
         api.getProblemSummary(),
         api.listProblems(),
       ]);
 
-      if (inboxResults[0].status === "fulfilled") {
+      if (inboxResults[0].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ runtimes: inboxResults[0].value });
       }
-      if (inboxResults[1].status === "fulfilled") {
+      if (inboxResults[1].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ settings: inboxResults[1].value });
       }
-      if (inboxResults[2].status === "fulfilled") {
+      if (inboxResults[2].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ organizations: inboxResults[2].value });
       }
       if (inboxResults[3].status === "fulfilled") {
@@ -476,22 +551,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     // Bookmarks: only needs projects + shared data (no problems/localAgents)
     if (activeView === "bookmarks") {
       const bookmarkResults = await Promise.allSettled([
-        api.listRuntimes(),
+        hasCoreData ? corePlaceholders.runtimes : api.listRuntimes(),
         api.listProjects(),
-        api.getSettings(),
-        api.listOrganizations(),
+        hasCoreData ? corePlaceholders.settings : api.getSettings(),
+        hasCoreData ? corePlaceholders.organizations : api.listOrganizations(),
       ]);
 
-      if (bookmarkResults[0].status === "fulfilled") {
+      if (bookmarkResults[0].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ runtimes: bookmarkResults[0].value });
       }
       if (bookmarkResults[1].status === "fulfilled") {
         applyRefreshResults({ projects: bookmarkResults[1].value });
       }
-      if (bookmarkResults[2].status === "fulfilled") {
+      if (bookmarkResults[2].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ settings: bookmarkResults[2].value });
       }
-      if (bookmarkResults[3].status === "fulfilled") {
+      if (bookmarkResults[3].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ organizations: bookmarkResults[3].value });
       }
 
@@ -502,20 +577,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     // Observability: needs problems + summary + shared data
     if (activeView === "observability") {
       const obsResults = await Promise.allSettled([
-        api.listRuntimes(),
-        api.getSettings(),
-        api.listOrganizations(),
+        hasCoreData ? corePlaceholders.runtimes : api.listRuntimes(),
+        hasCoreData ? corePlaceholders.settings : api.getSettings(),
+        hasCoreData ? corePlaceholders.organizations : api.listOrganizations(),
         api.getProblemSummary(),
         api.listProblems(),
       ]);
 
-      if (obsResults[0].status === "fulfilled") {
+      if (obsResults[0].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ runtimes: obsResults[0].value });
       }
-      if (obsResults[1].status === "fulfilled") {
+      if (obsResults[1].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ settings: obsResults[1].value });
       }
-      if (obsResults[2].status === "fulfilled") {
+      if (obsResults[2].status === "fulfilled" && !hasCoreData) {
         applyRefreshResults({ organizations: obsResults[2].value });
       }
       if (obsResults[3].status === "fulfilled") {
@@ -530,7 +605,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
 
     await refreshAll();
-  }, [activeView, applyRefreshResults, refreshAll, shouldLoadProjects, shouldLoadProblems]);
+  }, [
+    activeView,
+    applyRefreshResults,
+    refreshAll,
+    shouldLoadProjects,
+    shouldLoadProblems,
+  ]);
 
   useEffect(() => {
     void initializeViewData();
@@ -601,7 +682,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         await api.deleteOrganization(orgId);
         if (activeOrganizationId === orgId) {
           const remaining = organizations.filter((o) => o.id !== orgId);
-          setActiveOrganizationId(remaining.length > 0 ? remaining[0].id : null);
+          setActiveOrganizationId(
+            remaining.length > 0 ? remaining[0].id : null,
+          );
         }
         await refreshAll();
       } catch (err) {
@@ -611,33 +694,64 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     [activeOrganizationId, organizations, refreshAll, setActiveOrganizationId],
   );
 
-  const value: DashboardContextType = {
-    runtimes,
-    localAgents,
-    projects,
-    organizations,
-    problems,
-    settings: persistedSettings,
-    loading,
-    inboxCounts,
-    systemProblemCounts,
-    agentModelCounts,
-    refreshAll,
-    refreshLocalAgents,
-    handleDismiss,
-    handleBulkAction,
-    handleOrganizationCreate,
-    handleOrganizationRename,
-    handleOrganizationDelete,
-    showSettingsDialog,
-    setShowSettingsDialog,
-    uiPreviewTarget,
-    setUiPreviewTarget,
-    searchQuery,
-    setSearchQuery,
-    agentModelFilter: "all",
-    setAgentModelFilter: () => {},
-  };
+  const value = useMemo<DashboardContextType>(
+    () => ({
+      runtimes,
+      localAgents,
+      projects,
+      organizations,
+      problems,
+      settings: persistedSettings,
+      loading,
+      inboxCounts,
+      systemProblemCounts,
+      agentModelCounts,
+      refreshAll,
+      refreshLocalAgents,
+      handleDismiss,
+      handleBulkAction,
+      handleOrganizationCreate,
+      handleOrganizationRename,
+      handleOrganizationDelete,
+      showSettingsDialog,
+      setShowSettingsDialog,
+      uiPreviewTarget,
+      setUiPreviewTarget,
+      searchQuery,
+      setSearchQuery,
+      agentModelFilter: "all",
+      setAgentModelFilter: () => {},
+    }),
+    [
+      runtimes,
+      localAgents,
+      projects,
+      organizations,
+      problems,
+      persistedSettings,
+      loading,
+      inboxCounts,
+      systemProblemCounts,
+      agentModelCounts,
+      refreshAll,
+      refreshLocalAgents,
+      handleDismiss,
+      handleBulkAction,
+      handleOrganizationCreate,
+      handleOrganizationRename,
+      handleOrganizationDelete,
+      showSettingsDialog,
+      setShowSettingsDialog,
+      uiPreviewTarget,
+      setUiPreviewTarget,
+      searchQuery,
+      setSearchQuery,
+    ],
+  );
 
-  return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
+  return (
+    <DashboardContext.Provider value={value}>
+      {children}
+    </DashboardContext.Provider>
+  );
 }

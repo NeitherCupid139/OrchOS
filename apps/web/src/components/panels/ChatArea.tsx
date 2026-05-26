@@ -9,7 +9,19 @@ import {
 } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Google, Bing, Baidu, Yandex, Ai360, OpenAI, Gemini, Claude, DeepSeek, OpenCode, OpenRouter } from "@lobehub/icons";
+import {
+  Google,
+  Bing,
+  Baidu,
+  Yandex,
+  Ai360,
+  OpenAI,
+  Gemini,
+  Claude,
+  DeepSeek,
+  OpenCode,
+  OpenRouter,
+} from "@lobehub/icons";
 import {
   ArrowUp01Icon,
   Bookmark01Icon,
@@ -28,7 +40,11 @@ import { type UIMessage } from "ai";
 import { Button } from "@/components/ui/button";
 import { BorderBeam } from "border-beam";
 import { Spinner } from "@/components/ui/spinner";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +52,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { api, type BookmarkCategory, type Conversation, type CustomAgent } from "@/lib/api";
+import {
+  api,
+  type BookmarkCategory,
+  type Conversation,
+  type CustomAgent,
+} from "@/lib/api";
 import type { RuntimeProfile } from "@/lib/types";
 import { useUser } from "@clerk/clerk-react";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -70,11 +91,10 @@ import {
   voice_input_stop,
   web_search,
 } from "@/paraglide/messages";
+import { BookmarkFavicon } from "@/components/ui/bookmark-favicon";
 import { toast } from "@/components/ui/toast";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import {
-  MessageBubble,
-} from "@/components/chat/ConversationFlow";
+import { MessageBubble } from "@/components/chat/ConversationFlow";
 import { ChatThinkingState } from "@/components/chat/ChatThinkingState";
 import { useDashboard } from "@/lib/dashboard-context";
 
@@ -98,7 +118,10 @@ const PROVIDER_META = [
   { id: "deepseek", urlPrefix: "https://api.deepseek.com" },
 ];
 
-const searchEngineIconComponent: Record<string, (props: { className?: string }) => ReactNode> = {
+const searchEngineIconComponent: Record<
+  string,
+  (props: { className?: string }) => ReactNode
+> = {
   google: (props) => {
     const Icon = (Google as unknown as { Color: React.ElementType }).Color;
     return <Icon size={14} className={props.className} />;
@@ -121,7 +144,10 @@ const searchEngineIconComponent: Record<string, (props: { className?: string }) 
   },
 };
 
-const providerIconComponent: Record<string, (props: { className?: string }) => ReactNode> = {
+const providerIconComponent: Record<
+  string,
+  (props: { className?: string }) => ReactNode
+> = {
   "opencode-go": (props) => <OpenCode size={14} className={props.className} />,
   "opencode-zen": (props) => <OpenCode size={14} className={props.className} />,
   openai: (props) => <OpenAI size={14} className={props.className} />,
@@ -142,62 +168,13 @@ const providerIconComponent: Record<string, (props: { className?: string }) => R
 
 /* ── Sub-components ── */
 
-function Favicon({ url }: { url: string }) {
-  const failedRef = useRef(false);
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  let domain: string | null = null;
-  try {
-    domain = new URL(url).hostname;
-  } catch {}
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  if (failedRef.current || !domain) {
-    return (
-      <div
-        ref={ref}
-        className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
-      >
-        <HugeiconsIcon icon={PinIcon} className="size-4" />
-      </div>
-    );
-  }
-
-  return (
-    <div ref={ref} className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-accent">
-      {visible ? (
-        <img
-          src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
-          alt=""
-          className="size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-          onError={() => {
-            failedRef.current = true;
-            setVisible(false);
-          }}
-        />
-      ) : (
-        <div className="size-full" />
-      )}
-    </div>
-  );
-}
-
-function ProviderIcon({ url, className }: { url?: string; className?: string }) {
+function ProviderIcon({
+  url,
+  className,
+}: {
+  url?: string;
+  className?: string;
+}) {
   const provider = PROVIDER_META.find((p) => url?.startsWith(p.urlPrefix));
   if (provider) {
     const IconComponent = providerIconComponent[provider.id];
@@ -206,7 +183,13 @@ function ProviderIcon({ url, className }: { url?: string; className?: string }) 
   return <HugeiconsIcon icon={Settings01Icon} className={className} />;
 }
 
-function SearchEngineIcon({ engineId, className }: { engineId: string; className?: string }) {
+function SearchEngineIcon({
+  engineId,
+  className,
+}: {
+  engineId: string;
+  className?: string;
+}) {
   const IconComponent = searchEngineIconComponent[engineId];
   if (IconComponent) {
     return IconComponent({ className });
@@ -221,7 +204,12 @@ interface CustomAgentSelectorProps {
   onOpen?: () => void;
 }
 
-function CustomAgentSelector({ agents, selectedAgentId, onSelect, onOpen }: CustomAgentSelectorProps) {
+function CustomAgentSelector({
+  agents,
+  selectedAgentId,
+  onSelect,
+  onOpen,
+}: CustomAgentSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedAgent = agents.find((a) => a.id === selectedAgentId);
 
@@ -240,11 +228,17 @@ function CustomAgentSelector({ agents, selectedAgentId, onSelect, onOpen }: Cust
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
-            <ProviderIcon url={selectedAgent?.url} className="size-3 shrink-0" />
+            <ProviderIcon
+              url={selectedAgent?.url}
+              className="size-3 shrink-0"
+            />
           </span>
           <span className="truncate">{selectedAgent?.name || agent()}</span>
         </span>
-        <HugeiconsIcon icon={UnfoldMoreIcon} className="size-3 shrink-0 text-muted-foreground" />
+        <HugeiconsIcon
+          icon={UnfoldMoreIcon}
+          className="size-3 shrink-0 text-muted-foreground"
+        />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
@@ -287,7 +281,11 @@ interface SearchEngineSelectorProps {
   onSelect: (engineId: string) => void;
 }
 
-function SearchEngineSelector({ engines, selectedEngineId, onSelect }: SearchEngineSelectorProps) {
+function SearchEngineSelector({
+  engines,
+  selectedEngineId,
+  onSelect,
+}: SearchEngineSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedEngine = engines.find((e) => e.id === selectedEngineId);
 
@@ -299,11 +297,19 @@ function SearchEngineSelector({ engines, selectedEngineId, onSelect }: SearchEng
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
-            <SearchEngineIcon engineId={selectedEngineId} className="size-3.5" />
+            <SearchEngineIcon
+              engineId={selectedEngineId}
+              className="size-3.5"
+            />
           </span>
-          <span className="truncate">{selectedEngine?.name || search_engine_google()}</span>
+          <span className="truncate">
+            {selectedEngine?.name || search_engine_google()}
+          </span>
         </span>
-        <HugeiconsIcon icon={UnfoldMoreIcon} className="size-3 shrink-0 text-muted-foreground" />
+        <HugeiconsIcon
+          icon={UnfoldMoreIcon}
+          className="size-3 shrink-0 text-muted-foreground"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
         {engines.map((engine) => (
@@ -387,13 +393,22 @@ export function ChatArea({
   const chatBtnRef = useRef<HTMLButtonElement>(null);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
   const pendingConversationUpdateRef = useRef<Promise<void> | null>(null);
-  const [modeIndicator, setModeIndicator] = useState({ left: 4, width: 0, ready: false });
-  const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(undefined);
+  const [modeIndicator, setModeIndicator] = useState({
+    left: 4,
+    width: 0,
+    ready: false,
+  });
+  const [draftRuntimeId, setDraftRuntimeId] = useState<string | undefined>(
+    undefined,
+  );
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
   const bookmarksLoadedRef = useRef(false);
   const [mode, setMode] = useState<"chat" | "search">("chat");
-  const [searchEngineId, setSearchEngineId] = useState<string>(searchEngineMeta[0].id);
-  const isSendShortcutPreviewing = uiPreviewTarget === "send-shortcut" && mode === "chat";
+  const [searchEngineId, setSearchEngineId] = useState<string>(
+    searchEngineMeta[0].id,
+  );
+  const isSendShortcutPreviewing =
+    uiPreviewTarget === "send-shortcut" && mode === "chat";
   const searchEngines = searchEngineMeta.map((e) => ({
     ...e,
     name: {
@@ -407,7 +422,11 @@ export function ChatArea({
   const pinnedGroups = useMemo(
     () =>
       bookmarks.reduce<
-        { name: string; id: string; bookmarks: (typeof bookmarks)[number]["bookmarks"] }[]
+        {
+          name: string;
+          id: string;
+          bookmarks: (typeof bookmarks)[number]["bookmarks"];
+        }[]
       >((acc, category) => {
         const pinned = category.bookmarks.filter((b) => b.pinned);
         if (pinned.length > 0) {
@@ -437,7 +456,8 @@ export function ChatArea({
     ? (draftRuntimeId ?? conversation.runtimeId)
     : conversation.runtimeId;
 
-  const { isListening, transcript, isSupported, start, stop } = useSpeechRecognition();
+  const { isListening, transcript, isSupported, start, stop } =
+    useSpeechRecognition();
 
   const prevTranscriptRef = useRef("");
   useEffect(() => {
@@ -456,17 +476,26 @@ export function ChatArea({
     [customAgents, selectedCustomAgentId],
   );
   const { user } = useUser();
-  const pendingConversationId = useConversationStore((s) => s.pendingConversationId);
-  const flowDraftByConversationId = useConversationStore((s) => s.flowDraftByConversationId);
-  const pendingUserMessageByConversationId = useConversationStore((s) => s.pendingUserMessageByConversationId);
-  const setPendingUserMessage = useConversationStore((s) => s.setPendingUserMessage);
+  const pendingConversationId = useConversationStore(
+    (s) => s.pendingConversationId,
+  );
+  const flowDraftByConversationId = useConversationStore(
+    (s) => s.flowDraftByConversationId,
+  );
+  const pendingUserMessageByConversationId = useConversationStore(
+    (s) => s.pendingUserMessageByConversationId,
+  );
+  const setPendingUserMessage = useConversationStore(
+    (s) => s.setPendingUserMessage,
+  );
   const pendingUserMessage =
     conversation.id === "__draft__"
       ? null
       : (pendingUserMessageByConversationId[conversation.id] ?? null);
   const flowDraft = flowDraftByConversationId[conversation.id];
   const showPendingAssistantReply =
-    conversation.id !== "__draft__" && pendingConversationId === conversation.id;
+    conversation.id !== "__draft__" &&
+    pendingConversationId === conversation.id;
 
   const visibleMessages = useMemo(() => {
     if (!pendingUserMessage) return messages;
@@ -518,7 +547,8 @@ export function ChatArea({
 
   const syncModeIndicator = useCallback(() => {
     const container = toggleRef.current;
-    const activeBtn = mode === "chat" ? chatBtnRef.current : searchBtnRef.current;
+    const activeBtn =
+      mode === "chat" ? chatBtnRef.current : searchBtnRef.current;
     if (!container || !activeBtn) return;
 
     const containerRect = container.getBoundingClientRect();
@@ -573,7 +603,9 @@ export function ChatArea({
     const hasMatchedUserMessage = messages.some(
       (message) =>
         message.role === "user" &&
-        message.parts.some((part) => part.type === "text" && part.text === pendingUserMessage),
+        message.parts.some(
+          (part) => part.type === "text" && part.text === pendingUserMessage,
+        ),
     );
 
     if (hasMatchedUserMessage && conversation.id !== "__draft__") {
@@ -603,7 +635,12 @@ export function ChatArea({
   }, [isSendShortcutPreviewing]);
 
   const queueConversationUpdate = useCallback(
-    (data: { title?: string; runtimeId?: string; archived?: boolean; deleted?: boolean }) => {
+    (data: {
+      title?: string;
+      runtimeId?: string;
+      archived?: boolean;
+      deleted?: boolean;
+    }) => {
       if (isDraftConversation) {
         if (data.runtimeId !== undefined) setDraftRuntimeId(data.runtimeId);
         return Promise.resolve();
@@ -660,7 +697,11 @@ export function ChatArea({
           })
         : conversation;
 
-      await onSendMessage(content, targetConversation, selectedCustomAgentId ?? undefined);
+      await onSendMessage(
+        content,
+        targetConversation,
+        selectedCustomAgentId ?? undefined,
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
       toast.error(send_failed());
@@ -687,7 +728,11 @@ export function ChatArea({
       handleSend();
       return;
     }
-    if (e.key === "Enter" && !e.shiftKey && settings?.sendShortcut !== "cmd-enter") {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      settings?.sendShortcut !== "cmd-enter"
+    ) {
       e.preventDefault();
       handleSend();
     }
@@ -702,9 +747,13 @@ export function ChatArea({
       <div className="mx-auto max-w-3xl">
         {allMessages.length === 0 && (
           <div className="mb-3 px-1">
-            <p className="text-sm font-medium text-foreground/85">{creation_intro_title()}</p>
+            <p className="text-sm font-medium text-foreground/85">
+              {creation_intro_title()}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {mode === "chat" ? creation_intro_desc() : creation_intro_search_desc()}
+              {mode === "chat"
+                ? creation_intro_desc()
+                : creation_intro_search_desc()}
             </p>
           </div>
         )}
@@ -745,9 +794,12 @@ export function ChatArea({
                       type="button"
                       onClick={() => handleRemoveFile(index)}
                       className="absolute -right-1 -top-1 rounded-full border border-border bg-background p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:border-destructive/30 hover:bg-destructive/10"
-           tabIndex={-1}
+                      tabIndex={-1}
                     >
-                      <HugeiconsIcon icon={Delete02Icon} className="size-3 text-muted-foreground" />
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        className="size-3 text-muted-foreground"
+                      />
                     </button>
                   </div>
                 ))}
@@ -761,9 +813,13 @@ export function ChatArea({
                 mode === "search"
                   ? search_web_placeholder()
                   : selectedRuntime
-                    ? message_runtime_placeholder({ name: selectedRuntime.name })
+                    ? message_runtime_placeholder({
+                        name: selectedRuntime.name,
+                      })
                     : selectedCustomAgent
-                      ? message_agent_placeholder({ name: selectedCustomAgent.name })
+                      ? message_agent_placeholder({
+                          name: selectedCustomAgent.name,
+                        })
                       : creation_placeholder()
               }
               className="min-h-[40px] w-full resize-none bg-transparent py-1 text-sm leading-6 outline-none placeholder:text-muted-foreground"
@@ -892,7 +948,9 @@ export function ChatArea({
                             <span
                               className={cn(
                                 "absolute inset-[-10px] rounded-full bg-primary/12 blur-md transition-opacity duration-300",
-                                isSendShortcutPreviewing ? "opacity-100" : "opacity-0",
+                                isSendShortcutPreviewing
+                                  ? "opacity-100"
+                                  : "opacity-0",
                               )}
                             />
                             <HugeiconsIcon
@@ -941,7 +999,10 @@ export function ChatArea({
                       pinnedGroups.map((group) => (
                         <div key={group.id} className="flex flex-col gap-1.5">
                           <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70">
-                            <HugeiconsIcon icon={Folder01Icon} className="size-3" />
+                            <HugeiconsIcon
+                              icon={Folder01Icon}
+                              className="size-3"
+                            />
                             {group.name}
                           </span>
                           <div className="grid grid-cols-4 gap-2 md:grid-cols-5 lg:grid-cols-6">
@@ -949,10 +1010,12 @@ export function ChatArea({
                               <button
                                 key={bookmark.id}
                                 type="button"
-                                onClick={() => window.open(bookmark.url, "_blank")}
+                                onClick={() =>
+                                  window.open(bookmark.url, "_blank")
+                                }
                                 className="flex flex-col items-center gap-1.5 rounded-2xl p-2 transition-colors hover:bg-accent/40 active:scale-[0.93]"
                               >
-                                <Favicon url={bookmark.url} />
+                                <BookmarkFavicon url={bookmark.url} />
                                 <span className="max-w-[72px] truncate text-center text-[11px] leading-tight text-foreground">
                                   {bookmark.title}
                                 </span>
@@ -994,11 +1057,16 @@ export function ChatArea({
                           onClick={() => onShowBookmarksChange(true)}
                           className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
-                          <HugeiconsIcon icon={Bookmark01Icon} className="size-3.5" />
+                          <HugeiconsIcon
+                            icon={Bookmark01Icon}
+                            className="size-3.5"
+                          />
                         </button>
                       }
                     />
-                    <TooltipContent side="top">{show_bookmarks()}</TooltipContent>
+                    <TooltipContent side="top">
+                      {show_bookmarks()}
+                    </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="flex-1 space-y-4 px-4 py-4 md:px-6">
@@ -1006,7 +1074,8 @@ export function ChatArea({
                     <>
                       {allMessages.map((message, index) => {
                         const onRetry =
-                          message.role === "assistant" && allMessages[index - 1]?.role === "user"
+                          message.role === "assistant" &&
+                          allMessages[index - 1]?.role === "user"
                             ? async () => {
                                 try {
                                   await api.retryConversationMessage(
@@ -1034,7 +1103,9 @@ export function ChatArea({
                     </>
                   ) : (
                     <div className="flex h-full min-h-48 items-center justify-center">
-                      <p className="text-sm text-muted-foreground">{no_messages_yet()}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {no_messages_yet()}
+                      </p>
                     </div>
                   )}
                 </div>

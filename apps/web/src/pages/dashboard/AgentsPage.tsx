@@ -1,5 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Add01Icon, AiBrain01Icon, ArrowLeft01Icon, ArrowRight01Icon, Delete02Icon, Edit02Icon, InformationCircleIcon, Settings01Icon } from "@hugeicons/core-free-icons";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import {
+  Add01Icon,
+  AiBrain01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Delete02Icon,
+  Edit02Icon,
+  InformationCircleIcon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useLocation } from "@tanstack/react-router";
 import { toast } from "@/components/ui/toast";
@@ -11,57 +27,176 @@ import { api, type CustomAgent } from "@/lib/api";
 import { getBuiltInAgent } from "@/lib/built-in-agent";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
-import { Claude, DeepSeek, Gemini, OpenAI, OpenCode, OpenRouter } from "@lobehub/icons";
-import { add, agent_provider_placeholder, agent_removed, agent_url_help, agents, all_fields_required, api_key, api_key_placeholder, cancel, collapse_sidebar, custom_agent_created, custom_agent_name_placeholder, custom_agent_updated, custom_agent_url_placeholder, custom_configuration, default_agent, default_agent_cleared, default_agent_updated, delete as delete_message, edit, edit_agent, expand_sidebar, failed_remove_agent, failed_save_custom_agent, failed_update_default_agent, loading as loading_label, model, model_placeholder, name, no_agents_available, provider as providerLabel, resize_agents_sidebar, save, url } from "@/paraglide/messages";
+import {
+  Claude,
+  DeepSeek,
+  Gemini,
+  OpenAI,
+  OpenCode,
+  OpenRouter,
+} from "@lobehub/icons";
+import {
+  add,
+  agent_provider_placeholder,
+  agent_removed,
+  agent_url_help,
+  agents,
+  all_fields_required,
+  api_key,
+  api_key_placeholder,
+  cancel,
+  collapse_sidebar,
+  custom_agent_created,
+  custom_agent_name_placeholder,
+  custom_agent_updated,
+  custom_agent_url_placeholder,
+  custom_configuration,
+  default_agent,
+  default_agent_cleared,
+  default_agent_updated,
+  delete as delete_message,
+  edit,
+  edit_agent,
+  expand_sidebar,
+  failed_remove_agent,
+  failed_save_custom_agent,
+  failed_update_default_agent,
+  loading as loading_label,
+  model,
+  model_placeholder,
+  name,
+  no_agents_available,
+  provider as providerLabel,
+  resize_agents_sidebar,
+  save,
+  url,
+} from "@/paraglide/messages";
 
 const PROVIDERS = [
-  { id: "opencode-go", name: "OpenCode Go", url: "https://opencode.ai/zen/go/v1", icon: OpenCode },
-  { id: "opencode-zen", name: "OpenCode Zen", url: "https://opencode.ai/zen/v1", icon: OpenCode },
-  { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", icon: OpenAI },
-  { id: "gemini", name: "Google (Gemini)", url: "https://generativelanguage.googleapis.com/v1beta/openai/", icon: Gemini.Color },
-  { id: "anthropic", name: "Anthropic (Claude)", url: "https://api.anthropic.com/v1", icon: Claude.Color },
-  { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", icon: OpenRouter },
-  { id: "deepseek", name: "DeepSeek", url: "https://api.deepseek.com/v1", icon: DeepSeek.Color },
+  {
+    id: "opencode-go",
+    name: "OpenCode Go",
+    url: "https://opencode.ai/zen/go/v1",
+    icon: OpenCode,
+  },
+  {
+    id: "opencode-zen",
+    name: "OpenCode Zen",
+    url: "https://opencode.ai/zen/v1",
+    icon: OpenCode,
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    url: "https://api.openai.com/v1",
+    icon: OpenAI,
+  },
+  {
+    id: "gemini",
+    name: "Google (Gemini)",
+    url: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    icon: Gemini.Color,
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic (Claude)",
+    url: "https://api.anthropic.com/v1",
+    icon: Claude.Color,
+  },
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    url: "https://openrouter.ai/api/v1",
+    icon: OpenRouter,
+  },
+  {
+    id: "deepseek",
+    name: "DeepSeek",
+    url: "https://api.deepseek.com/v1",
+    icon: DeepSeek.Color,
+  },
 ];
 
 function ProviderIcon({ url, className }: { url: string; className?: string }) {
-  const provider = PROVIDERS.find((p) => url.startsWith(p.url.replace(/\/+$/, "")));
+  const provider = PROVIDERS.find((p) =>
+    url.startsWith(p.url.replace(/\/+$/, "")),
+  );
   if (provider) {
     const Icon = provider.icon;
     return <Icon className={cn(className, "opacity-70")} />;
   }
-  return <HugeiconsIcon icon={Settings01Icon} className={cn(className, "opacity-40")} />;
+  return (
+    <HugeiconsIcon
+      icon={Settings01Icon}
+      className={cn(className, "opacity-40")}
+    />
+  );
 }
 
 export function AgentsPage() {
   const location = useLocation();
-  const agentsView = new URLSearchParams(location.search).get("view") === "observability" ? "observability" : "config";
+  const agentsView =
+    new URLSearchParams(location.search).get("view") === "observability"
+      ? "observability"
+      : "config";
   const { loading } = useDashboard();
 
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const builtInAgent = useMemo(() => getBuiltInAgent(), []);
-  const [defaultCustomAgentId, setDefaultCustomAgentId] = useState<string | null>(null);
+  const [defaultCustomAgentId, setDefaultCustomAgentId] = useState<
+    string | null
+  >(null);
   const [selectedItem, setSelectedItem] = useState<
-    | { kind: "custom"; id: string }
-    | { kind: "builtin" }
-    | null
+    { kind: "custom"; id: string } | { kind: "builtin" } | null
   >(null);
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
-  const [agentForm, setAgentForm] = useState({ name: "", url: "", apiKey: "", model: "" });
+  const [agentForm, setAgentForm] = useState({
+    name: "",
+    url: "",
+    apiKey: "",
+    model: "",
+  });
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
-  const [connectionMode, setConnectionMode] = useState<"provider" | "url">("provider");
+  const [connectionMode, setConnectionMode] = useState<"provider" | "url">(
+    "provider",
+  );
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+
     void loadCustomAgents();
-    void api.getDefaultCustomAgentId().then(setDefaultCustomAgentId).catch(() => {});
+    void api
+      .getDefaultCustomAgentId()
+      .then((id) => {
+        if (!cancelled) setDefaultCustomAgentId(id);
+      })
+      .catch(() => {});
+
     // Select the built-in agent by default
-    setSelectedItem({ kind: "builtin" });
+    if (!cancelled) {
+      setSelectedItem({ kind: "builtin" });
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function loadCustomAgents() {
@@ -129,8 +264,18 @@ export function AgentsPage() {
     }
     try {
       const agents = editingAgentId
-        ? await api.updateCustomAgent(editingAgentId, { name: name.trim(), url: url.trim(), apiKey: apiKey.trim(), model: model.trim() })
-        : await api.createCustomAgent({ name: name.trim(), url: url.trim(), apiKey: apiKey.trim(), model: model.trim() });
+        ? await api.updateCustomAgent(editingAgentId, {
+            name: name.trim(),
+            url: url.trim(),
+            apiKey: apiKey.trim(),
+            model: model.trim(),
+          })
+        : await api.createCustomAgent({
+            name: name.trim(),
+            url: url.trim(),
+            apiKey: apiKey.trim(),
+            model: model.trim(),
+          });
       setCustomAgents(agents);
       const selectedId = editingAgentId ?? agents[agents.length - 1]?.id;
       if (selectedId) {
@@ -138,9 +283,13 @@ export function AgentsPage() {
       }
       setEditingAgentId(null);
       setIsConnectDialogOpen(false);
-      toast.success(editingAgentId ? custom_agent_updated() : custom_agent_created());
+      toast.success(
+        editingAgentId ? custom_agent_updated() : custom_agent_created(),
+      );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : failed_save_custom_agent());
+      toast.error(
+        error instanceof Error ? error.message : failed_save_custom_agent(),
+      );
     }
   }
 
@@ -150,11 +299,17 @@ export function AgentsPage() {
       setDefaultCustomAgentId(nextId);
       toast.success(nextId ? default_agent_updated() : default_agent_cleared());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : failed_update_default_agent());
+      toast.error(
+        error instanceof Error ? error.message : failed_update_default_agent(),
+      );
     }
   }
 
-  async function loadCustomAgentModels(url: string, apiKey: string, currentModel: string) {
+  async function loadCustomAgentModels(
+    url: string,
+    apiKey: string,
+    currentModel: string,
+  ) {
     if (!url.trim() || !apiKey.trim()) {
       setAvailableModels([]);
       setLoadingModels(false);
@@ -171,7 +326,9 @@ export function AgentsPage() {
       setAvailableModels(result.models);
       setAgentForm((prev) => {
         if (currentModel && result.models.includes(currentModel)) {
-          return prev.model === currentModel ? prev : { ...prev, model: currentModel };
+          return prev.model === currentModel
+            ? prev
+            : { ...prev, model: currentModel };
         }
 
         if (!prev.model.trim() && result.models[0]) {
@@ -182,7 +339,9 @@ export function AgentsPage() {
       });
     } catch (error) {
       setAvailableModels([]);
-      toast.error(error instanceof Error ? error.message : failed_save_custom_agent());
+      toast.error(
+        error instanceof Error ? error.message : failed_save_custom_agent(),
+      );
     } finally {
       setLoadingModels(false);
     }
@@ -228,34 +387,40 @@ export function AgentsPage() {
     setSidebarCollapsed(false);
   }, []);
 
-  const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const sidebarEl = sidebarRef.current;
-    if (!sidebarEl) return;
-    const sidebarLeft = sidebarEl.getBoundingClientRect().left;
+  const handleResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const sidebarEl = sidebarRef.current;
+      if (!sidebarEl) return;
+      const sidebarLeft = sidebarEl.getBoundingClientRect().left;
 
-    setIsResizingSidebar(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-    sidebarEl.style.transition = "none";
+      setIsResizingSidebar(true);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      sidebarEl.style.transition = "none";
 
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
-      setSidebarWidth(nextWidth);
-    };
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const nextWidth = Math.min(
+          Math.max(moveEvent.clientX - sidebarLeft, 200),
+          420,
+        );
+        setSidebarWidth(nextWidth);
+      };
 
-    const handlePointerUp = () => {
-      setIsResizingSidebar(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      sidebarEl.style.transition = "";
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
+      const handlePointerUp = () => {
+        setIsResizingSidebar(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        sidebarEl.style.transition = "";
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+      };
 
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-  }, []);
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+    },
+    [],
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
@@ -263,7 +428,9 @@ export function AgentsPage() {
         ref={sidebarRef}
         className={cn(
           "relative hidden min-h-0 shrink-0 flex-col overflow-visible border-r bg-card transition-[width] duration-300 ease-out lg:flex",
-          sidebarCollapsed ? "w-0 border-r-transparent" : "w-[var(--agents-sidebar-width)]",
+          sidebarCollapsed
+            ? "w-0 border-r-transparent"
+            : "w-[var(--agents-sidebar-width)]",
           sidebarCollapsed
             ? ""
             : isResizingSidebar
@@ -273,19 +440,28 @@ export function AgentsPage() {
         style={
           sidebarCollapsed
             ? undefined
-            : ({ "--agents-sidebar-width": `${Math.min(sidebarWidth, 380)}px` } as CSSProperties)
+            : ({
+                "--agents-sidebar-width": `${Math.min(sidebarWidth, 380)}px`,
+              } as CSSProperties)
         }
       >
         <div
           className={cn(
             "border-b border-border p-2 transition-[opacity,filter] duration-300 ease-out",
-            showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+            showExpandedContent
+              ? "opacity-100 blur-0"
+              : "pointer-events-none opacity-0 blur-[6px]",
           )}
           aria-hidden={!showExpandedContent}
         >
           <div className="flex h-10 items-center justify-between rounded-md px-2">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-foreground">{agents()} <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">{customAgents.length}</span></div>
+              <div className="text-sm font-semibold text-foreground">
+                {agents()}{" "}
+                <span className="ml-1 text-xs font-normal text-muted-foreground tabular-nums">
+                  {customAgents.length}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <Tooltip>
@@ -306,16 +482,23 @@ export function AgentsPage() {
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
-                  render={<Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="active:-translate-y-0"
-                    onClick={handleCollapseSidebar}
-                  >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                  </Button>}
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="active:-translate-y-0"
+                      onClick={handleCollapseSidebar}
+                    >
+                      <HugeiconsIcon
+                        icon={ArrowLeft01Icon}
+                        className="size-4"
+                      />
+                    </Button>
+                  }
                 />
-                <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
+                <TooltipContent side="bottom">
+                  {collapse_sidebar()}
+                </TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -324,7 +507,9 @@ export function AgentsPage() {
         <div
           className={cn(
             "min-h-0 flex flex-1 flex-col transition-[opacity,filter] duration-300 ease-out",
-            showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+            showExpandedContent
+              ? "opacity-100 blur-0"
+              : "pointer-events-none opacity-0 blur-[6px]",
           )}
           aria-hidden={!showExpandedContent}
         >
@@ -348,10 +533,17 @@ export function AgentsPage() {
                     : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
                 )}
               >
-                <HugeiconsIcon icon={AiBrain01Icon} className="size-3.5 shrink-0 text-primary" />
+                <HugeiconsIcon
+                  icon={AiBrain01Icon}
+                  className="size-3.5 shrink-0 text-primary"
+                />
                 <div className="min-w-0 flex-1 text-left">
-                  <div className="truncate text-xs leading-5">{builtInAgent.name}</div>
-                  <div className="truncate text-[11px] leading-4 text-muted-foreground">{builtInAgent.model}</div>
+                  <div className="truncate text-xs leading-5">
+                    {builtInAgent.name}
+                  </div>
+                  <div className="truncate text-[11px] leading-4 text-muted-foreground">
+                    {builtInAgent.model}
+                  </div>
                 </div>
                 <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary shrink-0">
                   {builtInAgent.badge}
@@ -361,7 +553,9 @@ export function AgentsPage() {
               {customAgents.map((agent) => (
                 <div
                   key={agent.id}
-                  onClick={() => setSelectedItem({ kind: "custom", id: agent.id })}
+                  onClick={() =>
+                    setSelectedItem({ kind: "custom", id: agent.id })
+                  }
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -372,15 +566,20 @@ export function AgentsPage() {
                   tabIndex={0}
                   className={cn(
                     "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
-                    selectedItem?.kind === "custom" && selectedItem.id === agent.id
+                    selectedItem?.kind === "custom" &&
+                      selectedItem.id === agent.id
                       ? "bg-accent text-foreground"
                       : "text-foreground/70 hover:bg-accent/50 hover:text-foreground",
                   )}
                 >
                   <ProviderIcon url={agent.url} className="size-3.5 shrink-0" />
                   <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-xs leading-5">{agent.name}</div>
-                    <div className="truncate text-[11px] leading-4 text-muted-foreground">{agent.model}</div>
+                    <div className="truncate text-xs leading-5">
+                      {agent.name}
+                    </div>
+                    <div className="truncate text-[11px] leading-4 text-muted-foreground">
+                      {agent.model}
+                    </div>
                   </div>
                   <div className="relative h-5 shrink-0">
                     {defaultCustomAgentId === agent.id ? (
@@ -395,16 +594,28 @@ export function AgentsPage() {
                         size="icon-xs"
                         tabIndex={-1}
                         aria-label={edit()}
-                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           setEditingAgentId(agent.id);
-                          setAgentForm({ name: agent.name, url: agent.url, apiKey: agent.apiKey, model: agent.model });
+                          setAgentForm({
+                            name: agent.name,
+                            url: agent.url,
+                            apiKey: agent.apiKey,
+                            model: agent.model,
+                          });
                           setAvailableModels([]);
                           setLoadingModels(false);
-                          const matchedProvider = PROVIDERS.find((p) => p.url === agent.url);
-                          setConnectionMode(matchedProvider ? "provider" : "url");
+                          const matchedProvider = PROVIDERS.find(
+                            (p) => p.url === agent.url,
+                          );
+                          setConnectionMode(
+                            matchedProvider ? "provider" : "url",
+                          );
                           setIsConnectDialogOpen(true);
                         }}
                         className="text-muted-foreground/60 hover:text-foreground"
@@ -417,27 +628,42 @@ export function AgentsPage() {
                         size="icon-xs"
                         tabIndex={-1}
                         aria-label={delete_message()}
-                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           try {
-                            const agents = await api.deleteCustomAgent(agent.id);
+                            const agents = await api.deleteCustomAgent(
+                              agent.id,
+                            );
                             setCustomAgents(agents);
                             if (defaultCustomAgentId === agent.id) {
                               setDefaultCustomAgentId(null);
                             }
                             setSelectedItem((current) =>
-                              current?.kind === "custom" && current.id === agent.id ? null : current,
+                              current?.kind === "custom" &&
+                              current.id === agent.id
+                                ? null
+                                : current,
                             );
                             toast.success(agent_removed());
                           } catch (error) {
-                            toast.error(error instanceof Error ? error.message : failed_remove_agent());
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : failed_remove_agent(),
+                            );
                           }
                         }}
                         className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
                       >
-                        <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                        <HugeiconsIcon
+                          icon={Delete02Icon}
+                          className="size-3.5"
+                        />
                       </Button>
                     </div>
                   </div>
@@ -460,7 +686,8 @@ export function AgentsPage() {
           className={cn(
             "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
             !showExpandedContent && "hidden",
-            isResizingSidebar && "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
+            isResizingSidebar &&
+              "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
@@ -515,7 +742,7 @@ export function AgentsPage() {
       <AppDialog
         open={isConnectDialogOpen}
         onOpenChange={(open) => {
-            if (!open) {
+          if (!open) {
             setAvailableModels([]);
             setLoadingModels(false);
           }
@@ -526,7 +753,11 @@ export function AgentsPage() {
         h="h-[480px]"
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsConnectDialogOpen(false)}
+            >
               {cancel()}
             </Button>
             <Button type="button" onClick={handleSaveCustomAgent}>
@@ -540,20 +771,32 @@ export function AgentsPage() {
             <span className="font-medium text-foreground">{name()}</span>
             <input
               value={agentForm.name}
-              onChange={(e) => setAgentForm((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setAgentForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder={custom_agent_name_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
           </label>
           <div className="grid gap-2 text-sm">
-            <Tabs value={connectionMode} onValueChange={(v) => setConnectionMode(v as "provider" | "url")}>
+            <Tabs
+              value={connectionMode}
+              onValueChange={(v) => setConnectionMode(v as "provider" | "url")}
+            >
               <TabsList className="w-full">
-                <TabsTrigger value="provider" className="flex-1">{providerLabel()}</TabsTrigger>
-                <TabsTrigger value="url" className="flex-1">{url()}</TabsTrigger>
+                <TabsTrigger value="provider" className="flex-1">
+                  {providerLabel()}
+                </TabsTrigger>
+                <TabsTrigger value="url" className="flex-1">
+                  {url()}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="provider">
                 <Select
-                  value={PROVIDERS.find((p) => p.url === agentForm.url)?.id || undefined}
+                  value={
+                    PROVIDERS.find((p) => p.url === agentForm.url)?.id ||
+                    undefined
+                  }
                   onValueChange={(value) => {
                     const provider = PROVIDERS.find((p) => p.id === value);
                     if (provider) {
@@ -564,12 +807,23 @@ export function AgentsPage() {
                   <SelectTrigger className="h-10 w-full rounded-md bg-background px-3 text-sm">
                     <span className="flex items-center gap-2">
                       {(() => {
-                        const selected = PROVIDERS.find((p) => p.url === agentForm.url);
+                        const selected = PROVIDERS.find(
+                          (p) => p.url === agentForm.url,
+                        );
                         if (selected) {
                           const Icon = selected.icon;
-                          return <><Icon className="size-4 shrink-0" />{selected.name}</>;
+                          return (
+                            <>
+                              <Icon className="size-4 shrink-0" />
+                              {selected.name}
+                            </>
+                          );
                         }
-                        return <span className="text-muted-foreground">{agent_provider_placeholder()}</span>;
+                        return (
+                          <span className="text-muted-foreground">
+                            {agent_provider_placeholder()}
+                          </span>
+                        );
                       })()}
                     </span>
                   </SelectTrigger>
@@ -594,7 +848,9 @@ export function AgentsPage() {
                 <div className="relative">
                   <input
                     value={agentForm.url}
-                    onChange={(e) => setAgentForm((prev) => ({ ...prev, url: e.target.value }))}
+                    onChange={(e) =>
+                      setAgentForm((prev) => ({ ...prev, url: e.target.value }))
+                    }
                     placeholder={custom_agent_url_placeholder()}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                   />
@@ -608,12 +864,18 @@ export function AgentsPage() {
                             size="icon-sm"
                             className="text-muted-foreground hover:text-foreground"
                           >
-                            <HugeiconsIcon icon={InformationCircleIcon} className="size-4" />
+                            <HugeiconsIcon
+                              icon={InformationCircleIcon}
+                              className="size-4"
+                            />
                           </Button>
                         }
                       />
                       <TooltipContent side="top" className="max-w-64">
-                        {agent_url_help()} <code className="text-[10px] opacity-70">https://api.example.com/v1</code>
+                        {agent_url_help()}{" "}
+                        <code className="text-[10px] opacity-70">
+                          https://api.example.com/v1
+                        </code>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -625,7 +887,9 @@ export function AgentsPage() {
             <span className="font-medium text-foreground">{api_key()}</span>
             <input
               value={agentForm.apiKey}
-              onChange={(e) => setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))}
+              onChange={(e) =>
+                setAgentForm((prev) => ({ ...prev, apiKey: e.target.value }))
+              }
               placeholder={api_key_placeholder()}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
             />
@@ -641,7 +905,11 @@ export function AgentsPage() {
               disabled={loadingModels || availableModels.length === 0}
             >
               <SelectTrigger className="h-10 w-full rounded-md bg-background px-3 text-sm">
-                <SelectValue placeholder={loadingModels ? loading_label() : model_placeholder()} />
+                <SelectValue
+                  placeholder={
+                    loadingModels ? loading_label() : model_placeholder()
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

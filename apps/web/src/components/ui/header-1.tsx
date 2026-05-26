@@ -7,7 +7,13 @@ import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import LocaleToggle from "@/components/layout/LocaleToggle";
-import { nav_about, nav_changelog, nav_home, nav_pricing, toggle_menu } from "@/paraglide/messages";
+import {
+  nav_about,
+  nav_changelog,
+  nav_home,
+  nav_pricing,
+  toggle_menu,
+} from "@/paraglide/messages";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
 
@@ -16,26 +22,44 @@ const starCountFormatter = new Intl.NumberFormat("en", {
   maximumFractionDigits: 1,
 });
 
+// Module-level cache for GitHub stars to avoid re-fetching on every Header mount
+let cachedStarCount: number | null = null;
+let cachedStarCountPromise: Promise<number | null> | null = null;
+
 export function Header() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
   const [starCount, setStarCount] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    fetch("/api/github-stars")
+    if (cachedStarCount !== null) {
+      setStarCount(cachedStarCount);
+      return;
+    }
+    if (cachedStarCountPromise !== null) {
+      cachedStarCountPromise.then(setStarCount).catch(() => {});
+      return;
+    }
+    cachedStarCountPromise = fetch("/api/github-stars")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
-        if (typeof (data as { stargazers_count?: number }).stargazers_count === "number") {
-          setStarCount((data as { stargazers_count: number }).stargazers_count);
-        }
+        const count =
+          typeof (data as { stargazers_count?: number }).stargazers_count ===
+          "number"
+            ? (data as { stargazers_count: number }).stargazers_count
+            : null;
+        cachedStarCount = count;
+        return count;
       })
-      .catch(() => {});
+      .catch(() => {
+        cachedStarCount = null;
+        return null;
+      });
+    cachedStarCountPromise.then(setStarCount).catch(() => {});
   }, []);
 
   const formattedStarCount =
-    starCount === null
-      ? null
-      : starCountFormatter.format(starCount);
+    starCount === null ? null : starCountFormatter.format(starCount);
 
   const links = [
     {
@@ -77,14 +101,23 @@ export function Header() {
         },
       )}
     >
-      <nav className="flex h-14 w-full items-center justify-between pl-6 pr-4">
-        <Link to="/" className="hover:bg-accent flex items-center gap-2 rounded-md p-2 ml-32">
+      <nav className="flex h-14 w-full items-center justify-between px-12">
+        <Link
+          to="/"
+          className="hover:bg-accent flex items-center gap-2 rounded-md p-2"
+        >
           <img src="/logo.svg" alt="" className="h-6 w-auto" />
-          <span className="font-serif text-sm font-semibold italic text-foreground">OrchOS</span>
+          <span className="font-serif text-sm font-semibold italic text-foreground hidden sm:inline">
+            OrchOS
+          </span>
         </Link>
         <div className="hidden items-center gap-2 md:flex">
           {links.map((link) => (
-            <Link key={link.label} className={buttonVariants({ variant: "ghost" })} to={link.to}>
+            <Link
+              key={link.label}
+              className={buttonVariants({ variant: "ghost" })}
+              to={link.to}
+            >
               {link.label}
             </Link>
           ))}
@@ -98,7 +131,9 @@ export function Header() {
               <HugeiconsIcon icon={GithubIcon} className="size-4" />
               GitHub
               {formattedStarCount ? (
-                <span className="text-xs text-muted-foreground">{formattedStarCount}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formattedStarCount}
+                </span>
               ) : null}
             </Button>
           </a>
@@ -148,7 +183,9 @@ export function Header() {
               <HugeiconsIcon icon={GithubIcon} className="size-4" />
               GitHub
               {formattedStarCount ? (
-                <span className="text-xs text-muted-foreground">{formattedStarCount}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formattedStarCount}
+                </span>
               ) : null}
             </Button>
           </a>

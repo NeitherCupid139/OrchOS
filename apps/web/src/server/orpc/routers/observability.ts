@@ -15,7 +15,9 @@ function getRangeDate(range: string): Date {
   }
 }
 
-function parseTrace(trace: string | null): Array<{ kind: string; state?: string }> {
+function parseTrace(
+  trace: string | null,
+): Array<{ kind: string; state?: string }> {
   if (!trace) return [];
   try {
     const parsed = JSON.parse(trace);
@@ -48,37 +50,66 @@ export const observabilityRouter = {
     const rangeDate = getRangeDate(range);
     const rangeDateStr = rangeDate.toISOString();
 
-    // SQL-level filtering: only load data within the time range
-    const [rangeEvents, rangeProblems] = await Promise.all([
-      db.select().from(events).where(gte(events.timestamp, rangeDateStr)).all(),
-      db.select().from(problems).where(gte(problems.createdAt, rangeDateStr)).all(),
+    const size = range === "24h" ? 24 : range === "7d" ? 7 : 30;
+    const intervalMs = range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const intervalFmt =
+      range === "24h" ? "%Y-%m-%d %H:00:00" : "%Y-%m-%d 00:00:00";
+
+    // SQL GROUP BY: aggregate events and problems into time buckets
+    const [eventBuckets, problemBuckets] = await Promise.all([
+      db
+        .select({
+          bucket: sql<string>`strftime(${intervalFmt}, ${events.timestamp})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(events)
+        .where(gte(events.timestamp, rangeDateStr))
+        .groupBy(sql`strftime(${intervalFmt}, ${events.timestamp})`)
+        .all(),
+      db
+        .select({
+          bucket: sql<string>`strftime(${intervalFmt}, ${problems.createdAt})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(problems)
+        .where(gte(problems.createdAt, rangeDateStr))
+        .groupBy(sql`strftime(${intervalFmt}, ${problems.createdAt})`)
+        .all(),
     ]);
 
-    const size = range === "24h" ? 24 : range === "7d" ? 7 : 30;
-    const intervalMs =
-      range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const eventMap = new Map(eventBuckets.map((b) => [b.bucket, b.count]));
+    const problemMap = new Map(problemBuckets.map((b) => [b.bucket, b.count]));
 
-    const buckets: { time: number; label: string; events: number; issues: number }[] = [];
+    // Generate all expected buckets and fill in gaps (at most 30 iterations)
+    const buckets: {
+      time: number;
+      label: string;
+      events: number;
+      issues: number;
+    }[] = [];
     for (let i = 0; i < size; i++) {
       const bucketStart = new Date(rangeDate.getTime() + i * intervalMs);
-      const bucketEnd = new Date(bucketStart.getTime() + intervalMs);
+      const y = bucketStart.getFullYear();
+      const m = String(bucketStart.getMonth() + 1).padStart(2, "0");
+      const d = String(bucketStart.getDate()).padStart(2, "0");
+      const h = String(bucketStart.getHours()).padStart(2, "0");
 
-      const eventCount = rangeEvents.filter((e) => {
-        const t = new Date(e.timestamp).getTime();
-        return t >= bucketStart.getTime() && t < bucketEnd.getTime();
-      }).length;
-
-      const issueCount = rangeProblems.filter((p) => {
-        const t = new Date(p.createdAt).getTime();
-        return t >= bucketStart.getTime() && t < bucketEnd.getTime();
-      }).length;
+      const bucketKey =
+        range === "24h"
+          ? `${y}-${m}-${d} ${h}:00:00`
+          : `${y}-${m}-${d} 00:00:00`;
 
       const label =
         range === "24h"
-          ? `${String(bucketStart.getHours()).padStart(2, "0")}:00`
+          ? `${h}:00`
           : `${bucketStart.getMonth() + 1}/${bucketStart.getDate()}`;
 
-      buckets.push({ time: i, label, events: eventCount, issues: issueCount });
+      buckets.push({
+        time: i,
+        label,
+        events: eventMap.get(bucketKey) ?? 0,
+        issues: problemMap.get(bucketKey) ?? 0,
+      });
     }
 
     return buckets;
@@ -125,10 +156,13 @@ export const observabilityRouter = {
       count: row.count,
     }));
 
-    const problemCountMap = new Map(problemCountRows.map((r) => [r.status, r.count]));
+    const problemCountMap = new Map(
+      problemCountRows.map((r) => [r.status, r.count]),
+    );
     const openIssues = problemCountMap.get("open") ?? 0;
     const resolvedIssues =
-      (problemCountMap.get("closed") ?? 0) + (problemCountMap.get("resolved") ?? 0);
+      (problemCountMap.get("closed") ?? 0) +
+      (problemCountMap.get("resolved") ?? 0);
 
     const recentItems = recentEvents.map((e) => ({
       id: e.id,
@@ -193,20 +227,23 @@ export const observabilityRouter = {
       }
     }
 
-    const recentCompletions = rangeMessages.slice(0, MAX_RECENT_ITEMS).map((msg) => {
-      const trace = parseTrace(msg.trace);
-      const toolEntries = trace.filter((e) => e.kind === "tool");
-      const convo = convoMap.get(msg.conversationId);
-      return {
-        conversationId: msg.conversationId,
-        conversationTitle: convo?.title ?? undefined,
-        agent: convo?.runtimeId ?? undefined,
-        timestamp: msg.createdAt,
-        tokens: msg.tokens ? Number(msg.tokens) : undefined,
-        toolCalls: toolEntries.length,
-        toolSuccesses: toolEntries.filter((e) => e.state === "completed").length,
-      };
-    });
+    const recentCompletions = rangeMessages
+      .slice(0, MAX_RECENT_ITEMS)
+      .map((msg) => {
+        const trace = parseTrace(msg.trace);
+        const toolEntries = trace.filter((e) => e.kind === "tool");
+        const convo = convoMap.get(msg.conversationId);
+        return {
+          conversationId: msg.conversationId,
+          conversationTitle: convo?.title ?? undefined,
+          agent: convo?.runtimeId ?? undefined,
+          timestamp: msg.createdAt,
+          tokens: msg.tokens ? Number(msg.tokens) : undefined,
+          toolCalls: toolEntries.length,
+          toolSuccesses: toolEntries.filter((e) => e.state === "completed")
+            .length,
+        };
+      });
 
     return {
       totalConversations: allConversations.length,
@@ -225,9 +262,36 @@ export const observabilityRouter = {
     const rangeDate = getRangeDate(range);
     const rangeDateStr = rangeDate.toISOString();
 
-    // SQL-level filtering: only assistant messages in time range
-    const rangeMessages = await db
-      .select()
+    const size = range === "24h" ? 24 : range === "7d" ? 7 : 30;
+    const intervalMs = range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const intervalFmt =
+      range === "24h" ? "%Y-%m-%d %H:00:00" : "%Y-%m-%d 00:00:00";
+
+    // SQL GROUP BY: aggregate tokens and message count per time bucket
+    const bucketedMessages = await db
+      .select({
+        bucket: sql<string>`strftime(${intervalFmt}, ${messages.createdAt})`,
+        tokens: sql<number>`coalesce(sum(${messages.tokens}), 0)`,
+        count: sql<number>`count(*)`,
+      })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.role, "assistant"),
+          gte(messages.createdAt, rangeDateStr),
+        ),
+      )
+      .groupBy(sql`strftime(${intervalFmt}, ${messages.createdAt})`)
+      .all();
+
+    const tokenMap = new Map(
+      bucketedMessages.map((b) => [b.bucket, Number(b.tokens)]),
+    );
+
+    // For tool call stats (requires JSON trace parsing), load only needed
+    // fields and bucket in a single pass using a Map (O(N) not O(N*size))
+    const toolMessages = await db
+      .select({ createdAt: messages.createdAt, trace: messages.trace })
       .from(messages)
       .where(
         and(
@@ -238,10 +302,39 @@ export const observabilityRouter = {
       .limit(MAX_RANGE_ROWS)
       .all();
 
-    const size = range === "24h" ? 24 : range === "7d" ? 7 : 30;
-    const intervalMs =
-      range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const toolStatsByBucket = new Map<
+      string,
+      { toolCalls: number; toolSuccesses: number; toolFailures: number }
+    >();
 
+    for (const msg of toolMessages) {
+      const dt = new Date(msg.createdAt);
+      const y = dt.getFullYear();
+      const mon = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      const hour = String(dt.getHours()).padStart(2, "0");
+      const key =
+        range === "24h"
+          ? `${y}-${mon}-${day} ${hour}:00:00`
+          : `${y}-${mon}-${day} 00:00:00`;
+
+      let entry = toolStatsByBucket.get(key);
+      if (!entry) {
+        entry = { toolCalls: 0, toolSuccesses: 0, toolFailures: 0 };
+        toolStatsByBucket.set(key, entry);
+      }
+
+      const trace = parseTrace(msg.trace);
+      for (const traceEntry of trace) {
+        if (traceEntry.kind === "tool") {
+          entry.toolCalls++;
+          if (traceEntry.state === "completed") entry.toolSuccesses++;
+          else if (traceEntry.state === "failed") entry.toolFailures++;
+        }
+      }
+    }
+
+    // Fill in output array (at most 30 iterations)
     const buckets: {
       time: number;
       label: string;
@@ -253,115 +346,150 @@ export const observabilityRouter = {
 
     for (let i = 0; i < size; i++) {
       const bucketStart = new Date(rangeDate.getTime() + i * intervalMs);
-      const bucketEnd = new Date(bucketStart.getTime() + intervalMs);
+      const y = bucketStart.getFullYear();
+      const m = String(bucketStart.getMonth() + 1).padStart(2, "0");
+      const d = String(bucketStart.getDate()).padStart(2, "0");
+      const h = String(bucketStart.getHours()).padStart(2, "0");
 
-      let tokens = 0;
-      let toolCalls = 0;
-      let toolSuccesses = 0;
-      let toolFailures = 0;
-
-      for (const msg of rangeMessages) {
-        const t = new Date(msg.createdAt).getTime();
-        if (t >= bucketStart.getTime() && t < bucketEnd.getTime()) {
-          if (msg.tokens) {
-            tokens += Number(msg.tokens);
-          }
-          const trace = parseTrace(msg.trace);
-          for (const entry of trace) {
-            if (entry.kind === "tool") {
-              toolCalls++;
-              if (entry.state === "completed") {
-                toolSuccesses++;
-              } else if (entry.state === "failed") {
-                toolFailures++;
-              }
-            }
-          }
-        }
-      }
+      const bucketKey =
+        range === "24h"
+          ? `${y}-${m}-${d} ${h}:00:00`
+          : `${y}-${m}-${d} 00:00:00`;
 
       const label =
         range === "24h"
-          ? `${String(bucketStart.getHours()).padStart(2, "0")}:00`
+          ? `${h}:00`
           : `${bucketStart.getMonth() + 1}/${bucketStart.getDate()}`;
 
-      buckets.push({ time: i, label, tokens, toolCalls, toolSuccesses, toolFailures });
+      const toolStats = toolStatsByBucket.get(bucketKey);
+
+      buckets.push({
+        time: i,
+        label,
+        tokens: tokenMap.get(bucketKey) ?? 0,
+        toolCalls: toolStats?.toolCalls ?? 0,
+        toolSuccesses: toolStats?.toolSuccesses ?? 0,
+        toolFailures: toolStats?.toolFailures ?? 0,
+      });
     }
 
     return buckets;
   }),
 
-  activityHeatmap: os.observability.activityHeatmap.handler(async ({ input }) => {
-    const range = input.range ?? "24h";
-    const metric = input.metric ?? "toolCalls";
-    const db = await getLocalDb();
-    const rangeDate = getRangeDate(range);
-    const rangeDateStr = rangeDate.toISOString();
+  activityHeatmap: os.observability.activityHeatmap.handler(
+    async ({ input }) => {
+      const range = input.range ?? "24h";
+      const metric = input.metric ?? "toolCalls";
+      const db = await getLocalDb();
+      const rangeDate = getRangeDate(range);
+      const rangeDateStr = rangeDate.toISOString();
 
-    // SQL-level filtering: only assistant messages in time range
-    const rangeMessages = await db
-      .select()
-      .from(messages)
-      .where(
-        and(
-          eq(messages.role, "assistant"),
-          gte(messages.createdAt, rangeDateStr),
-        ),
-      )
-      .limit(MAX_RANGE_ROWS)
-      .all();
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    // Initialize a 7 (days) x 24 (hours) grid
-    const grid = new Map<string, number>();
-    for (let d = 0; d < 7; d++) {
-      for (let h = 0; h < 24; h++) {
-        grid.set(`${d}-${h}`, 0);
-      }
-    }
+      // For "messages" and "tokens" metrics, use SQL GROUP BY with strftime
+      if (metric === "messages" || metric === "tokens") {
+        const heatmapRows = await db
+          .select({
+            dayOfWeek: sql<number>`cast(strftime('%w', ${messages.createdAt}) as integer)`,
+            hour: sql<number>`cast(strftime('%H', ${messages.createdAt}) as integer)`,
+            count: sql<number>`count(*)`,
+            tokens: sql<number>`coalesce(sum(${messages.tokens}), 0)`,
+          })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.role, "assistant"),
+              gte(messages.createdAt, rangeDateStr),
+            ),
+          )
+          .groupBy(
+            sql`strftime('%w', ${messages.createdAt})`,
+            sql`strftime('%H', ${messages.createdAt})`,
+          )
+          .all();
 
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const heatmapMap = new Map(
+          heatmapRows.map((r) => [
+            `${r.dayOfWeek}-${r.hour}`,
+            metric === "tokens" ? Number(r.tokens) : r.count,
+          ]),
+        );
 
-    for (const msg of rangeMessages) {
-      const dt = new Date(msg.createdAt);
-      const dayOfWeek = dt.getDay(); // 0=Sun, 6=Sat
-      const hour = dt.getHours();
-      const key = `${dayOfWeek}-${hour}`;
-      const cellValue = grid.get(key);
-      if (cellValue === undefined) continue;
-
-      switch (metric) {
-        case "messages":
-          grid.set(key, cellValue + 1);
-          break;
-        case "tokens":
-          if (msg.tokens) grid.set(key, cellValue + Number(msg.tokens));
-          break;
-        case "toolCalls":
-        default: {
-          const trace = parseTrace(msg.trace);
-          let tc = 0;
-          for (const entry of trace) {
-            if (entry.kind === "tool") tc++;
+        const result: {
+          dayOfWeek: number;
+          hour: number;
+          value: number;
+          label: string;
+        }[] = [];
+        for (let d = 0; d < 7; d++) {
+          for (let h = 0; h < 24; h++) {
+            result.push({
+              dayOfWeek: d,
+              hour: h,
+              value: heatmapMap.get(`${d}-${h}`) ?? 0,
+              label: `${dayNames[d]} ${String(h).padStart(2, "0")}:00`,
+            });
           }
-          grid.set(key, cellValue + tc);
-          break;
+        }
+        return result;
+      }
+
+      // For "toolCalls" metric, load only needed fields and bucket
+      // in a single JS pass to avoid loading all message content
+      const toolMessages = await db
+        .select({ createdAt: messages.createdAt, trace: messages.trace })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.role, "assistant"),
+            gte(messages.createdAt, rangeDateStr),
+          ),
+        )
+        .limit(MAX_RANGE_ROWS)
+        .all();
+
+      const grid = new Map<string, number>();
+      for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) {
+          grid.set(`${d}-${h}`, 0);
         }
       }
-    }
 
-    const result: { dayOfWeek: number; hour: number; value: number; label: string }[] = [];
-    for (let d = 0; d < 7; d++) {
-      for (let h = 0; h < 24; h++) {
-        const value = grid.get(`${d}-${h}`)!;
-        result.push({
-          dayOfWeek: d,
-          hour: h,
-          value,
-          label: `${dayNames[d]} ${String(h).padStart(2, "0")}:00`,
-        });
+      for (const msg of toolMessages) {
+        const dt = new Date(msg.createdAt);
+        const dayOfWeek = dt.getDay();
+        const hour = dt.getHours();
+        const key = `${dayOfWeek}-${hour}`;
+        const cellValue = grid.get(key);
+        if (cellValue === undefined) continue;
+
+        const trace = parseTrace(msg.trace);
+        let tc = 0;
+        for (const entry of trace) {
+          if (entry.kind === "tool") tc++;
+        }
+        grid.set(key, cellValue + tc);
       }
-    }
 
-    return result;
-  }),
+      const result: {
+        dayOfWeek: number;
+        hour: number;
+        value: number;
+        label: string;
+      }[] = [];
+      for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) {
+          const value = grid.get(`${d}-${h}`)!;
+          result.push({
+            dayOfWeek: d,
+            hour: h,
+            value,
+            label: `${dayNames[d]} ${String(h).padStart(2, "0")}:00`,
+          });
+        }
+      }
+
+      return result;
+    },
+  ),
 };

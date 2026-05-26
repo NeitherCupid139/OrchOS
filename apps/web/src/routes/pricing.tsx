@@ -85,113 +85,119 @@ type Tier = {
 
 function useTiers(): Tier[] {
   const { locale } = useLocale();
-  return useMemo(() => [
-    {
-      key: "oss",
-      title: pricing_oss_title(),
-      desc: pricing_oss_desc(),
-      price: pricing_oss_price(),
-      priceYearly: pricing_oss_price(),
-      billing: "",
-      buttonLabel: pricing_oss_cta(),
-      buttonVariant: "outline" as const,
-      popular: false,
-      href: GITHUB_REPO,
-      features: [
-        pricing_feature_unlimited_agents(),
-        pricing_oss_feature_core(),
-        pricing_oss_feature_self_hosted(),
-        pricing_oss_feature_community(),
-      ],
-    },
-    {
-      key: "free",
-      title: pricing_free_title(),
-      desc: pricing_free_desc(),
-      price: pricing_free_price(),
-      priceYearly: pricing_free_price(),
-      billing: "",
-      buttonLabel: pricing_free_cta(),
-      buttonVariant: "outline" as const,
-      popular: false,
-      href: "/sign-up",
-      features: [
-        pricing_feature_agents({ count: "5" }),
-        pricing_free_feature_core(),
-        pricing_free_feature_cloud(),
-        pricing_free_feature_sync(),
-        pricing_free_feature_tokens(),
-      ],
-    },
-    {
-      key: "pro",
-      title: pricing_pro_title(),
-      desc: pricing_pro_desc(),
-      price: pricing_pro_price(),
-      priceYearly: pricing_pro_price_yearly(),
-      billing: pricing_billed_monthly(),
-      buttonLabel: pricing_btn_get_started(),
-      buttonVariant: "default" as const,
-      popular: true,
-      href: "/sign-up",
-      features: [
-        pricing_pro_feature_agents(),
-        pricing_pro_feature_everything_free(),
-        pricing_pro_feature_web_search(),
-        pricing_feature_api(),
-        pricing_pro_feature_priority_support(),
-        pricing_pro_feature_tokens(),
-      ],
-    },
-  ], [locale]);
+  return useMemo(
+    () => [
+      {
+        key: "oss",
+        title: pricing_oss_title(),
+        desc: pricing_oss_desc(),
+        price: pricing_oss_price(),
+        priceYearly: pricing_oss_price(),
+        billing: "",
+        buttonLabel: pricing_oss_cta(),
+        buttonVariant: "outline" as const,
+        popular: false,
+        href: GITHUB_REPO,
+        features: [
+          pricing_feature_unlimited_agents(),
+          pricing_oss_feature_core(),
+          pricing_oss_feature_self_hosted(),
+          pricing_oss_feature_community(),
+        ],
+      },
+      {
+        key: "free",
+        title: pricing_free_title(),
+        desc: pricing_free_desc(),
+        price: pricing_free_price(),
+        priceYearly: pricing_free_price(),
+        billing: "",
+        buttonLabel: pricing_free_cta(),
+        buttonVariant: "outline" as const,
+        popular: false,
+        href: "/sign-up",
+        features: [
+          pricing_feature_agents({ count: "5" }),
+          pricing_free_feature_core(),
+          pricing_free_feature_cloud(),
+          pricing_free_feature_sync(),
+          pricing_free_feature_tokens(),
+        ],
+      },
+      {
+        key: "pro",
+        title: pricing_pro_title(),
+        desc: pricing_pro_desc(),
+        price: pricing_pro_price(),
+        priceYearly: pricing_pro_price_yearly(),
+        billing: pricing_billed_monthly(),
+        buttonLabel: pricing_btn_get_started(),
+        buttonVariant: "default" as const,
+        popular: true,
+        href: "/sign-up",
+        features: [
+          pricing_pro_feature_agents(),
+          pricing_pro_feature_everything_free(),
+          pricing_pro_feature_web_search(),
+          pricing_feature_api(),
+          pricing_pro_feature_priority_support(),
+          pricing_pro_feature_tokens(),
+        ],
+      },
+    ],
+    [locale],
+  );
 }
 
 function useCompareFeatures() {
   const { locale } = useLocale();
-  return useMemo(() => [
-    {
-      label: pricing_feature_agents_label(),
-      oss: "Unlimited",
-      free: "10",
-      pro: "10",
-    },
-    {
-      label: pricing_feature_bookmarks(),
-      oss: true,
-      free: true,
-      pro: true,
-    },
-    {
-      label: pricing_feature_calendar(),
-      oss: true,
-      free: true,
-      pro: true,
-    },
-    {
-      label: pricing_feature_mail(),
-      oss: true,
-      free: true,
-      pro: true,
-    },
-    {
-      label: pricing_feature_kanban(),
-      oss: true,
-      free: true,
-      pro: true,
-    },
-    {
-      label: pricing_feature_api(),
-      oss: false,
-      free: false,
-      pro: true,
-    },
-    {
-      label: pricing_pro_feature_priority_support(),
-      oss: false,
-      free: false,
-      pro: true,
-    },
-  ], [locale]);
+  return useMemo(
+    () => [
+      {
+        label: pricing_feature_agents_label(),
+        oss: "Unlimited",
+        free: "10",
+        pro: "10",
+      },
+      {
+        label: pricing_feature_bookmarks(),
+        oss: true,
+        free: true,
+        pro: true,
+      },
+      {
+        label: pricing_feature_calendar(),
+        oss: true,
+        free: true,
+        pro: true,
+      },
+      {
+        label: pricing_feature_mail(),
+        oss: true,
+        free: true,
+        pro: true,
+      },
+      {
+        label: pricing_feature_kanban(),
+        oss: true,
+        free: true,
+        pro: true,
+      },
+      {
+        label: pricing_feature_api(),
+        oss: false,
+        free: false,
+        pro: true,
+      },
+      {
+        label: pricing_pro_feature_priority_support(),
+        oss: false,
+        free: false,
+        pro: true,
+      },
+    ],
+    [locale],
+  );
 }
 
 function useFaqs() {
@@ -249,7 +255,7 @@ function Pricing() {
       <Header />
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden px-6 pb-8 pt-20 sm:px-10 sm:pb-12 sm:pt-24 lg:px-14 lg:pt-28">
+        <section className="relative overflow-hidden px-6 pb-8 pt-14 sm:px-10 sm:pb-12 sm:pt-16 lg:px-14 lg:pt-20">
           <div className="absolute inset-0 -z-10">
             <div className="from-background via-muted/30 to-background absolute inset-0 bg-gradient-to-b" />
           </div>
@@ -262,8 +268,6 @@ function Pricing() {
             </p>
           </div>
         </section>
-
-
 
         {/* Pricing Cards */}
         <section className="px-6 pb-16 sm:px-10 lg:px-14">
@@ -289,14 +293,25 @@ function Pricing() {
                   ) : null}
 
                   {/* Tier image */}
-                  <div className={cn(
-                    "-mx-6 -mt-6 mb-5 h-32 overflow-hidden rounded-t-2xl",
-                    tier.key === "oss" && "bg-gradient-to-br from-zinc-500/10 to-zinc-500/20",
-                    tier.key === "free" && "bg-gradient-to-br from-sky-500/10 to-sky-500/20",
-                    tier.key === "pro" && "bg-gradient-to-br from-primary/10 to-primary/20",
-                  )}>
+                  <div
+                    className={cn(
+                      "-mx-6 -mt-6 mb-5 h-32 overflow-hidden rounded-t-2xl",
+                      tier.key === "oss" &&
+                        "bg-gradient-to-br from-zinc-500/10 to-zinc-500/20",
+                      tier.key === "free" &&
+                        "bg-gradient-to-br from-sky-500/10 to-sky-500/20",
+                      tier.key === "pro" &&
+                        "bg-gradient-to-br from-primary/10 to-primary/20",
+                    )}
+                  >
                     <img
-                      src={tier.key === "oss" ? "/pricing/open-source.png" : tier.key === "free" ? "/pricing/free.png" : "/pricing/pro.png"}
+                      src={
+                        tier.key === "oss"
+                          ? "/pricing/open-source.png"
+                          : tier.key === "free"
+                            ? "/pricing/free.png"
+                            : "/pricing/pro.png"
+                      }
                       alt={tier.title}
                       className="h-full w-full object-cover"
                     />
@@ -320,7 +335,14 @@ function Pricing() {
                       </div>
                       {tier.key === "pro" ? (
                         <div className="flex items-center gap-2">
-                          <span className={cn("text-xs font-medium transition-colors", !yearly ? "text-foreground" : "text-muted-foreground")}>
+                          <span
+                            className={cn(
+                              "text-xs font-medium transition-colors",
+                              !yearly
+                                ? "text-foreground"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             {pricing_monthly()}
                           </span>
                           <AppleSwitch
@@ -329,7 +351,14 @@ function Pricing() {
                             size="sm"
                             aria-label={pricing_toggle_label()}
                           />
-                          <span className={cn("text-xs font-medium transition-colors", yearly ? "text-foreground" : "text-muted-foreground")}>
+                          <span
+                            className={cn(
+                              "text-xs font-medium transition-colors",
+                              yearly
+                                ? "text-foreground"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             {pricing_yearly()}
                           </span>
                           <Badge variant="default" className="text-[10px]">
@@ -358,7 +387,11 @@ function Pricing() {
                       className="w-full"
                       asChild
                     >
-                      <a href={tier.href} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={tier.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {tier.buttonLabel}
                       </a>
                     </Button>
@@ -368,9 +401,7 @@ function Pricing() {
                       className="w-full"
                       asChild
                     >
-                      <Link to={tier.href}>
-                        {tier.buttonLabel}
-                      </Link>
+                      <Link to={tier.href}>{tier.buttonLabel}</Link>
                     </Button>
                   )}
                 </div>
@@ -414,10 +445,7 @@ function Pricing() {
                         {feat.label}
                       </td>
                       {(["oss", "free", "pro"] as const).map((tier) => (
-                        <td
-                          key={tier}
-                          className="py-3 px-4 text-center"
-                        >
+                        <td key={tier} className="py-3 px-4 text-center">
                           {typeof feat[tier] === "boolean" ? (
                             feat[tier] ? (
                               <CheckIcon className="mx-auto text-primary" />
@@ -465,7 +493,6 @@ function Pricing() {
             </div>
           </div>
         </section>
-
       </main>
       <Footer />
     </div>

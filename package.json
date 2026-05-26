@@ -23,7 +23,7 @@
     "oxfmt": "^0.45.0",
     "oxlint": "^1.60.0",
     "prettier": "^3.7.4",
-    "typescript": "5.9.2"
+    "typescript": "6.0"
   },
   "engines": {
     "node": ">=22 <26"

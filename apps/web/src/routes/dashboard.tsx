@@ -1,5 +1,19 @@
-import { useEffect, useRef, useState, lazy, Suspense, type ComponentType } from "react";
-import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  lazy,
+  Suspense,
+  memo,
+  type ComponentType,
+} from "react";
+import {
+  createFileRoute,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useAuth } from "@clerk/clerk-react";
 import { isClerkConfigured } from "@/lib/auth";
@@ -14,7 +28,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import type { SidebarView } from "@/lib/types";
+import type { SidebarView, Organization, Problem } from "@/lib/types";
 import {
   getCapabilityModeFromPath,
   getCapabilityPath,
@@ -24,7 +38,9 @@ import { checking_auth, search_bookmarks } from "@/paraglide/messages";
 
 // Lazy-loaded dialogs — only loaded when first opened, ~115KB deferred from initial bundle
 const SettingsDialog = lazy(() =>
-  import("@/components/dialogs/SettingsDialog").then((m) => ({ default: m.SettingsDialog })),
+  import("@/components/dialogs/SettingsDialog").then((m) => ({
+    default: m.SettingsDialog,
+  })),
 );
 const CreateBoardConversationDialog = lazy(() =>
   import("@/components/dialogs/CreateBoardConversationDialog").then((m) => ({
@@ -119,7 +135,11 @@ function ClerkAuthGate({ children }: { children: React.ReactNode }) {
 }
 
 function getViewFromPath(pathname: string): SidebarView {
-  const segment = pathname.replace("/dashboard/", "").replace("/dashboard", "").split("/")[0] ?? "";
+  const segment =
+    pathname
+      .replace("/dashboard/", "")
+      .replace("/dashboard", "")
+      .split("/")[0] ?? "";
   const validViews: SidebarView[] = [
     "inbox",
     "creation",
@@ -130,7 +150,9 @@ function getViewFromPath(pathname: string): SidebarView {
     "observability",
     "agents",
   ];
-  return validViews.includes(segment as SidebarView) ? (segment as SidebarView) : "inbox";
+  return validViews.includes(segment as SidebarView)
+    ? (segment as SidebarView)
+    : "inbox";
 }
 
 function DashboardWrapper() {
@@ -149,6 +171,60 @@ function DashboardContent() {
   return <DashboardWrapper />;
 }
 
+// ── Memoized subsection components ──────────────────────────────
+
+const DashboardSidebar = memo(function DashboardSidebar({
+  isMobile: _isMobile,
+  organizations,
+  activeOrganizationId,
+  activeView,
+  collapsed,
+  onOpenSettings,
+  onOrganizationChange,
+  onOrganizationCreate,
+  onOrganizationRename,
+  onOrganizationDelete,
+  onToggleCollapse,
+}: {
+  isMobile?: boolean;
+  organizations: Organization[];
+  activeOrganizationId: string | null;
+  activeView: SidebarView;
+  collapsed: boolean;
+  onOpenSettings: () => void;
+  onOrganizationChange: (id: string) => void;
+  onOrganizationCreate: (name: string) => Promise<void>;
+  onOrganizationRename: (orgId: string, name: string) => Promise<void>;
+  onOrganizationDelete: (orgId: string) => Promise<void>;
+  onToggleCollapse: () => void;
+}) {
+  return (
+    <Sidebar
+      isMobile={_isMobile}
+      organizations={organizations}
+      activeOrganizationId={activeOrganizationId}
+      activeView={activeView}
+      collapsed={collapsed}
+      onOpenSettings={onOpenSettings}
+      onOrganizationChange={onOrganizationChange}
+      onOrganizationCreate={onOrganizationCreate}
+      onOrganizationRename={onOrganizationRename}
+      onOrganizationDelete={onOrganizationDelete}
+      onToggleCollapse={onToggleCollapse}
+    />
+  );
+});
+
+const DashboardActivityPanel = memo(function DashboardActivityPanel({
+  problems,
+  collapsed,
+}: {
+  problems: Problem[];
+  collapsed: boolean;
+}) {
+  return <ActivityPanel problems={problems} collapsed={collapsed} />;
+});
+
 function DashboardContentInner() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -158,13 +234,16 @@ function DashboardContentInner() {
   const capabilityViewMode = isCapabilityView(activeView)
     ? getCapabilityModeFromPath(dashboardPath, activeView)
     : "mine";
-  const [showAuthTransition, setShowAuthTransition] = useState(() => isAuthTransition());
+  const [showAuthTransition, setShowAuthTransition] = useState(() =>
+    isAuthTransition(),
+  );
   const [startDashboardReveal, setStartDashboardReveal] = useState(false);
-  const [AuthTransitionOverlay, setAuthTransitionOverlay] = useState<ComponentType<{
-    active: boolean;
-    reveal: boolean;
-    onComplete?: () => void;
-  }> | null>(null);
+  const [AuthTransitionOverlay, setAuthTransitionOverlay] =
+    useState<ComponentType<{
+      active: boolean;
+      reveal: boolean;
+      onComplete?: () => void;
+    }> | null>(null);
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<
     "general" | "notifications" | "mail" | "about"
@@ -214,6 +293,20 @@ function DashboardContentInner() {
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Stable callbacks for memoized subsection components
+  const handleDesktopSettingsOpen = useCallback(() => {
+    setShowSettingsDialog(true);
+  }, [setShowSettingsDialog]);
+
+  const handleMobileSettingsOpen = useCallback(() => {
+    setMobileSidebarOpen(false);
+    setShowSettingsDialog(true);
+  }, [setShowSettingsDialog]);
+
+  const handleMobileSidebarClose = useCallback(() => {
+    setMobileSidebarOpen(false);
+  }, []);
 
   const dashboardColumnsDesktop = activityExpanded
     ? "auto minmax(0,0fr) minmax(0,1fr)"
@@ -312,25 +405,24 @@ function DashboardContentInner() {
           <>
             <div
               className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out ${
-                mobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                mobileSidebarOpen
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
               }`}
-              onClick={() => setMobileSidebarOpen(false)}
+              onClick={handleMobileSidebarClose}
             />
             <div
               className={`fixed left-0 top-0 z-50 h-full transition-transform duration-300 ease-out ${
-                mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
               }`}
             >
-              <Sidebar
+              <DashboardSidebar
                 isMobile
                 organizations={organizations}
                 activeOrganizationId={activeOrganizationId}
                 activeView={activeView}
                 collapsed={false}
-                onOpenSettings={() => {
-                  setMobileSidebarOpen(false);
-                  setShowSettingsDialog(true);
-                }}
+                onOpenSettings={handleMobileSettingsOpen}
                 onOrganizationChange={setActiveOrganizationId}
                 onOrganizationCreate={handleOrganizationCreate}
                 onOrganizationRename={handleOrganizationRename}
@@ -348,7 +440,7 @@ function DashboardContentInner() {
               onClick={toggleActivityPanel}
             />
             <div className="fixed right-0 top-0 z-50 h-full w-full max-w-sm transition-transform duration-300 ease-out translate-x-0">
-              <ActivityPanel problems={problems} collapsed={false} />
+              <DashboardActivityPanel problems={problems} collapsed={false} />
             </div>
           </>
         )}
@@ -361,12 +453,12 @@ function DashboardContentInner() {
           }}
         >
           {!isMobile && (
-            <Sidebar
+            <DashboardSidebar
               organizations={organizations}
               activeOrganizationId={activeOrganizationId}
               activeView={activeView}
               collapsed={sidebarCollapsed}
-              onOpenSettings={() => setShowSettingsDialog(true)}
+              onOpenSettings={handleDesktopSettingsOpen}
               onOrganizationChange={setActiveOrganizationId}
               onOrganizationCreate={handleOrganizationCreate}
               onOrganizationRename={handleOrganizationRename}
@@ -427,9 +519,22 @@ function DashboardContentInner() {
                   setShowSettingsDialog(true);
                 }}
                 onRefresh={refreshAll}
-                onToggleMobileSidebar={isMobile ? () => setMobileSidebarOpen((v) => !v) : undefined}
-                agentsView={new URLSearchParams(location.search).get("view") === "observability" ? "observability" : "config"}
-                onAgentsViewChange={(view) => void navigate({ to: "/dashboard/agents", search: { view }, replace: true })}
+                onToggleMobileSidebar={
+                  isMobile ? () => setMobileSidebarOpen((v) => !v) : undefined
+                }
+                agentsView={
+                  new URLSearchParams(location.search).get("view") ===
+                  "observability"
+                    ? "observability"
+                    : "config"
+                }
+                onAgentsViewChange={(view) =>
+                  void navigate({
+                    to: "/dashboard/agents",
+                    search: { view },
+                    replace: true,
+                  })
+                }
               >
                 {activeView === "bookmarks" && (
                   <div className="relative mx-auto w-full max-w-md">
@@ -449,7 +554,12 @@ function DashboardContentInner() {
               <Outlet />
             </div>
           </div>
-          {!isMobile && <ActivityPanel problems={problems} collapsed={!activityPanelOpen} />}
+          {!isMobile && (
+            <DashboardActivityPanel
+              problems={problems}
+              collapsed={!activityPanelOpen}
+            />
+          )}
         </div>
         {showSettingsDialog && (
           <Suspense fallback={null}>

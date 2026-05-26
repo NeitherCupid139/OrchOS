@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { BoardTask, BoardTaskColumnId, BoardTaskPriority } from "@/lib/types";
+import type {
+  BoardTask,
+  BoardTaskColumnId,
+  BoardTaskPriority,
+} from "@/lib/types";
 
 function createBoardTaskId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -75,7 +79,8 @@ export const useBoardStore = create<BoardState & BoardActions>()(
               ? {
                   ...task,
                   ...input,
-                  title: input.title !== undefined ? input.title.trim() : task.title,
+                  title:
+                    input.title !== undefined ? input.title.trim() : task.title,
                   description:
                     input.description !== undefined
                       ? input.description.trim() || undefined
@@ -95,6 +100,9 @@ export const useBoardStore = create<BoardState & BoardActions>()(
     {
       name: "orchos-board",
       version: 1,
+      partialize: (state) => ({
+        tasks: state.tasks,
+      }),
     },
   ),
 );

@@ -26,9 +26,20 @@ import { InboxList } from "@/components/panels/InboxList";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   api,
@@ -37,13 +48,54 @@ import {
   type Integration,
 } from "@/lib/api";
 import { matchesMailFolder } from "@/lib/mail";
-import {
-  EMAIL_PROVIDERS,
-  getEmailProvider,
-} from "@/lib/email-providers";
+import { EMAIL_PROVIDERS, getEmailProvider } from "@/lib/email-providers";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useUIStore } from "@/lib/store";
-import { back, cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
+import {
+  back,
+  cancel,
+  collapse_sidebar,
+  compose_mail,
+  compose_mail_next_steps_intro,
+  compose_mail_pending_desc,
+  compose_mail_step_external_recipients,
+  compose_mail_step_new_thread,
+  compose_mail_step_select_identity,
+  compose_mail_wired_desc,
+  connect_mail_account,
+  connect_mailbox,
+  connect_mailbox_desc,
+  display_name,
+  display_name_placeholder,
+  email,
+  email_placeholder,
+  email_provider,
+  email_provider_help,
+  expand_sidebar,
+  failed_to_connect_mail_account,
+  host,
+  imap_configuration,
+  imap_host_placeholder,
+  imap_port_placeholder,
+  loading as loading_label,
+  mail,
+  mail_account_connected,
+  mail_account_details_required,
+  mail_accounts,
+  mail_accounts_desc,
+  mail_ports_must_be_numbers,
+  no_mail_accounts,
+  password,
+  password_placeholder,
+  port,
+  resize_mail_sidebar,
+  smtp_configuration,
+  smtp_host_placeholder,
+  smtp_port_placeholder,
+  use_tls_ssl,
+  username,
+  username_placeholder,
+} from "@/paraglide/messages";
 
 type MailIntegrationAccount = {
   id: string;
@@ -60,7 +112,9 @@ type MailIntegration = Integration & {
 export function MailPage() {
   const navigate = useNavigate();
   const { projects: dashboardProjects } = useDashboard();
-  const { activeInboxId, setActiveInboxId, mailFolderFilter } = useUIStore();
+  const activeInboxId = useUIStore((s) => s.activeInboxId);
+  const setActiveInboxId = useUIStore((s) => s.setActiveInboxId);
+  const mailFolderFilter = useUIStore((s) => s.mailFolderFilter);
   const projects = dashboardProjects ?? [];
 
   const [threads, setThreads] = useState<InboxThread[]>([]);
@@ -82,7 +136,9 @@ export function MailPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submittingAccount, setSubmittingAccount] = useState(false);
-  const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(null);
+  const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(
+    null,
+  );
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const collapseTimerRef = useRef<number | null>(null);
@@ -145,8 +201,48 @@ export function MailPage() {
     : [];
 
   useEffect(() => {
-    void loadThreads();
-    void loadIntegrations();
+    let cancelled = false;
+    setLoading(true);
+
+    const fetchThreads = api
+      .listInboxThreads()
+      .then((nextThreads) => {
+        if (!cancelled) setThreads(nextThreads);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load mail threads",
+            { closeButton: true },
+          );
+        }
+      });
+
+    const fetchIntegrations = api
+      .listIntegrations()
+      .then((result) => {
+        if (!cancelled) setIntegrations(result as MailIntegration[]);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load mail accounts",
+            { closeButton: true },
+          );
+        }
+      });
+
+    Promise.all([fetchThreads, fetchIntegrations]).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -179,15 +275,34 @@ export function MailPage() {
   }, [activeInboxId, filteredThreads, setActiveInboxId]);
 
   useEffect(() => {
-    if (!activeThread) {
-      return;
-    }
+    if (!activeThread) return;
+    if (messagesByThreadId[activeThread.id]) return;
 
-    if (messagesByThreadId[activeThread.id]) {
-      return;
-    }
+    let cancelled = false;
 
-    void loadMessages(activeThread.id);
+    api
+      .listInboxMessages(activeThread.id)
+      .then((nextMessages) => {
+        if (cancelled) return;
+        setMessagesByThreadId((current) => ({
+          ...current,
+          [activeThread.id]: nextMessages,
+        }));
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load thread messages",
+            { closeButton: true },
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeThread, messagesByThreadId]);
 
   useEffect(() => {
@@ -235,23 +350,6 @@ export function MailPage() {
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to load mail accounts",
-        { closeButton: true },
-      );
-    }
-  }
-
-  async function loadMessages(threadId: string) {
-    try {
-      const nextMessages = await api.listInboxMessages(threadId);
-      setMessagesByThreadId((current) => ({
-        ...current,
-        [threadId]: nextMessages,
-      }));
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to load thread messages",
         { closeButton: true },
       );
     }
@@ -491,11 +589,16 @@ export function MailPage() {
                         className="active:-translate-y-0"
                         onClick={() => setIsComposeDialogOpen(true)}
                       >
-                        <HugeiconsIcon icon={MailEdit02Icon} className="size-4" />
+                        <HugeiconsIcon
+                          icon={MailEdit02Icon}
+                          className="size-4"
+                        />
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{compose_mail()}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {compose_mail()}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
@@ -508,11 +611,16 @@ export function MailPage() {
                         className="active:-translate-y-0"
                         onClick={handleCollapseSidebar}
                       >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                        <HugeiconsIcon
+                          icon={ArrowLeft01Icon}
+                          className="size-4"
+                        />
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {collapse_sidebar()}
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -580,13 +688,27 @@ export function MailPage() {
                     title={connect_mailbox()}
                     description={connect_mailbox_desc()}
                     icons={[
-                      <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
-                      <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
-                      <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
+                      <HugeiconsIcon
+                        key="m1"
+                        icon={GoogleIcon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="m2"
+                        icon={SquareArrowDataTransferHorizontalIcon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="m3"
+                        icon={Add01Icon}
+                        className="size-6"
+                      />,
                     ]}
                     action={{
                       label: connect_mailbox(),
-                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                      icon: (
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                      ),
                       onClick: () => setIsConnectDialogOpen(true),
                     }}
                   />
@@ -649,11 +771,16 @@ export function MailPage() {
                         className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
                         onClick={handleExpandSidebar}
                       >
-                        <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                        <HugeiconsIcon
+                          icon={ArrowRight01Icon}
+                          className="size-4"
+                        />
                       </Button>
                     )}
                   />
-                  <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
+                  <TooltipContent side="right">
+                    {expand_sidebar()}
+                  </TooltipContent>
                 </Tooltip>
               ) : null}
 
@@ -684,13 +811,27 @@ export function MailPage() {
                     title={connect_mailbox()}
                     description={connect_mailbox_desc()}
                     icons={[
-                      <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
-                      <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
-                      <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
+                      <HugeiconsIcon
+                        key="m1"
+                        icon={GoogleIcon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="m2"
+                        icon={SquareArrowDataTransferHorizontalIcon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="m3"
+                        icon={Add01Icon}
+                        className="size-6"
+                      />,
                     ]}
                     action={{
                       label: connect_mailbox(),
-                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                      icon: (
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                      ),
                       onClick: () => setIsConnectDialogOpen(true),
                     }}
                   />
@@ -826,8 +967,13 @@ export function MailPage() {
         <div className="space-y-5">
           {/* Provider selector */}
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{email_provider()}</span>
-            <Select value={selectedProviderId} onValueChange={handleProviderChange}>
+            <span className="font-medium text-foreground">
+              {email_provider()}
+            </span>
+            <Select
+              value={selectedProviderId}
+              onValueChange={handleProviderChange}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={email_provider()} />
               </SelectTrigger>
@@ -844,7 +990,8 @@ export function MailPage() {
           </label>
 
           {/* Help text */}
-          {selectedProviderId && getEmailProvider(selectedProviderId)?.helpText ? (
+          {selectedProviderId &&
+          getEmailProvider(selectedProviderId)?.helpText ? (
             <p className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
               {getEmailProvider(selectedProviderId)!.helpText}
             </p>
@@ -855,175 +1002,186 @@ export function MailPage() {
           </p>
 
           <div className="space-y-4">
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{email()}</span>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted-foreground">{email()}</span>
+              <input
+                value={mailAccountForm.email}
+                onChange={(event) =>
+                  setMailAccountForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                    username: current.username || event.target.value,
+                  }))
+                }
+                placeholder={email_placeholder()}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted-foreground">{display_name()}</span>
+              <input
+                value={mailAccountForm.displayName}
+                onChange={(event) =>
+                  setMailAccountForm((current) => ({
+                    ...current,
+                    displayName: event.target.value,
+                  }))
+                }
+                placeholder={display_name_placeholder()}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted-foreground">{username()}</span>
+              <input
+                value={mailAccountForm.username}
+                onChange={(event) =>
+                  setMailAccountForm((current) => ({
+                    ...current,
+                    username: event.target.value,
+                  }))
+                }
+                placeholder={username_placeholder()}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted-foreground">{password()}</span>
+              <div className="relative">
                 <input
-                  value={mailAccountForm.email}
+                  type={showPassword ? "text" : "password"}
+                  value={mailAccountForm.password}
                   onChange={(event) =>
                     setMailAccountForm((current) => ({
                       ...current,
-                      email: event.target.value,
-                      username: current.username || event.target.value,
+                      password: event.target.value,
                     }))
                   }
-                  placeholder={email_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+                  placeholder={password_placeholder()}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                 />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{display_name()}</span>
-                <input
-                  value={mailAccountForm.displayName}
-                  onChange={(event) =>
-                    setMailAccountForm((current) => ({
-                      ...current,
-                      displayName: event.target.value,
-                    }))
-                  }
-                  placeholder={display_name_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{username()}</span>
-                <input
-                  value={mailAccountForm.username}
-                  onChange={(event) =>
-                    setMailAccountForm((current) => ({
-                      ...current,
-                      username: event.target.value,
-                    }))
-                  }
-                  placeholder={username_placeholder()}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">{password()}</span>
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  <HugeiconsIcon
+                    icon={showPassword ? ViewOffSlashIcon : EyeIcon}
+                    className="size-4"
+                  />
+                </button>
+              </div>
+            </label>
+
+            <div className="border-t border-border pt-4">
+              <p className="text-xs font-medium text-muted-foreground mb-3">
+                {smtp_configuration()}
+              </p>
+              <div className="space-y-3">
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{host()}</span>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    value={mailAccountForm.password}
+                    value={mailAccountForm.smtpHost}
                     onChange={(event) =>
                       setMailAccountForm((current) => ({
                         ...current,
-                        password: event.target.value,
+                        smtpHost: event.target.value,
                       }))
                     }
-                    placeholder={password_placeholder()}
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 pr-9 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+                    placeholder={smtp_host_placeholder()}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    <HugeiconsIcon icon={showPassword ? ViewOffSlashIcon : EyeIcon} className="size-4" />
-                  </button>
-                </div>
-              </label>
-
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground mb-3">{smtp_configuration()}</p>
-                <div className="space-y-3">
+                </label>
+                <div className="grid grid-cols-2 gap-3">
                   <label className="grid gap-1.5 text-sm">
-                    <span className="text-muted-foreground">{host()}</span>
+                    <span className="text-muted-foreground">{port()}</span>
                     <input
-                      value={mailAccountForm.smtpHost}
+                      value={mailAccountForm.smtpPort}
                       onChange={(event) =>
                         setMailAccountForm((current) => ({
                           ...current,
-                          smtpHost: event.target.value,
+                          smtpPort: event.target.value,
                         }))
                       }
-                      placeholder={smtp_host_placeholder()}
+                      placeholder={smtp_port_placeholder()}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                     />
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{port()}</span>
-                      <input
-                        value={mailAccountForm.smtpPort}
-                        onChange={(event) =>
-                          setMailAccountForm((current) => ({
-                            ...current,
-                            smtpPort: event.target.value,
-                          }))
-                        }
-                        placeholder={smtp_port_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
-                      />
-                    </label>
-                    <label className="flex items-center gap-2 text-sm pt-5">
-                      <input
-                        type="checkbox"
-                        checked={mailAccountForm.smtpSecure}
-                        onChange={(event) =>
-                          setMailAccountForm((current) => ({
-                            ...current,
-                            smtpSecure: event.target.checked,
-                          }))
-                        }
-                        className="rounded border-border"
-                      />
-                      <span className="text-muted-foreground">{use_tls_ssl()}</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground mb-3">{imap_configuration()}</p>
-                <div className="space-y-3">
-                  <label className="grid gap-1.5 text-sm">
-                    <span className="text-muted-foreground">{host()}</span>
+                  <label className="flex items-center gap-2 text-sm pt-5">
                     <input
-                      value={mailAccountForm.imapHost}
+                      type="checkbox"
+                      checked={mailAccountForm.smtpSecure}
                       onChange={(event) =>
                         setMailAccountForm((current) => ({
                           ...current,
-                          imapHost: event.target.value,
+                          smtpSecure: event.target.checked,
                         }))
                       }
-                      placeholder={imap_host_placeholder()}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+                      className="rounded border-border"
                     />
+                    <span className="text-muted-foreground">
+                      {use_tls_ssl()}
+                    </span>
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">{port()}</span>
-                      <input
-                        value={mailAccountForm.imapPort}
-                        onChange={(event) =>
-                          setMailAccountForm((current) => ({
-                            ...current,
-                            imapPort: event.target.value,
-                          }))
-                        }
-                        placeholder={imap_port_placeholder()}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
-                      />
-                    </label>
-                    <label className="flex items-center gap-2 text-sm pt-5">
-                      <input
-                        type="checkbox"
-                        checked={mailAccountForm.imapSecure}
-                        onChange={(event) =>
-                          setMailAccountForm((current) => ({
-                            ...current,
-                            imapSecure: event.target.checked,
-                          }))
-                        }
-                        className="rounded border-border"
-                      />
-                      <span className="text-muted-foreground">{use_tls_ssl()}</span>
-                    </label>
-                  </div>
                 </div>
               </div>
             </div>
+
+            <div className="border-t border-border pt-4">
+              <p className="text-xs font-medium text-muted-foreground mb-3">
+                {imap_configuration()}
+              </p>
+              <div className="space-y-3">
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{host()}</span>
+                  <input
+                    value={mailAccountForm.imapHost}
+                    onChange={(event) =>
+                      setMailAccountForm((current) => ({
+                        ...current,
+                        imapHost: event.target.value,
+                      }))
+                    }
+                    placeholder={imap_host_placeholder()}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="grid gap-1.5 text-sm">
+                    <span className="text-muted-foreground">{port()}</span>
+                    <input
+                      value={mailAccountForm.imapPort}
+                      onChange={(event) =>
+                        setMailAccountForm((current) => ({
+                          ...current,
+                          imapPort: event.target.value,
+                        }))
+                      }
+                      placeholder={imap_port_placeholder()}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm pt-5">
+                    <input
+                      type="checkbox"
+                      checked={mailAccountForm.imapSecure}
+                      onChange={(event) =>
+                        setMailAccountForm((current) => ({
+                          ...current,
+                          imapSecure: event.target.checked,
+                        }))
+                      }
+                      className="rounded border-border"
+                    />
+                    <span className="text-muted-foreground">
+                      {use_tls_ssl()}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </AppDialog>
     </div>

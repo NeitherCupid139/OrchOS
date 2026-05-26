@@ -6,7 +6,7 @@ import {
   clearAllCaches,
 } from "./api-cache";
 
-type ClientApi = typeof import("./api.client")["api"];
+type ClientApi = (typeof import("./api.client"))["api"];
 
 /** Cache TTL overrides per method key */
 const READ_CACHE_TTL: Record<string, number> = {
@@ -62,7 +62,12 @@ async function getClientApi(): Promise<ClientApi> {
 const methodCache = new Map<string, (...args: unknown[]) => unknown>();
 const MAX_METHOD_CACHE_SIZE = 30;
 
-function createCachedProxyMethod(property: string): (...args: unknown[]) => unknown {
+/** In-flight request promises keyed by method name — prevents duplicate concurrent requests. */
+const inflightRequests = new Map<string, Promise<unknown>>();
+
+function createCachedProxyMethod(
+  property: string,
+): (...args: unknown[]) => unknown {
   const cached = methodCache.get(property);
   if (cached) return cached;
 
@@ -77,12 +82,31 @@ function createCachedProxyMethod(property: string): (...args: unknown[]) => unkn
     // For read methods: check cache first, then store result
     if (READ_METHODS.has(property)) {
       const cacheKey = property;
+
+      // Check resolved cache
       const cachedResult = getCached(cacheKey);
       if (cachedResult !== undefined) return cachedResult;
 
-      const result = await (value as (...fnArgs: unknown[]) => unknown)(...args);
-      setCache(cacheKey, result, READ_CACHE_TTL[property]);
-      return result;
+      // Check in-flight request — deduplicate concurrent calls
+      const inflight = inflightRequests.get(cacheKey);
+      if (inflight) return inflight;
+
+      // Fire the request and store the promise
+      const promise = (
+        (value as (...fnArgs: unknown[]) => unknown)(
+          ...args,
+        ) as Promise<unknown>
+      )
+        .then((result: unknown) => {
+          setCache(cacheKey, result, READ_CACHE_TTL[property]);
+          return result;
+        })
+        .finally(() => {
+          inflightRequests.delete(cacheKey);
+        });
+
+      inflightRequests.set(cacheKey, promise);
+      return promise;
     }
 
     // For all other (mutation) methods: invalidate dependent caches, then call
@@ -107,7 +131,11 @@ export const api = new Proxy({} as ClientApi, {
   },
 });
 
-export { normalizeConversationMessage, normalizeInboxThread, normalizeTrace } from "./api.normalizers";
+export {
+  normalizeConversationMessage,
+  normalizeInboxThread,
+  normalizeTrace,
+} from "./api.normalizers";
 export { isRecord, readString, resolveApiUrl } from "./api.shared";
 export type * from "./api.types";
 

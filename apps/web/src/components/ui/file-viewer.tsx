@@ -2,11 +2,22 @@ import ReactMarkdown from "react-markdown";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { Check, Copy, FileCode, FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
+import {
+  Check,
+  Copy,
+  FileCode,
+  FileIcon,
+  FolderIcon,
+  FolderOpenIcon,
+} from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -19,7 +30,15 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "@/components/ui/toast";
-import { code, copy_file_content, file_content_copied, loading_code, preview, preview_markdown, show_markdown_source } from "@/paraglide/messages";
+import {
+  code,
+  copy_file_content,
+  file_content_copied,
+  loading_code,
+  preview,
+  preview_markdown,
+  show_markdown_source,
+} from "@/paraglide/messages";
 import { getSharedHighlighter } from "@/lib/shiki-singleton";
 
 export interface ApiComponent {
@@ -144,7 +163,13 @@ function ShikiViewer({
 }) {
   /* eslint-disable react--no-danger */
   const [highlight, dispatch] = useReducer(
-    (state: { html: string; isLoading: boolean }, action: { type: "SET_LOADING" } | { type: "SET_DATA"; payload: string } | { type: "SET_ERROR"; payload: string }) => {
+    (
+      state: { html: string; isLoading: boolean },
+      action:
+        | { type: "SET_LOADING" }
+        | { type: "SET_DATA"; payload: string }
+        | { type: "SET_ERROR"; payload: string },
+    ) => {
       switch (action.type) {
         case "SET_LOADING":
           return { ...state, isLoading: true };
@@ -176,7 +201,10 @@ function ShikiViewer({
         }
       } catch {
         if (mounted) {
-          dispatch({ type: "SET_ERROR", payload: `<pre><code>${escapeHtml(code)}</code></pre>` });
+          dispatch({
+            type: "SET_ERROR",
+            payload: `<pre><code>${escapeHtml(code)}</code></pre>`,
+          });
         }
       }
     }
@@ -264,9 +292,20 @@ function ShikiViewer({
   /* eslint-enable react--no-danger */
 }
 
-function MarkdownPreview({ content, className }: { content: string; className?: string }) {
+function MarkdownPreview({
+  content,
+  className,
+}: {
+  content: string;
+  className?: string;
+}) {
   return (
-    <div className={cn("overflow-hidden rounded-2xl border border-border bg-card", className)}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl border border-border bg-card",
+        className,
+      )}
+    >
       <div className="prose prose-sm max-w-none px-5 py-4 text-foreground dark:prose-invert prose-headings:text-foreground prose-headings:font-semibold prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:font-mono prose-code:text-[0.8125rem] prose-code:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-muted/60 prose-a:text-primary prose-a:no-underline hover:prose-a:underline">
         <ReactMarkdown
           components={{
@@ -319,7 +358,9 @@ function FileHeader({
         <Badge variant="outline" className="text-[11px]">
           {getFileType(file.path)}
         </Badge>
-        <span className="truncate text-xs text-muted-foreground">{file.path}</span>
+        <span className="truncate text-xs text-muted-foreground">
+          {file.path}
+        </span>
       </div>
       <div className="flex items-center gap-1">
         {canPreview ? (
@@ -339,14 +380,21 @@ function FileHeader({
           className="cursor-pointer"
           title={copy_file_content()}
         >
-          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+          {copied ? (
+            <Check className="size-3.5" />
+          ) : (
+            <Copy className="size-3.5" />
+          )}
         </Button>
       </div>
     </div>
   );
 }
 
-function TreeIndicator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function TreeIndicator({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   const { direction } = useTree();
 
   return (
@@ -376,7 +424,14 @@ function Folder({
   children: ReactNode;
   className?: string;
 }) {
-  const { direction, handleExpand, expandedItems, indicator, openIcon, closeIcon } = useTree();
+  const {
+    direction,
+    handleExpand,
+    expandedItems,
+    indicator,
+    openIcon,
+    closeIcon,
+  } = useTree();
 
   return (
     <AccordionPrimitive.Item value={value} className="relative overflow-hidden">
@@ -401,7 +456,10 @@ function Folder({
         {indicator ? <TreeIndicator /> : null}
         <AccordionPrimitive.Root
           type="multiple"
-          className={cn("flex flex-col gap-1 py-1", direction === "rtl" ? "mr-5" : "ml-5")}
+          className={cn(
+            "flex flex-col gap-1 py-1",
+            direction === "rtl" ? "mr-5" : "ml-5",
+          )}
           value={expandedItems}
         >
           {children}
@@ -477,10 +535,16 @@ function Tree({
   onSelectItem?: (id: string) => void;
   onExpand?: (id: string) => void;
 }) {
-  const selectItem = useCallback((id: string) => onSelectItem?.(id), [onSelectItem]);
-  const handleExpand = useCallback((id: string) => {
-    onExpand?.(id);
-  }, [onExpand]);
+  const selectItem = useCallback(
+    (id: string) => onSelectItem?.(id),
+    [onSelectItem],
+  );
+  const handleExpand = useCallback(
+    (id: string) => {
+      onExpand?.(id);
+    },
+    [onExpand],
+  );
 
   return (
     <TreeContext.Provider
@@ -521,7 +585,12 @@ function TreeItem({
 }) {
   if (item.children?.length) {
     return (
-      <Folder key={item.id} element={item.name} value={item.id} className="truncate">
+      <Folder
+        key={item.id}
+        element={item.name}
+        value={item.id}
+        className="truncate"
+      >
         {item.children.map((child) => (
           <TreeItem
             key={child.id}
@@ -575,19 +644,24 @@ function FileTree({
     return expandableItems;
   }, [tree]);
 
-  const [localExpandedItems, setLocalExpandedItems] = useState<string[] | null>(null);
+  const [localExpandedItems, setLocalExpandedItems] = useState<string[] | null>(
+    null,
+  );
   const expandedItems = localExpandedItems ?? allExpandableItems;
 
-  const handleExpand = useCallback((id: string) => {
-    setLocalExpandedItems((prev) => {
-      const currentItems = prev ?? allExpandableItems;
+  const handleExpand = useCallback(
+    (id: string) => {
+      setLocalExpandedItems((prev) => {
+        const currentItems = prev ?? allExpandableItems;
 
-      if (currentItems.includes(id)) {
-        return currentItems.filter((item) => item !== id);
-      }
-      return [...currentItems, id];
-    });
-  }, [allExpandableItems]);
+        if (currentItems.includes(id)) {
+          return currentItems.filter((item) => item !== id);
+        }
+        return [...currentItems, id];
+      });
+    },
+    [allExpandableItems],
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -596,7 +670,9 @@ function FileTree({
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileCode className="size-4" />
           </div>
-          <p className="truncate text-sm font-medium text-foreground">{component.name}</p>
+          <p className="truncate text-sm font-medium text-foreground">
+            {component.name}
+          </p>
         </div>
         {component.author ? (
           <Badge variant="secondary" className="shrink-0">
@@ -629,13 +705,20 @@ function FileTree({
   );
 }
 
-export default function ComponentFileViewer({ component }: { component: ApiComponent }) {
+export default function ComponentFileViewer({
+  component,
+}: {
+  component: ApiComponent;
+}) {
   const [selectedFile, setSelectedFile] = useState<string | undefined>();
   const [copied, setCopied] = useState(false);
   const [previewOverride, setPreviewOverride] = useState<boolean | null>(null);
   const isDesktop = useIsDesktop();
 
-  const files = useMemo(() => component.files.filter((file) => file.content), [component.files]);
+  const files = useMemo(
+    () => component.files.filter((file) => file.content),
+    [component.files],
+  );
 
   const tree = useMemo(() => {
     type TreeNode = {
@@ -718,10 +801,16 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
 
   return (
     <ResizablePanelGroup
-      direction={isDesktop ? "horizontal" : "vertical"}
+      direction="horizontal"
       className="min-h-16 overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
     >
-      <ResizablePanel defaultSize={isDesktop ? "28%" : "36%"} minSize="20%" maxSize="40%">
+      <ResizablePanel
+        defaultSize={isDesktop ? "28%" : "25%"}
+        minSize={isDesktop ? "20%" : "15%"}
+        maxSize="40%"
+        collapsible
+        collapsedSize={5}
+      >
         <FileTree
           tree={tree}
           selectedFile={selectedPath}
@@ -730,7 +819,7 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
         />
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={isDesktop ? "72%" : "64%"} minSize="40%">
+      <ResizablePanel defaultSize="72%" minSize="40%">
         {selected ? (
           <div className="flex h-full flex-col">
             <FileHeader
@@ -739,12 +828,17 @@ export default function ComponentFileViewer({ component }: { component: ApiCompo
               copied={copied}
               canPreview={canPreview}
               isPreview={isPreview}
-              onTogglePreview={() => setPreviewOverride((prev) => !(prev ?? canPreview))}
+              onTogglePreview={() =>
+                setPreviewOverride((prev) => !(prev ?? canPreview))
+              }
             />
             <div className="flex-1 overflow-hidden bg-background/30 p-3">
               <ScrollArea className="h-full w-full">
                 {canPreview && isPreview ? (
-                  <MarkdownPreview content={selected.content ?? ""} className="min-h-full" />
+                  <MarkdownPreview
+                    content={selected.content ?? ""}
+                    className="min-h-full"
+                  />
                 ) : (
                   <ShikiViewer
                     code={selected.content ?? ""}

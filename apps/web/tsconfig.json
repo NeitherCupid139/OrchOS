@@ -1,33 +1,41 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
-  "exclude": ["src/server/**/*"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
     "paths": {
       "@/paraglide/messages": ["./src/paraglide/messages.js"],
       "@/paraglide/runtime": ["./src/paraglide/runtime.js"],
-      "@/*": ["./src/*"],
-      "@server-app/*": ["../server/src/*"]
+      "@/*": ["./src/*"]
     },
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM"],
     "types": ["vite/client"],
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
     "allowJs": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
-    /* Linting */
+    /* Performance */
     "skipLibCheck": true,
+    "incremental": true,
+
+    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
-  }
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "src/server/**/*",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }

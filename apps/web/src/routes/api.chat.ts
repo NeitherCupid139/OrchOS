@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
 import { call } from "@orpc/server";
 
 import { conversationsRouter } from "@/server/orpc/routers/conversations";
@@ -32,7 +36,8 @@ function readTextPart(message: unknown) {
   if (Array.isArray(candidate.parts)) {
     return candidate.parts
       .reduce((acc, part) => {
-        if (part?.type === "text" && typeof part.text === "string") acc.push(part.text);
+        if (part?.type === "text" && typeof part.text === "string")
+          acc.push(part.text);
         return acc;
       }, [] as string[])
       .join("");
@@ -56,7 +61,8 @@ export const Route = createFileRoute("/api/chat")({
         }
         const conversationId = body.conversationId;
 
-        const latestMessage = body.message ?? body.messages?.[body.messages.length - 1];
+        const latestMessage =
+          body.message ?? body.messages?.[body.messages.length - 1];
         const content = readTextPart(latestMessage).trim();
         if (!content) {
           return new Response("Missing message text", { status: 400 });
@@ -67,6 +73,17 @@ export const Route = createFileRoute("/api/chat")({
           execute: async ({ writer }) => {
             const prepareContextToolCallId = `prepare-context-${crypto.randomUUID()}`;
             const runRuntimeToolCallId = `run-runtime-${crypto.randomUUID()}`;
+
+            // Initial progress events (prepare_context, run_runtime tool calls)
+            // are written to the stream BEFORE the blocking `call()` below.
+            // This means the user immediately sees these progress indicators.
+            //
+            // KNOWN LIMITATION: The actual response content (text-start/delta/end)
+            // and trace events are written AFTER `await call()` completes, because
+            // `sendMessage` performs the full LLM call before returning. The user
+            // will see all response content at once rather than incrementally.
+            // A future improvement would be to make the LLM handler stream its
+            // response tokens via Server-Sent Events or similar.
 
             writer.write({
               type: "tool-input-available",
@@ -96,6 +113,9 @@ export const Route = createFileRoute("/api/chat")({
               },
             });
 
+            // Blocking call: performs the full LLM call before returning.
+            // All subsequent writes (text-start/delta/end, trace events, finish)
+            // depend on this result, so they cannot be streamed until it resolves.
             const message = (await call(
               conversationsRouter.sendMessage,
               {
