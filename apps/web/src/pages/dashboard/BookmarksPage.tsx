@@ -52,6 +52,7 @@ import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { back, bookmark_count, bookmark_created, bookmark_deleted, bookmark_moved, bookmark_updated, bookmarks, bookmarks_workspace, bookmarks_workspace_desc, calendar_icon, cancel, category_deleted, category_name, category_renamed, collapse_sidebar, create, create_or_import, delete as delete_message, delete_bookmark, delete_bookmark_desc, delete_category, delete_category_desc, edit_bookmark, edit_bookmark_desc, edit_category, expand_sidebar, failed_to_create_bookmark, failed_to_create_category, failed_to_delete_bookmark, failed_to_delete_category, failed_to_import_bookmarks, failed_to_load_bookmarks, failed_to_move_bookmark, failed_to_rename_category, failed_to_reorder_bookmarks, failed_to_reorder_categories, failed_to_toggle_pin, failed_to_update_bookmark, import as import_message, import_bookmarks_desc, import_from_file, imported_bookmarks, loading as loading_label, name, new_bookmark, new_bookmark_desc, new_category, new_category_desc, no_bookmarks_desc, no_bookmarks_in_category, no_bookmarks_to_import, no_results_desc, no_results_found, pin_to_home, resize_bookmarks_sidebar, save, select_category_first, title as title_label, title_url_required, unpin, unsupported_bookmark_format, upload, url } from "@/paraglide/messages";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useUIStore } from "@/lib/store";
 
 type ImportedBookmark = {
@@ -953,7 +954,9 @@ export function BookmarksPage() {
 
   const contentContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const columns = 3;
+  const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const columns = isDesktop ? 4 : isTablet ? 3 : 2;
 
   const rowCount = useMemo(
     () => Math.ceil(filteredBookmarks.length / columns),
@@ -1237,7 +1240,7 @@ export function BookmarksPage() {
             ref={viewportRef}
             className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2 focus-visible:outline-1"
           >
-            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 p-6">
+            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-4 p-4 lg:gap-6 lg:p-6">
               {loading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <AsciiLoading label={loading_label()} />
@@ -1246,7 +1249,7 @@ export function BookmarksPage() {
                 <>
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <h1 className="flex items-center gap-2 truncate text-2xl font-semibold text-foreground">
+                      <h1 className="flex items-center gap-2 truncate text-xl font-semibold text-foreground lg:text-2xl">
                         <HugeiconsIcon
                           icon={getBookmarkCategoryIcon(selectedCategory.icon)}
                           className="size-5 shrink-0"
@@ -1271,6 +1274,32 @@ export function BookmarksPage() {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Mobile category picker */}
+                  {categories.length > 1 && (
+                    <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 lg:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      {categories.map((category) => {
+                        const CatIcon = getBookmarkCategoryIcon(category.icon);
+                        const isActive = category.id === selectedCategory?.id;
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => setSelectedCategoryId(category.id)}
+                            className={cn(
+                              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                              isActive
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground",
+                            )}
+                          >
+                            <HugeiconsIcon icon={CatIcon} className="size-3" color={isActive ? undefined : category.color} />
+                            {category.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {filteredBookmarks.length > 0 ? (
                     <div ref={contentContainerRef} className="min-h-0 flex-1">

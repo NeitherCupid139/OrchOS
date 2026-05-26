@@ -13,6 +13,7 @@ import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import type { SidebarView } from "@/lib/types";
 import {
   getCapabilityModeFromPath,
@@ -211,9 +212,13 @@ function DashboardContentInner() {
     toggleSidebar,
   } = useUIStore();
 
-  const dashboardColumns = activityExpanded
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const dashboardColumnsDesktop = activityExpanded
     ? "auto minmax(0,0fr) minmax(0,1fr)"
     : `auto minmax(0,1fr) ${activityPanelOpen ? "300px" : "0px"}`;
+  const dashboardColumns = isMobile ? "1fr" : dashboardColumnsDesktop;
 
   useEffect(() => {
     let mounted = true;
@@ -302,6 +307,51 @@ function DashboardContentInner() {
         />
       ) : null}
       <div className="flex h-screen flex-col overflow-hidden bg-background">
+        {/* Mobile sidebar drawer */}
+        {isMobile && (
+          <>
+            <div
+              className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out ${
+                mobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              }`}
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+            <div
+              className={`fixed left-0 top-0 z-50 h-full transition-transform duration-300 ease-out ${
+                mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
+            >
+              <Sidebar
+                isMobile
+                organizations={organizations}
+                activeOrganizationId={activeOrganizationId}
+                activeView={activeView}
+                collapsed={false}
+                onOpenSettings={() => {
+                  setMobileSidebarOpen(false);
+                  setShowSettingsDialog(true);
+                }}
+                onOrganizationChange={setActiveOrganizationId}
+                onOrganizationCreate={handleOrganizationCreate}
+                onOrganizationRename={handleOrganizationRename}
+                onOrganizationDelete={handleOrganizationDelete}
+                onToggleCollapse={toggleSidebar}
+              />
+            </div>
+          </>
+        )}
+        {/* Mobile activity panel drawer */}
+        {isMobile && activityPanelOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out opacity-100"
+              onClick={toggleActivityPanel}
+            />
+            <div className="fixed right-0 top-0 z-50 h-full w-full max-w-sm transition-transform duration-300 ease-out translate-x-0">
+              <ActivityPanel problems={problems} collapsed={false} />
+            </div>
+          </>
+        )}
         <div
           className="grid flex-1 overflow-hidden transition-[grid-template-columns]"
           style={{
@@ -310,18 +360,20 @@ function DashboardContentInner() {
             transitionTimingFunction: ACTIVITY_PANEL_EASING,
           }}
         >
-          <Sidebar
-            organizations={organizations}
-            activeOrganizationId={activeOrganizationId}
-            activeView={activeView}
-            collapsed={sidebarCollapsed}
-            onOpenSettings={() => setShowSettingsDialog(true)}
-            onOrganizationChange={setActiveOrganizationId}
-            onOrganizationCreate={handleOrganizationCreate}
-            onOrganizationRename={handleOrganizationRename}
-            onOrganizationDelete={handleOrganizationDelete}
-            onToggleCollapse={toggleSidebar}
-          />
+          {!isMobile && (
+            <Sidebar
+              organizations={organizations}
+              activeOrganizationId={activeOrganizationId}
+              activeView={activeView}
+              collapsed={sidebarCollapsed}
+              onOpenSettings={() => setShowSettingsDialog(true)}
+              onOrganizationChange={setActiveOrganizationId}
+              onOrganizationCreate={handleOrganizationCreate}
+              onOrganizationRename={handleOrganizationRename}
+              onOrganizationDelete={handleOrganizationDelete}
+              onToggleCollapse={toggleSidebar}
+            />
+          )}
           <div
             className={[
               "flex min-w-0 flex-col overflow-hidden transition-[opacity,transform,filter]",
@@ -375,6 +427,9 @@ function DashboardContentInner() {
                   setShowSettingsDialog(true);
                 }}
                 onRefresh={refreshAll}
+                onToggleMobileSidebar={isMobile ? () => setMobileSidebarOpen((v) => !v) : undefined}
+                agentsView={new URLSearchParams(location.search).get("view") === "observability" ? "observability" : "config"}
+                onAgentsViewChange={(view) => void navigate({ to: "/dashboard/agents", search: { view }, replace: true })}
               >
                 {activeView === "bookmarks" && (
                   <div className="relative mx-auto w-full max-w-md">
@@ -394,7 +449,7 @@ function DashboardContentInner() {
               <Outlet />
             </div>
           </div>
-          <ActivityPanel problems={problems} collapsed={!activityPanelOpen} />
+          {!isMobile && <ActivityPanel problems={problems} collapsed={!activityPanelOpen} />}
         </div>
         {showSettingsDialog && (
           <Suspense fallback={null}>

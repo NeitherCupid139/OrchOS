@@ -82,6 +82,7 @@ interface SidebarProps {
   activeOrganizationId: string | null;
   activeView: SidebarView;
   collapsed: boolean;
+  isMobile?: boolean;
   onOpenSettings: () => void;
   onOrganizationChange: (id: string) => void;
   onOrganizationCreate: (name: string) => Promise<void>;
@@ -95,6 +96,7 @@ export function Sidebar({
   activeOrganizationId,
   activeView,
   collapsed,
+  isMobile = false,
   onOpenSettings,
   onOrganizationChange,
   onOrganizationCreate,
@@ -103,13 +105,14 @@ export function Sidebar({
   onToggleCollapse,
 }: SidebarProps) {
   const { locale: _locale } = useLocale();
+  const effectiveCollapsed = isMobile ? false : collapsed;
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [targetOrganizationId, setTargetOrganizationId] = useState<string | null>(null);
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
-  const [showExpandedContent, setShowExpandedContent] = useState(!collapsed);
+  const [showExpandedContent, setShowExpandedContent] = useState(!effectiveCollapsed);
   const filteredOrganizations = useMemo(() => organizations.filter((org) =>
     org.name.toLowerCase().includes(orgSearch.trim().toLowerCase()),
   ), [organizations, orgSearch]);
@@ -143,7 +146,7 @@ export function Sidebar({
   }, [navigate]);
 
   useEffect(() => {
-    if (collapsed) {
+    if (effectiveCollapsed) {
       setShowExpandedContent(false);
       return;
     }
@@ -153,7 +156,7 @@ export function Sidebar({
     }, 220);
 
     return () => window.clearTimeout(timer);
-  }, [collapsed]);
+  }, [effectiveCollapsed]);
 
   const sections: SidebarSection[] = useMemo(() => [
     {
@@ -220,15 +223,15 @@ export function Sidebar({
       <aside
         className={cn(
           "flex h-full flex-col border-r border-border bg-sidebar transition-[width] duration-300 ease-out",
-          collapsed ? "w-14" : "w-60",
+          effectiveCollapsed ? "w-14" : "w-60",
         )}
       >
         {/* Organization Selector */}
-        <div className={cn("relative flex h-11 items-center border-b border-border", collapsed ? "px-0" : "px-2")}>
+        <div className={cn("relative flex h-11 items-center border-b border-border", effectiveCollapsed ? "px-0" : "px-2")}>
           <div
             className={cn(
               "flex min-w-0 flex-1 items-center gap-2 transition-opacity duration-300 ease-out",
-              collapsed ? "justify-center px-0" : "px-0 pr-9",
+              effectiveCollapsed ? "justify-center px-0" : "px-0 pr-9",
               !showExpandedContent
                 ? "pointer-events-none absolute opacity-0 delay-0"
                 : "opacity-100 delay-180",
@@ -344,29 +347,31 @@ export function Sidebar({
               </DropdownMenu>
             )}
           </div>
-          <Tooltip>
-            <TooltipTrigger
-              render={(props) => (
-                <button
-                  {...props}
-                  onClick={onToggleCollapse}
-                  aria-label={collapsed ? expand_sidebar() : collapse_sidebar()}
-                  className={cn(
-                    "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
-                    collapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
-                  )}
-                >
-                  <HugeiconsIcon
-                    icon={collapsed ? SidebarRight01Icon : SidebarLeft01Icon}
-                    className="size-4"
-                  />
-                </button>
-              )}
-            />
-            <TooltipContent side="right">
-              {collapsed ? expand_sidebar() : collapse_sidebar()}
-            </TooltipContent>
-          </Tooltip>
+          {!isMobile && (
+            <Tooltip>
+              <TooltipTrigger
+                render={(props) => (
+                  <button
+                    {...props}
+                    onClick={onToggleCollapse}
+                    aria-label={effectiveCollapsed ? expand_sidebar() : collapse_sidebar()}
+                    className={cn(
+                      "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer",
+                      effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-1.5",
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={effectiveCollapsed ? SidebarRight01Icon : SidebarLeft01Icon}
+                      className="size-4"
+                    />
+                  </button>
+                )}
+              />
+              <TooltipContent side="right">
+                {effectiveCollapsed ? expand_sidebar() : collapse_sidebar()}
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Navigation Sections */}
@@ -374,7 +379,7 @@ export function Sidebar({
           <div
             className={cn(
               "space-y-1 px-2 pb-2 pt-2",
-              collapsed && "flex flex-col items-center",
+              effectiveCollapsed && "flex flex-col items-center",
             )}
           >
             {sections.map((section, si) => (
@@ -382,7 +387,7 @@ export function Sidebar({
                 key={si}
                 className={cn(
                   "space-y-0.5",
-                  collapsed && "flex w-full flex-col items-center",
+                  effectiveCollapsed && "flex w-full flex-col items-center",
                 )}
               >
                 {section.label && (
@@ -416,7 +421,7 @@ export function Sidebar({
                         preload="intent"
                         className={cn(
                           "flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
-                          collapsed
+                          effectiveCollapsed
                             ? "mx-auto size-10 justify-center gap-0 px-0"
                             : "w-full gap-2.5 px-2.5 text-sm",
                           isActive
@@ -472,7 +477,7 @@ export function Sidebar({
                         )}
                       </Link>
                     );
-                    if (collapsed) {
+                    if (effectiveCollapsed && !isMobile) {
                       return (
                         <Tooltip key={id}>
                           <TooltipTrigger
@@ -542,12 +547,12 @@ export function Sidebar({
         <div
           className={cn(
             "border-t border-border",
-            collapsed ? "flex justify-center p-2" : "p-2",
+            effectiveCollapsed ? "flex justify-center p-2" : "p-2",
           )}
         >
           <ClerkUserProfile
             onOpenSettings={onOpenSettings}
-            collapsed={collapsed}
+            collapsed={effectiveCollapsed}
             showExpandedContent={showExpandedContent}
           />
         </div>

@@ -19,6 +19,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "@/components/ui/toast";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 import { InboxDetail, InboxNoSelection } from "@/components/panels/InboxDetail";
 import { InboxList } from "@/components/panels/InboxList";
@@ -42,7 +43,7 @@ import {
 } from "@/lib/email-providers";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useUIStore } from "@/lib/store";
-import { cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
+import { back, cancel, collapse_sidebar, compose_mail, compose_mail_next_steps_intro, compose_mail_pending_desc, compose_mail_step_external_recipients, compose_mail_step_new_thread, compose_mail_step_select_identity, compose_mail_wired_desc, connect_mail_account, connect_mailbox, connect_mailbox_desc, display_name, display_name_placeholder, email, email_placeholder, email_provider, email_provider_help, expand_sidebar, failed_to_connect_mail_account, host, imap_configuration, imap_host_placeholder, imap_port_placeholder, loading as loading_label, mail, mail_account_connected, mail_account_details_required, mail_accounts, mail_accounts_desc, mail_ports_must_be_numbers, no_mail_accounts, password, password_placeholder, port, resize_mail_sidebar, smtp_configuration, smtp_host_placeholder, smtp_port_placeholder, use_tls_ssl, username, username_placeholder } from "@/paraglide/messages";
 
 type MailIntegrationAccount = {
   id: string;
@@ -82,6 +83,8 @@ export function MailPage() {
   const [loading, setLoading] = useState(true);
   const [submittingAccount, setSubmittingAccount] = useState(false);
   const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const collapseTimerRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [mailAccountForm, setMailAccountForm] = useState({
@@ -203,6 +206,13 @@ export function MailPage() {
 
     setShowExpandedContent(true);
   }, [sidebarCollapsed]);
+
+  // On mobile: switch to detail view when a thread becomes active
+  useEffect(() => {
+    if (isMobile && activeInboxId) {
+      setMobileView("detail");
+    }
+  }, [isMobile, activeInboxId]);
 
   async function loadThreads() {
     setLoading(true);
@@ -559,66 +569,136 @@ export function MailPage() {
         </div>
 
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {sidebarCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={(props) => (
-                  <Button
-                    {...props}
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
-                    onClick={handleExpandSidebar}
-                  >
-                    <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-                  </Button>
-                )}
-              />
-              <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
-            </Tooltip>
-          ) : null}
-
-          {loading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <AsciiLoading label={loading_label()} />
+          {isMobile && mobileView === "list" ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {filteredThreads.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center px-6">
+                  <EmptyState
+                    variant="subtle"
+                    size="lg"
+                    className="hover:bg-transparent dark:hover:bg-transparent w-full max-w-lg"
+                    title={connect_mailbox()}
+                    description={connect_mailbox_desc()}
+                    icons={[
+                      <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
+                      <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
+                      <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
+                    ]}
+                    action={{
+                      label: connect_mailbox(),
+                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                      onClick: () => setIsConnectDialogOpen(true),
+                    }}
+                  />
+                </div>
+              ) : (
+                <InboxList
+                  threads={filteredThreads}
+                  activeInboxId={activeThread?.id ?? null}
+                  projectNameById={projectNameById}
+                  onSelectItem={(id) => {
+                    setActiveInboxId(id);
+                    setMobileView("detail");
+                  }}
+                  accounts={mailAccounts}
+                  activeAccountId={activeAccountId}
+                  onAccountChange={setActiveAccountIdFilter}
+                />
+              )}
             </div>
-          ) : activeThread ? (
-            <InboxDetail
-              thread={activeThread}
-              messages={activeMessages}
-              projects={projects}
-              onOpenGoal={
-                activeThread.primaryGoalId
-                  ? () => {
-                      void navigate({ to: "/dashboard/creation" });
-                    }
-                  : undefined
-              }
-              onReply={handleReply}
-            />
-          ) : filteredThreads.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center px-6">
-              <EmptyState
-                variant="subtle"
-                size="lg"
-                className="hover:bg-transparent dark:hover:bg-transparent w-full max-w-lg"
-                title={connect_mailbox()}
-                description={connect_mailbox_desc()}
-                icons={[
-                  <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
-                  <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
-                  <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
-                ]}
-                action={{
-                  label: connect_mailbox(),
-                  icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
-                  onClick: () => setIsConnectDialogOpen(true),
-                }}
+          ) : isMobile && mobileView === "detail" && activeThread ? (
+            <>
+              <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveInboxId(null);
+                    setMobileView("list");
+                  }}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                  {back()}
+                </button>
+              </div>
+              <InboxDetail
+                thread={activeThread}
+                messages={activeMessages}
+                projects={projects}
+                onOpenGoal={
+                  activeThread.primaryGoalId
+                    ? () => {
+                        void navigate({ to: "/dashboard/creation" });
+                      }
+                    : undefined
+                }
+                onReply={handleReply}
               />
-            </div>
+            </>
           ) : (
-            <InboxNoSelection />
+            <>
+              {sidebarCollapsed ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="absolute top-1/2 left-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border/70 bg-card shadow-sm active:translate-x-[calc(-50%+2px)] active:!translate-y-[-50%]"
+                        onClick={handleExpandSidebar}
+                      >
+                        <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent side="right">{expand_sidebar()}</TooltipContent>
+                </Tooltip>
+              ) : null}
+
+              {loading ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <AsciiLoading label={loading_label()} />
+                </div>
+              ) : activeThread ? (
+                <InboxDetail
+                  thread={activeThread}
+                  messages={activeMessages}
+                  projects={projects}
+                  onOpenGoal={
+                    activeThread.primaryGoalId
+                      ? () => {
+                          void navigate({ to: "/dashboard/creation" });
+                        }
+                      : undefined
+                  }
+                  onReply={handleReply}
+                />
+              ) : filteredThreads.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center px-6">
+                  <EmptyState
+                    variant="subtle"
+                    size="lg"
+                    className="hover:bg-transparent dark:hover:bg-transparent w-full max-w-lg"
+                    title={connect_mailbox()}
+                    description={connect_mailbox_desc()}
+                    icons={[
+                      <HugeiconsIcon key="m1" icon={GoogleIcon} className="size-6" />,
+                      <HugeiconsIcon key="m2" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
+                      <HugeiconsIcon key="m3" icon={Add01Icon} className="size-6" />,
+                    ]}
+                    action={{
+                      label: connect_mailbox(),
+                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                      onClick: () => setIsConnectDialogOpen(true),
+                    }}
+                  />
+                </div>
+              ) : (
+                <InboxNoSelection />
+              )}
+            </>
           )}
         </div>
       </div>

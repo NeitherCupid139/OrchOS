@@ -15,8 +15,9 @@ import {
   type SourceFilter,
 } from "@/components/layout/InboxSourceTabs";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, PanelLeft, PanelRight, Settings02Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, PanelLeft, PanelRight, Settings02Icon, CodeIcon } from "@hugeicons/core-free-icons";
 import { accounts, add, close_activity_panel, open_activity_panel } from "@/paraglide/messages";
+import { cn } from "@/lib/utils";
 import type { SidebarView } from "@/lib/types";
 import {
   isCapabilityView,
@@ -57,6 +58,9 @@ interface ToolbarProps {
   onOpenCreateGoal?: () => void;
   onOpenMailAccounts?: () => void;
   onRefresh?: () => void | Promise<void>;
+  agentsView?: string;
+  onAgentsViewChange?: (view: string) => void;
+  onToggleMobileSidebar?: () => void;
   children?: React.ReactNode;
 }
 
@@ -82,10 +86,26 @@ export function Toolbar({
   onBoardFilterChange,
   onOpenCreateGoal,
   onOpenMailAccounts,
+  agentsView,
+  onAgentsViewChange,
+  onToggleMobileSidebar,
   children,
 }: ToolbarProps) {
-  return (
-    <div className="relative flex h-11 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
+  const hamburgerButton = onToggleMobileSidebar && (
+    <button
+      type="button"
+      onClick={onToggleMobileSidebar}
+      aria-label="Open sidebar"
+      className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M2 5H16M2 9H16M2 13H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    </button>
+  );
+
+  const filtersContent = (
+    <>
       {activeView === "inbox" && (
         <>
           <InboxStatusTabs
@@ -123,11 +143,49 @@ export function Toolbar({
         />
       ) : null}
 
-      <div className="flex-1" />
+      {activeView === "agents" && onAgentsViewChange ? (
+        <div className="flex items-center gap-1.5 px-1">
+          <button
+            type="button"
+            onClick={() => onAgentsViewChange("config")}
+            aria-pressed={agentsView !== "observability"}
+            className={cn(
+              "inline-flex h-7 cursor-pointer items-center gap-2 rounded-full border px-3 text-[11px] font-medium transition-colors",
+              agentsView !== "observability"
+                ? "border-transparent bg-sky-500/5 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                : "border-border/50 bg-background text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <HugeiconsIcon icon={Settings02Icon} className={cn("size-3.5", agentsView !== "observability" ? "text-sky-600 dark:text-sky-400" : "")} />
+            配置
+          </button>
+          <button
+            type="button"
+            onClick={() => onAgentsViewChange("observability")}
+            aria-pressed={agentsView === "observability"}
+            className={cn(
+              "inline-flex h-7 cursor-pointer items-center gap-2 rounded-full border px-3 text-[11px] font-medium transition-colors",
+              agentsView === "observability"
+                ? "border-transparent bg-violet-500/5 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                : "border-border/50 bg-background text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <HugeiconsIcon icon={CodeIcon} className={cn("size-3.5", agentsView === "observability" ? "text-violet-600 dark:text-violet-400" : "")} />
+            观测
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
 
+  return (
+    <div className="relative flex h-11 shrink-0 items-center gap-2 border-b border-border bg-background px-2 md:px-4">
+      {hamburgerButton}
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {filtersContent}
+      </div>
       {children}
-
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {activeView === "board" && onOpenCreateGoal ? (
           <Tooltip>
             <TooltipTrigger

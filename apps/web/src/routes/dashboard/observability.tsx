@@ -1,7 +1,7 @@
-import { createFileRoute, lazyRouteComponent } from "@tanstack/react-router";
-import { RoutePending } from "@/components/layout/RoutePending";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/observability")({
-  component: lazyRouteComponent(() => import("@/pages/dashboard/ObservabilityPage"), "ObservabilityPage"),
-  pendingComponent: RoutePending,
+  loader: () => {
+    throw redirect({ to: "/dashboard/agents", search: { view: "observability" } });
+  },
 });
