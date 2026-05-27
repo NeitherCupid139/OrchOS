@@ -526,7 +526,12 @@ function BookmarkIconField({
           className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:bg-muted"
         >
           {value ? (
-            <img src={value} alt="" className="size-full object-cover" />
+            <img
+              src={value}
+              alt=""
+              className="size-full object-cover"
+              loading="lazy"
+            />
           ) : (
             <HugeiconsIcon
               icon={Upload01Icon}

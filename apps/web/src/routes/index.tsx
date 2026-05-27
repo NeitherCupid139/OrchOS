@@ -11,6 +11,9 @@ import {
   open_dashboard,
 } from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { GithubIcon } from "@hugeicons/core-free-icons";
+import { useGitHubStars } from "@/lib/hooks/use-github-stars";
 import { FeaturesBento } from "@/components/ui/features-bento";
 import Footer from "@/components/layout/Footer";
 
@@ -18,6 +21,7 @@ export const Route = createFileRoute("/")({ component: HomePage });
 
 function HomePageInner() {
   const [isHeroPreviewExpanded, setIsHeroPreviewExpanded] = useState(false);
+  const { formattedStarCount } = useGitHubStars();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -51,12 +55,27 @@ function HomePageInner() {
               {hero_subtitle()}
             </p>
             <div className="flex flex-wrap items-center justify-start gap-3">
-              <Button
-                asChild
-                className="h-auto rounded-2xl px-6 py-3 shadow-sm"
-              >
+              <Button asChild className="h-11 rounded-2xl px-6 py-3 shadow-sm">
                 <Link to="/dashboard">{open_dashboard()}</Link>
               </Button>
+              <a
+                href="https://github.com/NeitherCupid139/OrchOS"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-2xl px-6 py-3 shadow-sm text-white border-white/20 bg-transparent hover:bg-white/10 hover:text-white"
+                >
+                  <HugeiconsIcon icon={GithubIcon} className="size-4" />
+                  GitHub
+                  {formattedStarCount ? (
+                    <span className="text-xs text-white/60">
+                      {formattedStarCount}
+                    </span>
+                  ) : null}
+                </Button>
+              </a>
             </div>
 
             <div

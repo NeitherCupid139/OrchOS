@@ -233,12 +233,30 @@ export function ObservabilityView() {
   const [agentTimeline, setAgentTimeline] = useState<AgentTimelinePoint[]>([]);
   const [heatmapData, setHeatmapData] = useState<ActivityHeatmapPoint[]>([]);
   useEffect(() => {
-    api.getAgentMetrics(timeRange).then(setAgentMetrics).catch(console.error);
-    api.getAgentTimeline(timeRange).then(setAgentTimeline).catch(console.error);
+    let cancelled = false;
+
+    api
+      .getAgentMetrics(timeRange)
+      .then((data) => {
+        if (!cancelled) setAgentMetrics(data);
+      })
+      .catch(console.error);
+    api
+      .getAgentTimeline(timeRange)
+      .then((data) => {
+        if (!cancelled) setAgentTimeline(data);
+      })
+      .catch(console.error);
     api
       .getActivityHeatmap(timeRange, "tokens")
-      .then(setHeatmapData)
+      .then((data) => {
+        if (!cancelled) setHeatmapData(data);
+      })
       .catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
   }, [timeRange]);
 
   // Agent metrics

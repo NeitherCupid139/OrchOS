@@ -1,18 +1,49 @@
+import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
   CheckmarkBadge01Icon,
   ComputerIcon,
+  Edit02Icon,
   LinkSquare02Icon,
   Settings01Icon,
 } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import type { CustomAgent, LocalAgentProfile } from "@/lib/api";
 import type { BuiltInAgent } from "@/lib/built-in-agent";
-import { api_key, app_version, connect_agent, connect_local_device, created, default_agent, device_id, endpoint, last_seen, loading_devices, model, no_runtimes_reported, offline, online, pair_any_machine_desc, registered, runtimes, set_as_default, unknown, unknown_platform, unset_default } from "@/paraglide/messages";
+import {
+  api_key,
+  app_version,
+  cancel,
+  connect_agent,
+  connect_local_device,
+  created,
+  custom_agent_updated,
+  default_agent,
+  device_id,
+  edit,
+  endpoint,
+  failed_save_custom_agent,
+  last_seen,
+  loading_devices,
+  model,
+  no_runtimes_reported,
+  offline,
+  online,
+  pair_any_machine_desc,
+  registered,
+  runtimes,
+  save,
+  set_as_default,
+  unknown,
+  unknown_platform,
+  unset_default,
+} from "@/paraglide/messages";
 
 type SelectedAgent =
   | { kind: "custom"; agent: CustomAgent }
@@ -26,6 +57,10 @@ interface LocalDevicesViewProps {
   selectedAgent: SelectedAgent;
   defaultCustomAgentId?: string | null;
   onSetDefaultCustomAgent?: (agentId: string | null) => void | Promise<void>;
+  onUpdateCustomAgent?: (
+    id: string,
+    data: { name?: string; url?: string; apiKey?: string; model?: string },
+  ) => Promise<unknown>;
 }
 
 export function LocalDevicesView({
@@ -34,6 +69,7 @@ export function LocalDevicesView({
   selectedAgent,
   defaultCustomAgentId = null,
   onSetDefaultCustomAgent,
+  onUpdateCustomAgent,
 }: LocalDevicesViewProps) {
   if (loading) {
     return (
@@ -77,44 +113,14 @@ export function LocalDevicesView({
 
   if (selectedAgent?.kind === "custom") {
     const { agent } = selectedAgent;
-    const isDefault = defaultCustomAgentId === agent.id;
-
     return (
-      <div className="flex min-h-0 flex-1 bg-background p-6">
-        <section className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <HugeiconsIcon icon={Settings01Icon} className="size-5" />
-                </div>
-                {isDefault ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
-                    <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-3.5" />
-                    {default_agent()}
-                  </span>
-                ) : null}
-              </div>
-              <h2 className="mt-4 text-xl font-semibold text-foreground">{agent.name}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{agent.model}</p>
-            </div>
-            <Button
-              type="button"
-              variant={isDefault ? "outline" : "default"}
-              onClick={() => onSetDefaultCustomAgent?.(isDefault ? null : agent.id)}
-            >
-              {isDefault ? unset_default() : set_as_default()}
-            </Button>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DetailCard label={endpoint()} value={agent.url} mono />
-            <DetailCard label={model()} value={agent.model} mono />
-            <DetailCard label={api_key()} value={maskApiKey(agent.apiKey)} mono />
-            <DetailCard label={created()} value={formatDateTime(agent.createdAt)} />
-          </div>
-        </section>
-      </div>
+      <CustomAgentDetail
+        key={agent.id}
+        agent={agent}
+        defaultCustomAgentId={defaultCustomAgentId}
+        onSetDefaultCustomAgent={onSetDefaultCustomAgent}
+        onUpdateCustomAgent={onUpdateCustomAgent}
+      />
     );
   }
 
@@ -235,4 +241,178 @@ function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+interface CustomAgentDetailProps {
+  agent: CustomAgent;
+  defaultCustomAgentId: string | null;
+  onSetDefaultCustomAgent?: (
+    agentId: string | null,
+  ) => void | Promise<void>;
+  onUpdateCustomAgent?: (
+    id: string,
+    data: { name?: string; url?: string; apiKey?: string; model?: string },
+  ) => Promise<unknown>;
+}
+
+function CustomAgentDetail({
+  agent,
+  defaultCustomAgentId,
+  onSetDefaultCustomAgent,
+  onUpdateCustomAgent,
+}: CustomAgentDetailProps) {
+  const isDefault = defaultCustomAgentId === agent.id;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    url: agent.url,
+    apiKey: agent.apiKey,
+    model: agent.model,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  function startEditing() {
+    setEditForm({ url: agent.url, apiKey: agent.apiKey, model: agent.model });
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setIsEditing(false);
+  }
+
+  async function saveEditing() {
+    if (!onUpdateCustomAgent) return;
+    setIsSaving(true);
+    try {
+      await onUpdateCustomAgent(agent.id, {
+        url: editForm.url.trim(),
+        apiKey: editForm.apiKey.trim(),
+        model: editForm.model.trim(),
+      });
+      setIsEditing(false);
+      toast.success(custom_agent_updated());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : failed_save_custom_agent(),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function renderEditableField(
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    opts?: { placeholder?: string; mono?: boolean },
+  ) {
+    if (isEditing) {
+      return (
+        <div className="rounded-xl border border-border/70 bg-background px-4 py-3">
+          <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+            {label}
+          </div>
+          <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={opts?.placeholder}
+            className={cn(
+              "h-8 text-sm",
+              opts?.mono && "font-mono text-[13px]",
+            )}
+          />
+        </div>
+      );
+    }
+    return (
+      <DetailCard label={label} value={value} mono={opts?.mono} />
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 bg-background p-6">
+      <section className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <HugeiconsIcon icon={Settings01Icon} className="size-5" />
+              </div>
+              {isDefault ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                  <HugeiconsIcon icon={CheckmarkBadge01Icon} className="size-3.5" />
+                  {default_agent()}
+                </span>
+              ) : null}
+            </div>
+            <h2 className="mt-4 text-xl font-semibold text-foreground">{agent.name}</h2>
+            {!isEditing && (
+              <p className="mt-1 text-sm text-muted-foreground">{agent.model}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-start gap-2">
+            {!isEditing && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={startEditing}
+                aria-label={edit()}
+              >
+                <HugeiconsIcon icon={Edit02Icon} className="size-4" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={isDefault ? "outline" : "default"}
+              onClick={() =>
+                onSetDefaultCustomAgent?.(isDefault ? null : agent.id)
+              }
+              disabled={isEditing}
+            >
+              {isDefault ? unset_default() : set_as_default()}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {renderEditableField(endpoint(), editForm.url, (v) =>
+            setEditForm((prev) => ({ ...prev, url: v })),
+          { placeholder: "https://...", mono: true })}
+          {renderEditableField(model(), editForm.model, (v) =>
+            setEditForm((prev) => ({ ...prev, model: v })),
+          { placeholder: "gpt-4o", mono: true })}
+          {renderEditableField(
+            api_key(),
+            isEditing ? editForm.apiKey : maskApiKey(agent.apiKey),
+            (v) => setEditForm((prev) => ({ ...prev, apiKey: v })),
+            { placeholder: "sk-...", mono: true },
+          )}
+          <DetailCard
+            label={created()}
+            value={formatDateTime(agent.createdAt)}
+          />
+        </div>
+
+        {isEditing && (
+          <div className="mt-6 flex items-center justify-end gap-2 border-t border-border pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={cancelEditing}
+              disabled={isSaving}
+            >
+              {cancel()}
+            </Button>
+            <Button
+              type="button"
+              onClick={saveEditing}
+              disabled={isSaving}
+            >
+              {save()}
+            </Button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }

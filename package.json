@@ -34,9 +34,14 @@
     "@shikijs/transformers": "^4.0.2"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.65",
+    "@ai-sdk/openai-compatible": "^2.0.0",
+    "@ai-sdk/provider": "^3.0.0",
+    "@ai-sdk/provider-utils": "^4.0.0",
     "@dodopayments/tanstack": "^0.2.7",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@tanstack/react-virtual": "^3.13.25",
+    "ai-gateway-provider": "3.1.3",
     "date-fns": "^4.1.0",
     "nodemailer": "^8.0.7",
     "remark-gfm": "^4.0.1",

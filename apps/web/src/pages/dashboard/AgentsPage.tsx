@@ -305,6 +305,14 @@ export function AgentsPage() {
     }
   }
 
+  async function handleUpdateCustomAgent(
+    id: string,
+    data: { url?: string; apiKey?: string; model?: string },
+  ) {
+    const agents = await api.updateCustomAgent(id, data);
+    setCustomAgents(agents);
+  }
+
   async function loadCustomAgentModels(
     url: string,
     apiKey: string,
@@ -735,6 +743,7 @@ export function AgentsPage() {
             selectedAgent={selectedAgent}
             defaultCustomAgentId={defaultCustomAgentId}
             onSetDefaultCustomAgent={handleSetDefaultCustomAgent}
+            onUpdateCustomAgent={handleUpdateCustomAgent}
           />
         )}
       </div>

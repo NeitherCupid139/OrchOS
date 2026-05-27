@@ -1,5 +1,7 @@
 import { ORPCError } from "@orpc/server";
 
+import type { AIGatewayConfig } from "@orchos/pro/ai-gateway";
+
 export type UpstreamAttempt = {
   url: string;
   detail: string;
@@ -72,14 +74,52 @@ function isLikelyOllamaNativeUrl(url: string) {
   return stripLikelyOllamaNativeSuffix(trimUrl(url)) !== null;
 }
 
+/**
+ * Apply Cloudflare AI Gateway URL rewriting using the pro package.
+ * Falls back to original URL if pro package is not available.
+ */
+async function applyGatewayToUrl(
+  config: AIGatewayConfig,
+  originalUrl: string,
+): Promise<string> {
+  try {
+    const { buildGatewayUrl } = await import("@orchos/pro/ai-gateway");
+    return buildGatewayUrl(config, originalUrl);
+  } catch {
+    return originalUrl;
+  }
+}
+
+/**
+ * Build fetch headers including Gateway auth when configured.
+ */
+function buildGatewayHeaders(
+  apiKey: string,
+  gatewayConfig?: AIGatewayConfig | null,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+  if (gatewayConfig) {
+    headers["cf-aig-authorization"] = `Bearer ${gatewayConfig.apiKey}`;
+  }
+  return headers;
+}
+
 async function readFailureDetail(response: Response) {
   const text = await response.text().catch(() => "");
   const detail = text.trim().slice(0, 200);
 
-  return detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`;
+  return detail
+    ? `HTTP ${response.status}: ${detail}`
+    : `HTTP ${response.status}`;
 }
 
-function formatEndpointError(operation: string, originalUrl: string, attempts: UpstreamAttempt[]) {
+function formatEndpointError(
+  operation: string,
+  originalUrl: string,
+  attempts: UpstreamAttempt[],
+) {
   const tried = attempts.map((attempt) => attempt.url).join(", ");
   const lastAttempt = attempts.at(-1);
   const lastDetail = lastAttempt ? ` Last error: ${lastAttempt.detail}.` : "";
@@ -140,7 +180,10 @@ export function buildOpenAICompatibleChatUrls(url: string) {
   return candidates;
 }
 
-function buildOpenAICompatibleOperationUrls(url: string, operation: OpenAICompatibleOperation) {
+function buildOpenAICompatibleOperationUrls(
+  url: string,
+  operation: OpenAICompatibleOperation,
+) {
   const normalized = trimUrl(url);
   const suffix = `/${operation}`;
   const candidates: string[] = [];
@@ -151,7 +194,9 @@ function buildOpenAICompatibleOperationUrls(url: string, operation: OpenAICompat
 
   const ollamaBase = stripLikelyOllamaNativeSuffix(normalized);
   if (ollamaBase) {
-    return operation === "chat/completions" ? [`${ollamaBase}/v1/chat/completions`] : [];
+    return operation === "chat/completions"
+      ? [`${ollamaBase}/v1/chat/completions`]
+      : [];
   }
 
   addCandidate(candidates, `${normalized}/v1${suffix}`);
@@ -163,13 +208,12 @@ function buildOpenAICompatibleOperationUrls(url: string, operation: OpenAICompat
   return candidates;
 }
 
-export function inferOpenAICompatibleOperationForModel(model: string): OpenAICompatibleOperation {
+export function inferOpenAICompatibleOperationForModel(
+  model: string,
+): OpenAICompatibleOperation {
   const normalized = model.trim().toLowerCase();
 
-  if (
-    normalized.startsWith("claude") ||
-    normalized.startsWith("anthropic/")
-  ) {
+  if (normalized.startsWith("claude") || normalized.startsWith("anthropic/")) {
     return "messages";
   }
 
@@ -224,7 +268,8 @@ function normalizeAnthropicToolCalls(data: Record<string, unknown>) {
           content: textParts.join("\n"),
           tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
         },
-        finish_reason: typeof data.stop_reason === "string" ? data.stop_reason : null,
+        finish_reason:
+          typeof data.stop_reason === "string" ? data.stop_reason : null,
       },
     ],
   } satisfies NormalizedChatCompletion;
@@ -263,7 +308,10 @@ function normalizeResponsesToolCalls(data: Record<string, unknown>) {
       if (!part || typeof part !== "object") continue;
 
       const contentPart = part as Record<string, unknown>;
-      if (contentPart.type === "output_text" && typeof contentPart.text === "string") {
+      if (
+        contentPart.type === "output_text" &&
+        typeof contentPart.text === "string"
+      ) {
         textParts.push(contentPart.text);
       }
     }
@@ -288,17 +336,18 @@ export async function fetchOpenAICompatibleModels(
   input: {
     url: string;
     apiKey: string;
+    gatewayConfig?: AIGatewayConfig | null;
   },
 ) {
   const attempts: UpstreamAttempt[] = [];
+  const effectiveUrl = input.gatewayConfig
+    ? await applyGatewayToUrl(input.gatewayConfig, input.url)
+    : input.url;
 
-  for (const candidate of buildOpenAICompatibleModelUrls(input.url)) {
+  for (const candidate of buildOpenAICompatibleModelUrls(effectiveUrl)) {
     try {
-      const response = await fetchImpl(candidate, {
-        headers: {
-          Authorization: `Bearer ${input.apiKey}`,
-        },
-      });
+      const headers = buildGatewayHeaders(input.apiKey, input.gatewayConfig);
+      const response = await fetchImpl(candidate, { headers });
 
       if (!response.ok) {
         attempts.push({
@@ -338,20 +387,22 @@ export async function requestOpenAICompatibleChatCompletion<T>(
     apiKey: string;
     model: string;
     body: unknown;
+    gatewayConfig?: AIGatewayConfig | null;
   },
 ) {
   const attempts: UpstreamAttempt[] = [];
   const operation = inferOpenAICompatibleOperationForModel(input.model);
-  const candidates = buildOpenAICompatibleOperationUrls(input.url, operation);
+  const baseUrl = input.gatewayConfig
+    ? await applyGatewayToUrl(input.gatewayConfig, input.url)
+    : input.url;
+  const candidates = buildOpenAICompatibleOperationUrls(baseUrl, operation);
 
   for (const candidate of candidates) {
     try {
+      const headers = buildGatewayHeaders(input.apiKey, input.gatewayConfig);
       const response = await fetchImpl(candidate, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${input.apiKey}`,
-        },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify(input.body),
       });
 
@@ -364,7 +415,7 @@ export async function requestOpenAICompatibleChatCompletion<T>(
         continue;
       }
 
-      const data = await response.json() as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, unknown>;
 
       let result: NormalizedChatCompletion;
       if (operation === "messages") {
@@ -380,8 +431,12 @@ export async function requestOpenAICompatibleChatCompletion<T>(
       if (rawUsage) {
         result.usage = {
           promptTokens: rawUsage.prompt_tokens ?? rawUsage.input_tokens,
-          completionTokens: rawUsage.completion_tokens ?? rawUsage.output_tokens,
-          totalTokens: rawUsage.total_tokens ?? ((rawUsage.prompt_tokens ?? rawUsage.input_tokens ?? 0) + (rawUsage.completion_tokens ?? rawUsage.output_tokens ?? 0)),
+          completionTokens:
+            rawUsage.completion_tokens ?? rawUsage.output_tokens,
+          totalTokens:
+            rawUsage.total_tokens ??
+            (rawUsage.prompt_tokens ?? rawUsage.input_tokens ?? 0) +
+              (rawUsage.completion_tokens ?? rawUsage.output_tokens ?? 0),
         };
       }
 

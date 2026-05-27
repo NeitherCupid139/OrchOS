@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   BoardTask,
   BoardTaskColumnId,
@@ -100,6 +100,10 @@ export const useBoardStore = create<BoardState & BoardActions>()(
     {
       name: "orchos-board",
       version: 1,
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") return null as unknown as Storage;
+        return window.localStorage;
+      }),
       partialize: (state) => ({
         tasks: state.tasks,
       }),

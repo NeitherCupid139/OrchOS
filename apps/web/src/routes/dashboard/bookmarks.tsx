@@ -1,9 +1,6 @@
-import { createFileRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { BookmarksPage } from "@/pages/dashboard/BookmarksPage";
 
 export const Route = createFileRoute("/dashboard/bookmarks")({
-  component: lazyRouteComponent(
-    () => import("@/pages/dashboard/BookmarksPage"),
-    "BookmarksPage",
-  ),
-  pendingComponent: () => null,
+  component: BookmarksPage,
 });

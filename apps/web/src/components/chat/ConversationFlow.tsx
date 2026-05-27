@@ -9,10 +9,7 @@ import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
 import { ChatToolTimeline } from "@/components/chat/ChatToolTimeline";
 import { Actions, Action } from "@/components/ui/actions";
 import { toast } from "@/components/ui/toast";
-import {
-  CopyIcon,
-  RefreshCcwIcon,
-} from "lucide-react";
+import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 
 type ConversationUiPart = (
   | { type: "text"; text: string }
@@ -128,7 +125,9 @@ function getCachedParts(message: ConversationMessage): ConversationUiPart[] {
   return parts;
 }
 
-export function mapConversationMessagesToUiMessages(messages: ConversationMessage[]): UIMessage[] {
+export function mapConversationMessagesToUiMessages(
+  messages: ConversationMessage[],
+): UIMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role,
@@ -215,46 +214,71 @@ export const MessageBubble = memo(function MessageBubble({
   }, [parts]);
 
   return (
-    <div className={cn("flex w-full gap-2.5", isUser ? "justify-end" : "justify-start")}>
+    <div
+      className={cn(
+        "flex w-full gap-2.5",
+        isUser ? "justify-end" : "justify-start",
+      )}
+    >
       {!isUser && (
         <span
           className={cn(
             "mt-[3px] inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-medium leading-none",
-            metadata.error
-              ? "bg-destructive/10 text-destructive"
-              : "bg-muted",
+            metadata.error ? "bg-destructive/10 text-destructive" : "bg-muted",
           )}
         >
           <img src="/logo.svg" alt="" className="size-4" />
         </span>
       )}
       <div className={cn("min-w-0", isUser ? "max-w-[80%]" : "max-w-[85%]")}>
-        <div className={cn(
-          "mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground",
-          isUser && "justify-end",
-        )}>
-          <span className="font-medium text-foreground/60">{isUser ? user() : assistant()}</span>
-          {metadata.responseTime != null && <span className="opacity-50">{formatDuration(metadata.responseTime)}</span>}
+        <div
+          className={cn(
+            "mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground",
+            isUser && "justify-end",
+          )}
+        >
+          <span className="font-medium text-foreground/60">
+            {isUser ? user() : assistant()}
+          </span>
+          {metadata.responseTime != null && (
+            <span className="opacity-50">
+              {formatDuration(metadata.responseTime)}
+            </span>
+          )}
         </div>
-        <div className={cn(
-          "rounded-2xl px-3 py-1.5",
-          isUser
-            ? "bg-primary text-primary-foreground [&_a]:text-primary-foreground/80 [&_a]:underline-offset-4 [&_code]:bg-primary-foreground/15"
-            : "bg-muted/50",
-        )}>
+        <div
+          className={cn(
+            "rounded-2xl px-3 py-1.5",
+            isUser
+              ? "bg-primary text-primary-foreground [&_a]:text-primary-foreground/80 [&_a]:underline-offset-4 [&_code]:bg-primary-foreground/15"
+              : "bg-muted/50",
+          )}
+        >
           {parts.map((part, index) => {
             const key = getPartKey(part, index);
 
             if (part.type === "text") {
               return (
-                <div key={key} className={cn("text-sm leading-7", isUser ? "text-primary-foreground" : "text-foreground/90")}>
+                <div
+                  key={key}
+                  className={cn(
+                    "text-sm leading-7",
+                    isUser ? "text-primary-foreground" : "text-foreground/90",
+                  )}
+                >
                   <ChatMarkdown content={part.text} />
                 </div>
               );
             }
 
             if (part.type === "reasoning") {
-              return <ChatReasoningDrawer key={key} text={part.text} metadata={metadata} />;
+              return (
+                <ChatReasoningDrawer
+                  key={key}
+                  text={part.text}
+                  metadata={metadata}
+                />
+              );
             }
 
             if (part.type === "clarification") {
@@ -282,19 +306,11 @@ export const MessageBubble = memo(function MessageBubble({
         {!isUser && (
           <Actions className="mt-2">
             {onRetry && (
-              <Action
-                label="Retry"
-                tooltip="Retry"
-                onClick={onRetry}
-              >
+              <Action label="Retry" tooltip="Retry" onClick={onRetry}>
                 <RefreshCcwIcon className="size-4" />
               </Action>
             )}
-            <Action
-              label="Copy"
-              tooltip="Copy"
-              onClick={handleCopy}
-            >
+            <Action label="Copy" tooltip="Copy" onClick={handleCopy}>
               <CopyIcon className="size-4" />
             </Action>
           </Actions>
@@ -303,7 +319,12 @@ export const MessageBubble = memo(function MessageBubble({
       {isUser && (
         <span className="mt-[3px] inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-medium leading-none text-primary">
           {userImageUrl ? (
-            <img src={userImageUrl} alt="" className="size-full object-cover" />
+            <img
+              src={userImageUrl}
+              alt=""
+              className="size-full object-cover"
+              loading="lazy"
+            />
           ) : (
             "U"
           )}

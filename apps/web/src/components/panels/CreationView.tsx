@@ -1,13 +1,22 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Add01Icon, Archive01Icon, ArrowLeft01Icon, ArrowRight01Icon,
-  Chat01Icon, Clock01Icon, Delete02Icon,
+  Add01Icon,
+  Archive01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Chat01Icon,
+  Clock01Icon,
+  Delete02Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -19,6 +28,7 @@ import {
 import type { ControlSettings, RuntimeProfile } from "@/lib/types";
 import { useConversationStore } from "@/lib/stores/conversation";
 import { useUIStore } from "@/lib/store";
+import { useAssistantMessageNotification } from "@/lib/hooks";
 import {
   all,
   archive,
@@ -36,9 +46,7 @@ import {
   untitled_conversation,
 } from "@/paraglide/messages";
 import { toast } from "@/components/ui/toast";
-import {
-  mapConversationMessagesToUiMessages,
-} from "@/components/chat/ConversationFlow";
+import { mapConversationMessagesToUiMessages } from "@/components/chat/ConversationFlow";
 import { ChatArea } from "@/components/panels/ChatArea";
 
 /* ── Types ── */
@@ -55,8 +63,18 @@ const EMPTY_CONVERSATION_MESSAGES: ConversationMessage[] = [];
 export function CreationView(props?: CreationViewProps | null) {
   const { runtimes = [], settings = null } = props ?? {};
   const creationFilterButtons = [
-    { value: "all", label: all(), icon: Chat01Icon, iconClassName: "text-muted-foreground/80" },
-    { value: "active", label: creation_active(), icon: Clock01Icon, iconClassName: "text-sky-500" },
+    {
+      value: "all",
+      label: all(),
+      icon: Chat01Icon,
+      iconClassName: "text-muted-foreground/80",
+    },
+    {
+      value: "active",
+      label: creation_active(),
+      icon: Clock01Icon,
+      iconClassName: "text-sky-500",
+    },
     {
       value: "archived",
       label: creation_archived(),
@@ -66,20 +84,30 @@ export function CreationView(props?: CreationViewProps | null) {
   ] as const;
 
   const creationArchiveFilter = useUIStore((s) => s.creationArchiveFilter);
-  const setCreationArchiveFilter = useUIStore((s) => s.setCreationArchiveFilter);
-  const creationSidebarCollapsed = useUIStore((s) => s.creationSidebarCollapsed);
-  const setCreationSidebarCollapsed = useUIStore((s) => s.setCreationSidebarCollapsed);
+  const setCreationArchiveFilter = useUIStore(
+    (s) => s.setCreationArchiveFilter,
+  );
+  const creationSidebarCollapsed = useUIStore(
+    (s) => s.creationSidebarCollapsed,
+  );
+  const setCreationSidebarCollapsed = useUIStore(
+    (s) => s.setCreationSidebarCollapsed,
+  );
   const creationSidebarWidth = useUIStore((s) => s.creationSidebarWidth);
   const setCreationSidebarWidth = useUIStore((s) => s.setCreationSidebarWidth);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
-  const [showExpandedContent, setShowExpandedContent] = useState(!creationSidebarCollapsed);
+  const [showExpandedContent, setShowExpandedContent] = useState(
+    !creationSidebarCollapsed,
+  );
   const [showBookmarks, setShowBookmarks] = useState(true);
   const collapseTimerRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
-  const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<string | null>(null);
+  const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<
+    string | null
+  >(null);
   const customAgentsLoadedRef = useRef(false);
 
   const loadCustomAgents = useCallback(async () => {
@@ -96,17 +124,29 @@ export function CreationView(props?: CreationViewProps | null) {
   }, []);
 
   const conversations = useConversationStore((s) => s.conversations);
-  const activeConversationId = useConversationStore((s) => s.activeConversationId);
-  const messagesByConversationId = useConversationStore((s) => s.messagesByConversationId);
-  const hasLoadedConversations = useConversationStore((s) => s.hasLoadedConversations);
-  const isLoadingConversations = useConversationStore((s) => s.isLoadingConversations);
+  const activeConversationId = useConversationStore(
+    (s) => s.activeConversationId,
+  );
+  const messagesByConversationId = useConversationStore(
+    (s) => s.messagesByConversationId,
+  );
+  const hasLoadedConversations = useConversationStore(
+    (s) => s.hasLoadedConversations,
+  );
+  const isLoadingConversations = useConversationStore(
+    (s) => s.isLoadingConversations,
+  );
   const loadConversations = useConversationStore((s) => s.loadConversations);
-  const setActiveConversationId = useConversationStore((s) => s.setActiveConversationId);
+  const setActiveConversationId = useConversationStore(
+    (s) => s.setActiveConversationId,
+  );
   const loadMessages = useConversationStore((s) => s.loadMessages);
   const createConversation = useConversationStore((s) => s.createConversation);
   const updateConversation = useConversationStore((s) => s.updateConversation);
   const deleteConversation = useConversationStore((s) => s.deleteConversation);
-  const setPendingUserMessage = useConversationStore((s) => s.setPendingUserMessage);
+  const setPendingUserMessage = useConversationStore(
+    (s) => s.setPendingUserMessage,
+  );
 
   const handleConversationListItemKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
@@ -123,12 +163,25 @@ export function CreationView(props?: CreationViewProps | null) {
   };
 
   const messages = activeConversationId
-    ? (messagesByConversationId[activeConversationId] ?? EMPTY_CONVERSATION_MESSAGES)
+    ? (messagesByConversationId[activeConversationId] ??
+      EMPTY_CONVERSATION_MESSAGES)
     : EMPTY_CONVERSATION_MESSAGES;
-  const uiMessages = useMemo(() => mapConversationMessagesToUiMessages(messages), [messages]);
+  const uiMessages = useMemo(
+    () => mapConversationMessagesToUiMessages(messages),
+    [messages],
+  );
 
   const [sending, setSending] = useState(false);
-  const enabledRuntimes = useMemo(() => runtimes.filter((r) => r.enabled), [runtimes]);
+
+  // Browser notification when assistant responds while user is on another tab
+  useAssistantMessageNotification(
+    messages,
+    settings?.notifications?.system ?? false,
+  );
+  const enabledRuntimes = useMemo(
+    () => runtimes.filter((r) => r.enabled),
+    [runtimes],
+  );
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
     [conversations, activeConversationId],
@@ -148,7 +201,9 @@ export function CreationView(props?: CreationViewProps | null) {
 
   const availableConversations = useMemo(() => {
     if (creationArchiveFilter === "archived") {
-      return conversations.filter((conversation) => conversation.archived && !conversation.deleted);
+      return conversations.filter(
+        (conversation) => conversation.archived && !conversation.deleted,
+      );
     }
 
     if (creationArchiveFilter === "active") {
@@ -290,8 +345,14 @@ export function CreationView(props?: CreationViewProps | null) {
       sidebarEl.style.transition = "none";
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
-        const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
-        sidebarEl.style.setProperty("--creation-sidebar-width", `${nextWidth}px`);
+        const nextWidth = Math.min(
+          Math.max(moveEvent.clientX - sidebarLeft, 200),
+          420,
+        );
+        sidebarEl.style.setProperty(
+          "--creation-sidebar-width",
+          `${nextWidth}px`,
+        );
       };
 
       const handlePointerUp = () => {
@@ -299,7 +360,9 @@ export function CreationView(props?: CreationViewProps | null) {
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
         sidebarEl.style.transition = "";
-        const finalWidth = sidebarEl.style.getPropertyValue("--creation-sidebar-width");
+        const finalWidth = sidebarEl.style.getPropertyValue(
+          "--creation-sidebar-width",
+        );
         if (finalWidth) {
           setCreationSidebarWidth(Number.parseFloat(finalWidth));
         }
@@ -361,20 +424,26 @@ export function CreationView(props?: CreationViewProps | null) {
         style={
           creationSidebarCollapsed
             ? undefined
-            : ({ "--creation-sidebar-width": `${creationSidebarWidth}px` } as React.CSSProperties)
+            : ({
+                "--creation-sidebar-width": `${creationSidebarWidth}px`,
+              } as React.CSSProperties)
         }
       >
         {/* Header */}
         <div
           className={cn(
             "border-b border-border p-2 transition-[opacity,filter] duration-300 ease-out",
-            showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+            showExpandedContent
+              ? "opacity-100 blur-0"
+              : "pointer-events-none opacity-0 blur-[6px]",
           )}
           aria-hidden={!showExpandedContent}
         >
           <div className="flex h-10 items-center justify-between rounded-md px-2">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-foreground">{creation()}</div>
+              <div className="text-sm font-semibold text-foreground">
+                {creation()}
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <Tooltip>
@@ -390,7 +459,9 @@ export function CreationView(props?: CreationViewProps | null) {
                     </button>
                   )}
                 />
-                <TooltipContent side="bottom">{new_conversation()}</TooltipContent>
+                <TooltipContent side="bottom">
+                  {new_conversation()}
+                </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -401,11 +472,16 @@ export function CreationView(props?: CreationViewProps | null) {
                       className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:-translate-y-0"
                       onClick={handleCollapseSidebar}
                     >
-                      <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                      <HugeiconsIcon
+                        icon={ArrowLeft01Icon}
+                        className="size-4"
+                      />
                     </button>
                   )}
                 />
-                <TooltipContent side="right">{collapse_sidebar()}</TooltipContent>
+                <TooltipContent side="right">
+                  {collapse_sidebar()}
+                </TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -415,14 +491,17 @@ export function CreationView(props?: CreationViewProps | null) {
         <div
           className={cn(
             "min-h-0 flex flex-1 flex-col transition-[opacity,filter] duration-300 ease-out",
-            showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+            showExpandedContent
+              ? "opacity-100 blur-0"
+              : "pointer-events-none opacity-0 blur-[6px]",
           )}
           aria-hidden={!showExpandedContent}
         >
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-0.5 p-1.5">
               {availableConversations.map((conversation) => {
-                const isActive = conversation.id === activeConversationId && !showBookmarks;
+                const isActive =
+                  conversation.id === activeConversationId && !showBookmarks;
 
                 return (
                   <div
@@ -441,9 +520,14 @@ export function CreationView(props?: CreationViewProps | null) {
                       setShowBookmarks(false);
                       loadMessages(conversation.id);
                     }}
-                    onKeyDown={(event) => handleConversationListItemKeyDown(event, conversation.id)}
+                    onKeyDown={(event) =>
+                      handleConversationListItemKeyDown(event, conversation.id)
+                    }
                   >
-                    <HugeiconsIcon icon={Chat01Icon} className="size-3.5 shrink-0 opacity-40" />
+                    <HugeiconsIcon
+                      icon={Chat01Icon}
+                      className="size-3.5 shrink-0 opacity-40"
+                    />
                     <button type="button" className="min-w-0 flex-1 text-left">
                       <div className="truncate text-xs leading-5">
                         {conversation.title || untitled_conversation()}
@@ -465,13 +549,18 @@ export function CreationView(props?: CreationViewProps | null) {
                                 });
                               }}
                               className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber-500"
-               tabIndex={-1}
+                              tabIndex={-1}
                             >
-                              <HugeiconsIcon icon={Archive01Icon} className="size-3.5" />
+                              <HugeiconsIcon
+                                icon={Archive01Icon}
+                                className="size-3.5"
+                              />
                             </Button>
                           )}
                         />
-                        <TooltipContent side="bottom">{archive()}</TooltipContent>
+                        <TooltipContent side="bottom">
+                          {archive()}
+                        </TooltipContent>
                       </Tooltip>
 
                       <Tooltip>
@@ -488,13 +577,18 @@ export function CreationView(props?: CreationViewProps | null) {
                                 setDeleteConfirmOpen(true);
                               }}
                               className="text-muted-foreground/55 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-               tabIndex={-1}
+                              tabIndex={-1}
                             >
-                              <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                              <HugeiconsIcon
+                                icon={Delete02Icon}
+                                className="size-3.5"
+                              />
                             </Button>
                           )}
                         />
-                        <TooltipContent side="bottom">{delete_message()}</TooltipContent>
+                        <TooltipContent side="bottom">
+                          {delete_message()}
+                        </TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
@@ -507,13 +601,16 @@ export function CreationView(props?: CreationViewProps | null) {
                 </div>
               ) : null}
 
-              {availableConversations.length === 0 && !isLoadingConversations ? (
+              {availableConversations.length === 0 &&
+              !isLoadingConversations ? (
                 <div className="py-6 text-center">
                   <HugeiconsIcon
                     icon={Chat01Icon}
                     className="mx-auto mb-1.5 size-5 text-muted-foreground/30"
                   />
-                  <p className="text-xs text-muted-foreground">{no_conversations()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {no_conversations()}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -623,7 +720,11 @@ export function CreationView(props?: CreationViewProps | null) {
               setPendingUserMessage(conversation.id, content);
             }
             try {
-              await api.sendConversationMessage(conversation.id, content, customAgentId);
+              await api.sendConversationMessage(
+                conversation.id,
+                content,
+                customAgentId,
+              );
               await loadMessages(conversation.id, { force: true });
               setPendingUserMessage(conversation.id, undefined);
               if (!conversation.title && messages.length === 0) {
@@ -642,7 +743,9 @@ export function CreationView(props?: CreationViewProps | null) {
             }
           }}
           onReloadMessages={
-            activeConversation ? () => loadMessages(activeConversation.id) : undefined
+            activeConversation
+              ? () => loadMessages(activeConversation.id)
+              : undefined
           }
         />
       </div>

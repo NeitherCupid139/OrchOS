@@ -1,6 +1,11 @@
 import { startTransition, useEffect } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
-import { theme_dark, theme_light, theme_switch_mode, theme_system } from "@/paraglide/messages";
+import {
+  theme_dark,
+  theme_light,
+  theme_switch_mode,
+  theme_system,
+} from "@/paraglide/messages";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUIStore } from "@/lib/store";
 import { applyThemeMode, type ThemeMode } from "@/lib/theme";
@@ -44,13 +49,22 @@ export default function ThemeToggle() {
   return (
     <Tabs value={theme} onValueChange={handleThemeChange}>
       <TabsList>
-        <TabsTrigger value="light" aria-label={theme_switch_mode({ label: theme_light() })}>
+        <TabsTrigger
+          value="light"
+          aria-label={theme_switch_mode({ label: theme_light() })}
+        >
           <Sun className="size-4" />
         </TabsTrigger>
-        <TabsTrigger value="dark" aria-label={theme_switch_mode({ label: theme_dark() })}>
+        <TabsTrigger
+          value="dark"
+          aria-label={theme_switch_mode({ label: theme_dark() })}
+        >
           <Moon className="size-4" />
         </TabsTrigger>
-        <TabsTrigger value="auto" aria-label={theme_switch_mode({ label: theme_system() })}>
+        <TabsTrigger
+          value="auto"
+          aria-label={theme_switch_mode({ label: theme_system() })}
+        >
           <Monitor className="size-4" />
         </TabsTrigger>
       </TabsList>

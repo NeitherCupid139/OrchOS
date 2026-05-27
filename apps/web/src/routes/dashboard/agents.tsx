@@ -1,9 +1,6 @@
-import { createFileRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { AgentsPage } from "@/pages/dashboard/AgentsPage";
 
 export const Route = createFileRoute("/dashboard/agents")({
-  component: lazyRouteComponent(
-    () => import("@/pages/dashboard/AgentsPage"),
-    "AgentsPage",
-  ),
-  pendingComponent: () => null,
+  component: AgentsPage,
 });

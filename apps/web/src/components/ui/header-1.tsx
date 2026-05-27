@@ -14,52 +14,9 @@ import {
   nav_pricing,
   toggle_menu,
 } from "@/paraglide/messages";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { GithubIcon } from "@hugeicons/core-free-icons";
-
-const starCountFormatter = new Intl.NumberFormat("en", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-// Module-level cache for GitHub stars to avoid re-fetching on every Header mount
-let cachedStarCount: number | null = null;
-let cachedStarCountPromise: Promise<number | null> | null = null;
-
 export function Header() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
-  const [starCount, setStarCount] = React.useState<number | null>(null);
-
-  React.useEffect(() => {
-    if (cachedStarCount !== null) {
-      setStarCount(cachedStarCount);
-      return;
-    }
-    if (cachedStarCountPromise !== null) {
-      cachedStarCountPromise.then(setStarCount).catch(() => {});
-      return;
-    }
-    cachedStarCountPromise = fetch("/api/github-stars")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
-        const count =
-          typeof (data as { stargazers_count?: number }).stargazers_count ===
-          "number"
-            ? (data as { stargazers_count: number }).stargazers_count
-            : null;
-        cachedStarCount = count;
-        return count;
-      })
-      .catch(() => {
-        cachedStarCount = null;
-        return null;
-      });
-    cachedStarCountPromise.then(setStarCount).catch(() => {});
-  }, []);
-
-  const formattedStarCount =
-    starCount === null ? null : starCountFormatter.format(starCount);
 
   const links = [
     {
@@ -101,7 +58,7 @@ export function Header() {
         },
       )}
     >
-      <nav className="flex h-14 w-full items-center justify-between px-12">
+      <nav className="flex h-14 w-full items-center px-48">
         <Link
           to="/"
           className="hover:bg-accent flex items-center gap-2 rounded-md p-2"
@@ -111,7 +68,7 @@ export function Header() {
             OrchOS
           </span>
         </Link>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {links.map((link) => (
             <Link
               key={link.label}
@@ -121,23 +78,9 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <a
-            href="https://github.com/NeitherCupid139/OrchOS"
-            target="_blank"
-            rel="noreferrer"
-            className="mr-20"
-          >
-            <Button variant="outline">
-              <HugeiconsIcon icon={GithubIcon} className="size-4" />
-              GitHub
-              {formattedStarCount ? (
-                <span className="text-xs text-muted-foreground">
-                  {formattedStarCount}
-                </span>
-              ) : null}
-            </Button>
-          </a>
-          <div className="ml-auto flex items-center gap-1">
+        </div>
+        <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="flex items-center gap-1">
             <LocaleToggle />
             <ThemeToggle />
           </div>
@@ -173,22 +116,6 @@ export function Header() {
         <div className="flex items-center justify-between">
           <LocaleToggle />
           <ThemeToggle />
-          <a
-            href="https://github.com/NeitherCupid139/OrchOS"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => setOpen(false)}
-          >
-            <Button variant="outline" className="w-full bg-transparent">
-              <HugeiconsIcon icon={GithubIcon} className="size-4" />
-              GitHub
-              {formattedStarCount ? (
-                <span className="text-xs text-muted-foreground">
-                  {formattedStarCount}
-                </span>
-              ) : null}
-            </Button>
-          </a>
         </div>
       </MobileMenu>
     </header>

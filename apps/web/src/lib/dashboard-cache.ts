@@ -1,15 +1,12 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   Project,
   Organization,
   Problem,
   ControlSettings,
 } from "@/lib/types";
-import type {
-  RuntimeProfile,
-  ProblemSummary,
-} from "@/lib/api";
+import type { RuntimeProfile, ProblemSummary } from "@/lib/api";
 
 interface DashboardCacheState {
   runtimes: RuntimeProfile[];
@@ -27,7 +24,13 @@ interface DashboardCacheActions {
 
 const emptySummary: ProblemSummary = {
   status: { open: 0, fixed: 0, ignored: 0, assigned: 0 },
-  inbox: { all: 0, github_pr: 0, github_issue: 0, mention: 0, agent_request: 0 },
+  inbox: {
+    all: 0,
+    github_pr: 0,
+    github_issue: 0,
+    mention: 0,
+    agent_request: 0,
+  },
   system: { critical: 0, warning: 0, info: 0 },
 };
 
@@ -40,7 +43,9 @@ const initialState: DashboardCacheState = {
   settings: null,
 };
 
-export const useDashboardCache = create<DashboardCacheState & DashboardCacheActions>()(
+export const useDashboardCache = create<
+  DashboardCacheState & DashboardCacheActions
+>()(
   persist(
     (set) => ({
       ...initialState,
@@ -50,6 +55,10 @@ export const useDashboardCache = create<DashboardCacheState & DashboardCacheActi
     {
       name: "orchos-dashboard-cache",
       version: 3,
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") return null as unknown as Storage;
+        return window.localStorage;
+      }),
       /**
        * Only persist essential data for fast initial render.
        * Large/frequently-changing collections (problems, etc.)

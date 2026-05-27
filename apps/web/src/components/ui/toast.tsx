@@ -129,22 +129,22 @@ const iconConfig: Record<
   success: {
     Icon: CheckCircleIcon,
     color: "text-emerald-500",
-    progressColor: "bg-emerald-500/40",
+    progressColor: "stroke-emerald-500/40",
   },
   error: {
     Icon: XCircleIcon,
     color: "text-destructive",
-    progressColor: "bg-destructive/40",
+    progressColor: "stroke-destructive/40",
   },
   warning: {
     Icon: AlertTriangleIcon,
     color: "text-amber-500",
-    progressColor: "bg-amber-500/40",
+    progressColor: "stroke-amber-500/40",
   },
   message: {
     Icon: InfoIcon,
     color: "text-blue-500",
-    progressColor: "bg-blue-500/40",
+    progressColor: "stroke-blue-500/40",
   },
 };
 
@@ -167,19 +167,19 @@ const ToastContainer = () => {
       {visibleToasts.map((toast, i) => {
         const isTop = i === visibleToasts.length - 1;
         const offset = visibleToasts.length - 1 - i;
-        const { Icon, color, progressColor } = iconConfig[toast.type];
+        const { Icon, color } = iconConfig[toast.type];
 
         return (
           <div
             key={toast.id}
             className={cn(
               "absolute right-0 bottom-0 pointer-events-auto",
-              "rounded-xl bg-card ring-1 ring-foreground/10",
-              "transition-all duration-200 ease-out",
+              "rounded-xl bg-card",
+              "transition-all duration-300 ease-out",
               isTop ? "shadow-lg" : "shadow-sm",
               toast.exiting
-                ? "translate-x-4 opacity-0 scale-95"
-                : "translate-x-0 opacity-100",
+                ? "translate-y-2 opacity-0 scale-95"
+                : "translate-y-0 opacity-100",
             )}
             style={{
               width: 380,
@@ -202,45 +202,17 @@ const ToastContainer = () => {
               });
             }}
           >
-            {/* Circular progress ring */}
-            {!toast.preserve && !toast.exiting && (
-              <svg
-                key={toast.progressKey}
-                className="absolute inset-0 size-full pointer-events-none"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
-                <rect
-                  x="1"
-                  y="1"
-                  width="98"
-                  height="98"
-                  rx="9"
-                  ry="9"
-                  fill="none"
-                  className={progressColor}
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  style={{
-                    strokeDasharray: 388,
-                    animation: `toast-ring ${toast.remaining ?? 3000}ms linear forwards`,
-                  }}
-                />
-              </svg>
-            )}
-
             <div className="relative px-4 py-3">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <Icon
                   className={cn(
-                    "size-5 shrink-0 mt-0.5",
+                    "size-5 shrink-0",
                     color,
                     toast.exiting &&
                       "opacity-0 transition-opacity duration-150",
                   )}
                 />
-                <p className="flex-1 text-sm leading-snug text-foreground min-w-0 break-words pt-px">
+                <p className="flex-1 text-sm leading-snug text-foreground min-w-0 break-words">
                   {toast.text}
                 </p>
                 <BaseButton

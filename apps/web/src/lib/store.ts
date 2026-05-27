@@ -1,15 +1,39 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { ControlSettings } from "@/lib/types";
 import type { BoardTaskFilter } from "@/components/panels/BoardView";
 import type { ThemeMode } from "@/lib/theme";
 import { migrateUIStore } from "@/lib/ui-store-migrations";
 
-type SourceFilter = "all" | "github_pr" | "github_issue" | "mention" | "agent_request";
+// SSR-safe storage: returns undefined when localStorage is unavailable (e.g. Cloudflare Workers)
+const ssrSafeStorage = {
+  getItem: (name: string) => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(name);
+  },
+  setItem: (name: string, value: string) => {
+    if (typeof window !== "undefined") window.localStorage.setItem(name, value);
+  },
+  removeItem: (name: string) => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(name);
+  },
+};
+
+type SourceFilter =
+  | "all"
+  | "github_pr"
+  | "github_issue"
+  | "mention"
+  | "agent_request";
 type InboxStatusFilter = "all" | "open" | "assigned" | "fixed" | "ignored";
 type ScopeFilter = "all" | "global" | "project";
 type CreationArchiveFilter = "all" | "active" | "archived";
-type MailFolderFilter = "all" | "unread" | "waiting_reply" | "completed" | "archived";
+type MailFolderFilter =
+  | "all"
+  | "unread"
+  | "waiting_reply"
+  | "completed"
+  | "archived";
 type CalendarViewMode = "day" | "week" | "month";
 type CapabilityViewMode = "mine" | "market";
 interface UIState {
@@ -79,7 +103,12 @@ const defaultSettings: ControlSettings = {
   sendShortcut: "enter" as const,
   useMixedScript: false,
   preferKanji: false,
-  notifications: { system: true, sound: true, eventSounds: {}, eventSoundFiles: {} },
+  notifications: {
+    system: true,
+    sound: true,
+    eventSounds: {},
+    eventSoundFiles: {},
+  },
 };
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -119,19 +148,25 @@ export const useUIStore = create<UIState & UIActions>()(
       setSourceFilter: (filter) => set({ sourceFilter: filter }),
       setInboxStatusFilter: (filter) => set({ inboxStatusFilter: filter }),
       setScopeFilter: (filter) => set({ scopeFilter: filter }),
-      setCreationArchiveFilter: (filter) => set({ creationArchiveFilter: filter }),
+      setCreationArchiveFilter: (filter) =>
+        set({ creationArchiveFilter: filter }),
       setMailFolderFilter: (filter) => set({ mailFolderFilter: filter }),
       setCalendarViewMode: (mode) => set({ calendarViewMode: mode }),
       setCapabilityViewMode: (mode) => set({ capabilityViewMode: mode }),
       setBoardFilter: (filter) => set({ boardFilter: filter }),
       setActivityPanelOpen: (open) => set({ activityPanelOpen: open }),
-      toggleActivityPanel: () => set((s) => ({ activityPanelOpen: !s.activityPanelOpen })),
+      toggleActivityPanel: () =>
+        set((s) => ({ activityPanelOpen: !s.activityPanelOpen })),
       setActivityExpanded: (expanded) => set({ activityExpanded: expanded }),
-      toggleActivityExpanded: () => set((s) => ({ activityExpanded: !s.activityExpanded })),
+      toggleActivityExpanded: () =>
+        set((s) => ({ activityExpanded: !s.activityExpanded })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-      toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-      setCreationSidebarCollapsed: (collapsed) => set({ creationSidebarCollapsed: collapsed }),
-      toggleCreationSidebar: () => set((s) => ({ creationSidebarCollapsed: !s.creationSidebarCollapsed })),
+      toggleSidebar: () =>
+        set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      setCreationSidebarCollapsed: (collapsed) =>
+        set({ creationSidebarCollapsed: collapsed }),
+      toggleCreationSidebar: () =>
+        set((s) => ({ creationSidebarCollapsed: !s.creationSidebarCollapsed })),
       setCreationSidebarWidth: (width) => set({ creationSidebarWidth: width }),
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
       setTheme: (mode) => set({ theme: mode, themePreferenceSet: true }),
@@ -140,6 +175,7 @@ export const useUIStore = create<UIState & UIActions>()(
     {
       name: "orchos-ui",
       version: 2,
+      storage: createJSONStorage(() => ssrSafeStorage),
       migrate: migrateUIStore,
       // Only persist essential navigation/filter state — settings come from server API.
       partialize: (state) => ({

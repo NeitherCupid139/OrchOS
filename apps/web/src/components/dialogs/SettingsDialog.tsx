@@ -130,6 +130,7 @@ import {
   ensureSystemNotificationAccess,
   sendTestNotification,
   canUseNotifications,
+  getNotificationPermissionState,
 } from "@/lib/notifications";
 
 const defaultEventSounds: Record<string, string> = {
@@ -443,18 +444,25 @@ export function SettingsDialog({
   const handleNotificationToggle = async (key: "system" | "sound") => {
     if (!currentSettings) return;
 
-    const newValue = !currentSettings.notifications[key];
+    const newValue = !(currentSettings.notifications?.[key] ?? false);
 
     // When enabling system notifications, request browser permission first
     if (key === "system" && newValue) {
-      const granted = await ensureSystemNotificationAccess();
-      if (!granted) {
+      const result = await ensureSystemNotificationAccess();
+      if (!result.granted) {
         toast.error(notification_permission_denied());
         // Force re-render so AppleSwitch snaps back to OFF
-        // (its setChecked already moved the thumb ON, but currentSettings
-        //  wasn't updated, leaving it stuck in a limbo state)
         onSettingsChange({ ...currentSettings });
         return;
+      }
+      // Permission granted, but test notification may have failed due to
+      // lost user gesture after the async permission dialog.
+      // The manual test button can be used to verify.
+      if (!result.testSent) {
+        console.warn(
+          "[OrchOS] Test notification may have failed due to lost user gesture. " +
+            "Use the 'Send Test' button to verify notifications are working.",
+        );
       }
     }
 
@@ -480,8 +488,10 @@ export function SettingsDialog({
       notifications: {
         ...currentSettings.notifications,
         eventSounds: {
-          ...currentSettings.notifications.eventSounds,
-          [event]: !currentSettings.notifications.eventSounds[event],
+          ...currentSettings.notifications?.eventSounds,
+          [event]: !(
+            currentSettings.notifications?.eventSounds?.[event] ?? false
+          ),
         },
       },
     };
@@ -503,7 +513,7 @@ export function SettingsDialog({
       notifications: {
         ...currentSettings.notifications,
         eventSoundFiles: {
-          ...currentSettings.notifications.eventSoundFiles,
+          ...currentSettings.notifications?.eventSoundFiles,
           [event]: soundId,
         },
       },
@@ -851,11 +861,16 @@ export function SettingsDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={!canUseNotifications()}
+                    disabled={
+                      !canUseNotifications() ||
+                      getNotificationPermissionState() !== "granted"
+                    }
                     onClick={() => {
                       const result = sendTestNotification();
-                      if (result) {
+                      if (result.sent) {
                         toast.success(notification_test_sent());
+                      } else if (result.reason === "denied") {
+                        toast.error(notification_permission_denied());
                       } else {
                         toast.error(notification_test_failed());
                       }
