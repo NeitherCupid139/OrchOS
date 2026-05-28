@@ -18,7 +18,7 @@ import { getBuiltInAgent } from "@/lib/built-in-agent";
 import { subscriptions } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { AIGatewayConfig } from "@orchos/pro/ai-gateway";
-import { tool, type ModelMessage, type ToolSet } from "ai";
+import { jsonSchema, tool, type ModelMessage, type ToolSet } from "ai";
 
 // Module-level service cache
 const getCustomAgentService = createServiceCache(
@@ -32,6 +32,7 @@ type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content?: string | null;
   tool_call_id?: string;
+  tool_name?: string;
   tool_calls?: Array<{
     id: string;
     type: "function";
@@ -112,11 +113,14 @@ function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
           {
             type: "tool-result" as const,
             toolCallId: m.tool_call_id ?? "",
-            toolName: "unknown",
-            output: { result: m.content ?? "" } as unknown as never,
+            toolName: m.tool_name ?? "unknown",
+            output: {
+              type: "json" as const,
+              value: safeJsonParse(m.content ?? ""),
+            },
           },
         ],
-      };
+      } as ModelMessage;
     });
 }
 
@@ -130,7 +134,7 @@ function toAISDKTools(tools?: AgentToolDefinition[]): ToolSet | undefined {
   for (const t of tools) {
     toolSet[t.function.name] = tool({
       description: t.function.description,
-      inputSchema: {
+      inputSchema: jsonSchema({
         type: "object",
         properties: (t.function.parameters.properties ?? {}) as Record<
           string,
@@ -138,7 +142,7 @@ function toAISDKTools(tools?: AgentToolDefinition[]): ToolSet | undefined {
         >,
         required: (t.function.parameters.required ?? []) as string[],
         additionalProperties: false,
-      } as unknown as never,
+      }),
     }) as never;
   }
   return toolSet;
@@ -307,6 +311,7 @@ async function runCustomAgentConversation(input: {
         chatMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
+          tool_name: toolCall.function.name,
           content: JSON.stringify(output),
         });
       } catch (error) {
@@ -324,6 +329,7 @@ async function runCustomAgentConversation(input: {
         chatMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
+          tool_name: toolCall.function.name,
           content: JSON.stringify({ error: errorText }),
         });
       }
@@ -347,7 +353,7 @@ async function runCustomAgentConversation(input: {
  * Unlike custom agents, the built-in agent:
  * - Uses BYOK mode (no provider URL or API key needed)
  * - Routes through Cloudflare AI Gateway (handles auth & observability)
- * - Does not execute custom agent tools
+ * - Supports all agent tools (web search, calendar, reminders, email, bookmarks)
  */
 async function runBuiltinAgentConversation(input: {
   conversationId: string;
@@ -357,6 +363,7 @@ async function runBuiltinAgentConversation(input: {
   const db = await getLocalDb();
   const gatewayConfig = await getAIGatewayConfig();
   const builtIn = getBuiltInAgent();
+  const toolService = getAgentToolService(db);
 
   // If gateway is not configured, fall back to the previous runtime-based path
   if (!gatewayConfig) {
@@ -398,29 +405,104 @@ async function runBuiltinAgentConversation(input: {
     input.conversationId,
   );
   const chatMessages = conversationHistoryToChatMessages(storedMessages);
+  const tools = toolService.getToolDefinitions();
+  const trace: NonNullable<Message["trace"]> = [];
+  let totalTokens = 0;
 
-  const completion = await requestChatCompletion({
-    model: builtIn.model,
-    messages: chatMessages,
-    gatewayConfig,
-    // No url or apiKey → BYOK mode: gateway handles auth
-  });
+  for (let step = 0; step < 6; step += 1) {
+    const completion = await requestChatCompletion({
+      model: builtIn.model,
+      messages: chatMessages,
+      tools,
+      gatewayConfig,
+      // No url or apiKey → BYOK mode: gateway handles auth
+    });
 
-  const assistantContent = completion.choices?.[0]?.message?.content ?? "";
+    const choice = completion.choices?.[0];
+    const assistantMessage = choice?.message;
+    const toolCalls = assistantMessage?.tool_calls ?? [];
+    const assistantContent = assistantMessage?.content ?? "";
+
+    if (completion.usage?.totalTokens)
+      totalTokens += completion.usage.totalTokens;
+    if (assistantContent)
+      trace.push({ kind: "message", text: assistantContent });
+
+    if (toolCalls.length === 0) {
+      return ConversationService.addMessage(
+        db,
+        input.conversationId,
+        "assistant",
+        assistantContent || "No response",
+        undefined,
+        undefined,
+        { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
+      );
+    }
+
+    chatMessages.push({
+      role: "assistant",
+      content: assistantContent,
+      tool_calls: toolCalls,
+    });
+
+    for (const toolCall of toolCalls) {
+      trace.push({
+        kind: "tool",
+        toolName: toolCall.function.name,
+        toolCallId: toolCall.id,
+        state: "started",
+        input: toolCall.function.arguments,
+      });
+
+      try {
+        const output = await toolService.executeTool(
+          toolCall.function.name,
+          toolCall.function.arguments,
+        );
+        trace.push({
+          kind: "tool",
+          toolName: toolCall.function.name,
+          toolCallId: toolCall.id,
+          state: "completed",
+          output,
+        });
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          tool_name: toolCall.function.name,
+          content: JSON.stringify(output),
+        });
+      } catch (error) {
+        const errorText =
+          error instanceof Error
+            ? error.message
+            : `Tool ${toolCall.function.name} failed`;
+        trace.push({
+          kind: "tool",
+          toolName: toolCall.function.name,
+          toolCallId: toolCall.id,
+          state: "failed",
+          errorText,
+        });
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          tool_name: toolCall.function.name,
+          content: JSON.stringify({ error: errorText }),
+        });
+      }
+    }
+  }
 
   return ConversationService.addMessage(
     db,
     input.conversationId,
     "assistant",
-    assistantContent || "No response",
+    "Agent exceeded tool execution limit.",
+    "Agent exceeded tool execution limit.",
     undefined,
-    undefined,
-    {
-      tokens:
-        completion.usage?.totalTokens && completion.usage.totalTokens > 0
-          ? completion.usage.totalTokens
-          : undefined,
-    },
+    { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
   );
 }
 
@@ -555,13 +637,29 @@ export const conversationsRouter = {
           throw error;
       }
 
-      const message = await sendConversationMessage(
-        input.id,
-        input.content,
-        input.customAgentId,
-      );
-
-      return message;
+      try {
+        const message = await sendConversationMessage(
+          input.id,
+          input.content,
+          input.customAgentId,
+        );
+        return message;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[sendMessage] Error:", errorMsg);
+        try {
+          const db = await getLocalDb();
+          return await ConversationService.addMessage(
+            db,
+            input.id,
+            "assistant",
+            `❌ ${errorMsg}`,
+            errorMsg,
+          );
+        } catch {
+          throw err;
+        }
+      }
     },
   ),
   retryMessage: os.conversations.retryMessage.handler(async ({ input }) => {

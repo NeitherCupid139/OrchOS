@@ -8,7 +8,6 @@ import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
 import { ChatToolTimeline } from "@/components/chat/ChatToolTimeline";
 import { Actions, Action } from "@/components/ui/actions";
-import { toast } from "@/components/ui/toast";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 
 type ConversationUiPart = (
@@ -207,9 +206,9 @@ export const MessageBubble = memo(function MessageBubble({
         document.execCommand("copy");
         document.body.removeChild(textarea);
       }
-      toast.success("Copied!");
+      console.log("Copied!");
     } catch {
-      toast.error("Failed to copy");
+      console.error("Failed to copy");
     }
   }, [parts]);
 
@@ -306,11 +305,11 @@ export const MessageBubble = memo(function MessageBubble({
         {!isUser && (
           <Actions className="mt-2">
             {onRetry && (
-              <Action label="Retry" tooltip="Retry" onClick={onRetry}>
+              <Action label="Retry" tooltip="Retry" onClick={onRetry} animation="spin">
                 <RefreshCcwIcon className="size-4" />
               </Action>
             )}
-            <Action label="Copy" tooltip="Copy" onClick={handleCopy}>
+            <Action label="Copy" tooltip="Copy" onClick={handleCopy} animation="checkmark">
               <CopyIcon className="size-4" />
             </Action>
           </Actions>

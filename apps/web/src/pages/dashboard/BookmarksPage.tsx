@@ -47,7 +47,6 @@ import {
   Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { toast } from "@/components/ui/toast";
 
 import { api, type BookmarkCategory } from "@/lib/api";
 import { useDashboard } from "@/lib/dashboard-context";
@@ -70,18 +69,12 @@ import { cn } from "@/lib/utils";
 import {
   back,
   bookmark_count,
-  bookmark_created,
-  bookmark_deleted,
-  bookmark_moved,
-  bookmark_updated,
   bookmarks,
   bookmarks_workspace,
   bookmarks_workspace_desc,
   calendar_icon,
   cancel,
-  category_deleted,
   category_name,
-  category_renamed,
   collapse_sidebar,
   create,
   create_or_import,
@@ -94,22 +87,9 @@ import {
   edit_bookmark_desc,
   edit_category,
   expand_sidebar,
-  failed_to_create_bookmark,
-  failed_to_create_category,
-  failed_to_delete_bookmark,
-  failed_to_delete_category,
-  failed_to_import_bookmarks,
-  failed_to_load_bookmarks,
-  failed_to_move_bookmark,
-  failed_to_rename_category,
-  failed_to_reorder_bookmarks,
-  failed_to_reorder_categories,
-  failed_to_toggle_pin,
-  failed_to_update_bookmark,
   import as import_message,
   import_bookmarks_desc,
   import_from_file,
-  imported_bookmarks,
   loading as loading_label,
   name,
   new_bookmark,
@@ -124,9 +104,7 @@ import {
   pin_to_home,
   resize_bookmarks_sidebar,
   save,
-  select_category_first,
   title as title_label,
-  title_url_required,
   unpin,
   unsupported_bookmark_format,
   upload,
@@ -577,7 +555,7 @@ function BookmarkIconField({
                 onChange(nextIcon);
               })
               .catch((error) => {
-                toast.error(error instanceof Error ? error.message : upload());
+                console.error(error);
               })
               .finally(() => {
                 event.target.value = "";
@@ -878,9 +856,7 @@ export function BookmarksPage() {
         (current) => current ?? nextCategories[0]?.id ?? null,
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_to_load_bookmarks(),
-      );
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -922,9 +898,7 @@ export function BookmarksPage() {
 
     const nextCategories = [...categories, newCategory];
     void persistCategories(nextCategories, newCategory.id).catch((error) => {
-      toast.error(
-        error instanceof Error ? error.message : failed_to_create_category(),
-      );
+      console.error(error);
     });
     setIsCreateOrImportDialogOpen(false);
   }
@@ -948,9 +922,7 @@ export function BookmarksPage() {
     const [moved] = next.splice(sourceIndex, 1);
     next.splice(targetIndex, 0, moved);
     void persistCategories(next, selectedCategoryId).catch((error) => {
-      toast.error(
-        error instanceof Error ? error.message : failed_to_reorder_categories(),
-      );
+      console.error(error);
     });
   }
 
@@ -983,11 +955,7 @@ export function BookmarksPage() {
 
     void persistCategories(nextCategories, selectedCategory.id).catch(
       (error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : failed_to_reorder_bookmarks(),
-        );
+        console.error(error);
       },
     );
   }
@@ -1018,19 +986,10 @@ export function BookmarksPage() {
       }
 
       await persistCategories(parsed, parsed[0]?.id ?? null);
-      toast.success(
-        imported_bookmarks({
-          count: parsed.reduce(
-            (count, category) => count + category.bookmarks.length,
-            0,
-          ),
-        }),
-      );
+
       setIsCreateOrImportDialogOpen(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_to_import_bookmarks(),
-      );
+      console.error(error);
     }
 
     event.target.value = "";
@@ -1063,9 +1022,7 @@ export function BookmarksPage() {
           setCategories(previousCategories);
         }
         console.error("Failed to toggle pin:", error);
-        toast.error(
-          error instanceof Error ? error.message : failed_to_toggle_pin(),
-        );
+        console.error(error);
       } finally {
         setPendingPinBookmarkIds((current) =>
           current.filter((id) => id !== bookmarkId),
@@ -1287,14 +1244,10 @@ export function BookmarksPage() {
                                 setCategories(saved);
                                 setSelectedCategoryId(category.id);
                                 setDraggedBookmark(null);
-                                toast.success(bookmark_moved());
+  
                               })
                               .catch((error) => {
-                                toast.error(
-                                  error instanceof Error
-                                    ? error.message
-                                    : failed_to_move_bookmark(),
-                                );
+                                console.error(error);
                               });
                           }
                         }}
@@ -1708,14 +1661,10 @@ export function BookmarksPage() {
                 (current) => current ?? saved[0]?.id ?? null,
               );
               setRenameCategoryId(null);
-              toast.success(category_renamed());
+
             })
             .catch((error) => {
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : failed_to_rename_category(),
-              );
+              console.error(error);
             });
         }}
       />
@@ -1739,12 +1688,10 @@ export function BookmarksPage() {
               type="button"
               onClick={() => {
                 if (!selectedCategoryId) {
-                  toast.error(select_category_first());
                   return;
                 }
 
                 if (!bookmarkDraft.title.trim() || !bookmarkDraft.url.trim()) {
-                  toast.error(title_url_required());
                   return;
                 }
 
@@ -1759,14 +1706,10 @@ export function BookmarksPage() {
                     setSelectedCategoryId(selectedCategoryId);
                     setBookmarkDraft({ title: "", url: "", icon: undefined });
                     setIsCreateBookmarkDialogOpen(false);
-                    toast.success(bookmark_created());
+
                   })
                   .catch((error) => {
-                    toast.error(
-                      error instanceof Error
-                        ? error.message
-                        : failed_to_create_bookmark(),
-                    );
+                    console.error(error);
                   });
               }}
             >
@@ -1835,14 +1778,10 @@ export function BookmarksPage() {
                 (current) => current ?? saved[0]?.id ?? null,
               );
               setDeletingBookmarkId(null);
-              toast.success(bookmark_deleted());
+
             })
             .catch((error) => {
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : failed_to_delete_bookmark(),
-              );
+              console.error(error);
             });
         }}
       />
@@ -1874,7 +1813,6 @@ export function BookmarksPage() {
                 }
 
                 if (!bookmarkDraft.title.trim() || !bookmarkDraft.url.trim()) {
-                  toast.error(title_url_required());
                   return;
                 }
 
@@ -1890,14 +1828,10 @@ export function BookmarksPage() {
                       (current) => current ?? saved[0]?.id ?? null,
                     );
                     setEditingBookmarkId(null);
-                    toast.success(bookmark_updated());
+
                   })
                   .catch((error) => {
-                    toast.error(
-                      error instanceof Error
-                        ? error.message
-                        : failed_to_update_bookmark(),
-                    );
+                    console.error(error);
                   });
               }}
             >
@@ -1966,14 +1900,10 @@ export function BookmarksPage() {
                 setSelectedCategoryId(saved[0]?.id ?? null);
               }
               setDeleteCategoryId(null);
-              toast.success(category_deleted());
+
             })
             .catch((error) => {
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : failed_to_delete_category(),
-              );
+              console.error(error);
             });
         }}
       />

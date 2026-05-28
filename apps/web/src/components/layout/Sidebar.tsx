@@ -127,7 +127,6 @@ import { useLocale } from "@/lib/i18n-provider";
 import { useUIStore } from "@/lib/store";
 import type { Organization, SidebarView } from "@/lib/types";
 import { OnboardingChangelogDialog } from "@/components/dialogs/OnboardingChangelogDialog";
-import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { isProEnabled } from "@/lib/pro-loader";
 
@@ -701,7 +700,7 @@ export function Sidebar({
           onClose={() => setCreateOrgOpen(false)}
           onSubmit={async (name) => {
             await onOrganizationCreate(name);
-            toast.success(space_created());
+            console.log(space_created());
             setCreateOrgOpen(false);
           }}
         />

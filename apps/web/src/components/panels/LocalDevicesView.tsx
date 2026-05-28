@@ -12,7 +12,6 @@ import {
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import type { CustomAgent, LocalAgentProfile } from "@/lib/api";
 import type { BuiltInAgent } from "@/lib/built-in-agent";
@@ -23,12 +22,10 @@ import {
   connect_agent,
   connect_local_device,
   created,
-  custom_agent_updated,
   default_agent,
   device_id,
   edit,
   endpoint,
-  failed_save_custom_agent,
   last_seen,
   loading_devices,
   model,
@@ -289,11 +286,8 @@ function CustomAgentDetail({
         model: editForm.model.trim(),
       });
       setIsEditing(false);
-      toast.success(custom_agent_updated());
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_save_custom_agent(),
-      );
+      console.error(error);
     } finally {
       setIsSaving(false);
     }

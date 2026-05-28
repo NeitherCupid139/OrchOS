@@ -18,7 +18,6 @@ import {
   SquareArrowDataTransferHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { toast } from "@/components/ui/toast";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
@@ -43,8 +42,9 @@ import { useBoardStore } from "@/lib/stores/board";
 import { getReminderDisplayText, getReminderNextOccurrence } from "@/lib/planner-reminders";
 import { useUIStore } from "@/lib/store";
 import type { BoardTaskColumnId } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { account_label, add, calendar, calendar_account_details, calendar_account_details_desc, calendar_account_label_placeholder, calendar_account_removed, calendar_add_calendar, calendar_add_calendar_desc, calendar_add_event, calendar_add_google_desc, calendar_add_google_title, calendar_all_day, calendar_all_day_event, calendar_calendar_created, calendar_calendar_deleted, calendar_calendar_name, calendar_calendar_updated, calendar_choose_calendar, calendar_connected_accounts, calendar_connected_accounts_desc, calendar_create_calendar_first, calendar_create_local_first, calendar_delete_calendar, calendar_delete_calendar_confirm, calendar_edit_calendar, calendar_edit_event, calendar_empty_workspace_desc, calendar_empty_workspace_title, calendar_end, calendar_end_after_start, calendar_enter_calendar_name, calendar_enter_event_title, calendar_event_created, calendar_event_title, calendar_event_title_placeholder, calendar_event_updated, calendar_failed_connect_google, calendar_failed_load_integrations, calendar_failed_remove_account, calendar_google, calendar_google_calendar_option_desc, calendar_google_connected, calendar_google_oauth_required, calendar_google_overview, calendar_google_refresh_token_placeholder, calendar_icon, calendar_local_calendar_desc, calendar_local_calendar_option, calendar_local_calendar_option_desc, calendar_local_event_desc, calendar_location, calendar_location_placeholder, calendar_n_accounts, calendar_n_scopes, calendar_name_placeholder, calendar_new_calendar, calendar_no_calendar_connected, calendar_no_calendar_desc, calendar_no_groups_desc, calendar_notes, calendar_remove_account, calendar_required_scopes, calendar_select_account, calendar_start, calendar_use_color, calendar_valid_time, cancel, client_id, client_secret, close, collapse_sidebar, color, connect, connected, delete as delete_message, edit, expand_sidebar, google_oauth_client_id_placeholder, google_oauth_client_secret_placeholder, loading as loading_label, refresh_token, resize_calendar_sidebar, save } from "@/paraglide/messages";
+import { cn } from "@/lib/utils";import {
+  account_label, add, calendar, calendar_account_details, calendar_account_details_desc, calendar_account_label_placeholder, calendar_add_calendar, calendar_add_calendar_desc, calendar_add_event, calendar_add_google_desc, calendar_add_google_title, calendar_all_day, calendar_all_day_event, calendar_calendar_name, calendar_connected_accounts, calendar_connected_accounts_desc, calendar_create_calendar_first, calendar_delete_calendar, calendar_delete_calendar_confirm, calendar_edit_calendar, calendar_edit_event, calendar_empty_workspace_desc, calendar_empty_workspace_title, calendar_end, calendar_event_title, calendar_event_title_placeholder, calendar_failed_load_integrations, calendar_google, calendar_google_calendar_option_desc, calendar_google_overview, calendar_google_refresh_token_placeholder, calendar_icon, calendar_local_calendar_desc, calendar_local_calendar_option, calendar_local_calendar_option_desc, calendar_local_event_desc, calendar_location, calendar_location_placeholder, calendar_n_accounts, calendar_n_scopes, calendar_name_placeholder, calendar_new_calendar, calendar_no_calendar_connected, calendar_no_calendar_desc, calendar_no_groups_desc, calendar_notes, calendar_remove_account, calendar_required_scopes, calendar_select_account, calendar_start, calendar_use_color, cancel, client_id, client_secret, close, collapse_sidebar, color, connect, connected, delete as delete_message, edit, expand_sidebar, google_oauth_client_id_placeholder, google_oauth_client_secret_placeholder, loading as loading_label, refresh_token, resize_calendar_sidebar, save
+} from "@/paraglide/messages";
 
 type CalendarIntegrationAccount = {
   id: string;
@@ -369,7 +369,6 @@ export function CalendarPage() {
   const handleCreateCalendarSlot = useCallback((start: Date, end: Date) => {
     const defaultCalendarId = activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
     if (!defaultCalendarId) {
-      toast.error(calendar_create_local_first());
       return;
     }
 
@@ -456,7 +455,7 @@ export function CalendarPage() {
     try {
       setIntegrations(await api.listIntegrations());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : calendar_failed_load_integrations(), { closeButton: true });
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -466,7 +465,7 @@ export function CalendarPage() {
     try {
       setLocalStore(await api.getPlannerStore());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : calendar_failed_load_integrations(), { closeButton: true });
+      console.error(error instanceof Error ? error.message : calendar_failed_load_integrations());
     }
   }
 
@@ -474,13 +473,12 @@ export function CalendarPage() {
     try {
       setGoogleEvents(await api.listGoogleCalendarEvents({ accountId }));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : calendar_failed_load_integrations(), { closeButton: true });
+      console.error(error instanceof Error ? error.message : calendar_failed_load_integrations());
     }
   }
 
   async function handleConnect() {
     if (!form.clientId.trim() || !form.clientSecret.trim() || !form.refreshToken.trim()) {
-      toast.error(calendar_google_oauth_required());
       return;
     }
 
@@ -501,9 +499,9 @@ export function CalendarPage() {
       });
       setIsAddDialogOpen(false);
       await loadGoogleEvents((updated as CalendarIntegration).accounts?.[0]?.id);
-      toast.success(calendar_google_connected());
+
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : calendar_failed_connect_google(), { closeButton: true });
+      console.error(error);
     } finally {
       setSubmitting(false);
     }
@@ -514,9 +512,9 @@ export function CalendarPage() {
       const updated = await api.deleteIntegrationAccount("google-calendar", accountId);
       setIntegrations((current) => [...current.filter((item) => item.id !== updated.id), updated]);
       setSelectedSidebarItem("google-overview");
-      toast.success(calendar_account_removed());
+
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : calendar_failed_remove_account(), { closeButton: true });
+      console.error(error);
     }
   }
 
@@ -553,7 +551,6 @@ export function CalendarPage() {
     const defaultCalendarId = event?.calendarId ?? activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
 
     if (!defaultCalendarId) {
-      toast.error(calendar_create_local_first());
       return;
     }
 
@@ -599,7 +596,6 @@ export function CalendarPage() {
     const name = localCalendarForm.name.trim();
 
     if (!name) {
-      toast.error(calendar_enter_calendar_name());
       return;
     }
 
@@ -629,30 +625,25 @@ export function CalendarPage() {
     }
 
     setIsLocalCalendarDialogOpen(false);
-    toast.success(localCalendarForm.id ? calendar_calendar_updated() : calendar_calendar_created());
   }
 
   async function handleSaveLocalEvent() {
     if (!localEventForm.calendarId) {
-      toast.error(calendar_choose_calendar());
       return;
     }
 
     const title = localEventForm.title.trim();
     if (!title) {
-      toast.error(calendar_enter_event_title());
       return;
     }
 
     const startAt = new Date(localEventForm.startAt);
     const endAt = new Date(localEventForm.endAt);
     if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-      toast.error(calendar_valid_time());
       return;
     }
 
     if (endAt.getTime() < startAt.getTime()) {
-      toast.error(calendar_end_after_start());
       return;
     }
 
@@ -682,7 +673,6 @@ export function CalendarPage() {
     setSelectedLocalDate(formatDayKey(startAt));
     setVisibleMonth(startOfMonth(startAt));
     setIsLocalEventDialogOpen(false);
-    toast.success(localEventForm.id ? calendar_event_updated() : calendar_event_created());
   }
 
   function handleDeleteLocalCalendar(calendar: LocalCalendar) {
@@ -697,7 +687,6 @@ export function CalendarPage() {
     setHiddenCalendarIds((current) => current.filter((id) => id !== calendar.id));
     setSelectedSidebarItem((current) => current === `local-calendar:${calendar.id}` ? "local-overview" : current);
     setCalendarPendingDelete(null);
-    toast.success(calendar_calendar_deleted());
   }
 
   const handleCollapseSidebar = useCallback(() => {

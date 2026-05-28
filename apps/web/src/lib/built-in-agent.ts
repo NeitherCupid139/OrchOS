@@ -33,7 +33,7 @@ export function getBuiltInAgent(): BuiltInAgent {
     id: BUILTIN_AGENT_ID,
     name: "OrchOS Agent",
     url: "",
-    model: "deepseek-v4-flash",
+    model: "deepseek/deepseek-chat",
     readonly: true,
     badge: "Built-in",
   };

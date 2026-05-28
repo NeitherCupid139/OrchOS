@@ -67,9 +67,13 @@ export abstract class BookmarkService {
           updatedAt: now,
         }).run(),
       );
+    }
+    await Promise.all(insertPromises);
 
+    const bookmarkPromises: Promise<unknown>[] = [];
+    for (const category of categories) {
       for (const [bookmarkIndex, bookmark] of category.bookmarks.entries()) {
-        insertPromises.push(
+        bookmarkPromises.push(
           db.insert(bookmarks).values({
             id: bookmark.id,
             categoryId: category.id,
@@ -84,7 +88,7 @@ export abstract class BookmarkService {
         );
       }
     }
-    await Promise.all(insertPromises);
+    await Promise.all(bookmarkPromises);
 
     // D1 is eventually consistent — retry list a few times
     // in case the read replica hasn't caught up yet

@@ -94,7 +94,6 @@ import {
   web_search,
 } from "@/paraglide/messages";
 import { BookmarkFavicon } from "@/components/ui/bookmark-favicon";
-import { toast } from "@/components/ui/toast";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { MessageBubble } from "@/components/chat/ConversationFlow";
 import { ChatThinkingState } from "@/components/chat/ChatThinkingState";
@@ -719,7 +718,7 @@ export function ChatArea({
 
     try {
       if (filesToSend.length > 0) {
-        toast.error(creation_image_unsupported());
+        console.warn(creation_image_unsupported());
         return;
       }
 
@@ -736,7 +735,7 @@ export function ChatArea({
       );
     } catch (err) {
       console.error("Failed to send message:", err);
-      toast.error(send_failed());
+      console.error(send_failed());
     }
   }, [
     attachedFiles,

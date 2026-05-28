@@ -71,7 +71,10 @@ export function AppDialog({
                   {title}
                 </DialogPrimitive.Title>
                 {description ? (
-                  <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
+                  <DialogPrimitive.Description
+                    render={<div />}
+                    className="mt-1 text-xs text-muted-foreground"
+                  >
                     {description}
                   </DialogPrimitive.Description>
                 ) : null}

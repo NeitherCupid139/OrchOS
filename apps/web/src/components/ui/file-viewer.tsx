@@ -29,7 +29,6 @@ import {
   type HTMLAttributes,
   type ReactNode,
 } from "react";
-import { toast } from "@/components/ui/toast";
 import {
   code,
   copy_file_content,
@@ -815,7 +814,7 @@ export default function ComponentFileViewer({
     }
 
     setCopied(true);
-    toast.success(file_content_copied());
+    console.log(file_content_copied());
 
     window.setTimeout(() => setCopied(false), 2000);
   }, [selected]);

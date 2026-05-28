@@ -45,7 +45,6 @@ import {
   send_failed,
   untitled_conversation,
 } from "@/paraglide/messages";
-import { toast } from "@/components/ui/toast";
 import { mapConversationMessagesToUiMessages } from "@/components/chat/ConversationFlow";
 import { ChatArea } from "@/components/panels/ChatArea";
 
@@ -739,7 +738,7 @@ export function CreationView(props?: CreationViewProps | null) {
             } catch (err) {
               setPendingUserMessage(conversation.id, undefined);
               console.error("Failed to send message:", err);
-              toast.error(err instanceof Error ? err.message : send_failed());
+              console.error(err instanceof Error ? err.message : send_failed());
               throw err;
             } finally {
               setSending(false);

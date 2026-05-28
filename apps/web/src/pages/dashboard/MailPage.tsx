@@ -18,7 +18,6 @@ import {
   MailEdit02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { toast } from "@/components/ui/toast";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 import { InboxDetail, InboxNoSelection } from "@/components/panels/InboxDetail";
@@ -72,18 +71,14 @@ import {
   email_provider,
   email_provider_help,
   expand_sidebar,
-  failed_to_connect_mail_account,
   host,
   imap_configuration,
   imap_host_placeholder,
   imap_port_placeholder,
   loading as loading_label,
   mail,
-  mail_account_connected,
-  mail_account_details_required,
   mail_accounts,
   mail_accounts_desc,
-  mail_ports_must_be_numbers,
   no_mail_accounts,
   password,
   password_placeholder,
@@ -211,12 +206,7 @@ export function MailPage() {
       })
       .catch((error) => {
         if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to load mail threads",
-            { closeButton: true },
-          );
+          console.error(error);
         }
       });
 
@@ -227,12 +217,7 @@ export function MailPage() {
       })
       .catch((error) => {
         if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to load mail accounts",
-            { closeButton: true },
-          );
+          console.error(error);
         }
       });
 
@@ -291,12 +276,7 @@ export function MailPage() {
       })
       .catch((error) => {
         if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to load thread messages",
-            { closeButton: true },
-          );
+          console.error(error);
         }
       });
 
@@ -335,10 +315,7 @@ export function MailPage() {
       const nextThreads = await api.listInboxThreads();
       setThreads(nextThreads);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to load mail threads",
-        { closeButton: true },
-      );
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -348,10 +325,7 @@ export function MailPage() {
     try {
       setIntegrations((await api.listIntegrations()) as MailIntegration[]);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to load mail accounts",
-        { closeButton: true },
-      );
+      console.error(error);
     }
   }
 
@@ -419,7 +393,6 @@ export function MailPage() {
       !mailAccountForm.smtpHost.trim() ||
       !mailAccountForm.imapHost.trim()
     ) {
-      toast.error(mail_account_details_required());
       return;
     }
 
@@ -427,7 +400,6 @@ export function MailPage() {
     const imapPort = Number(mailAccountForm.imapPort);
 
     if (!Number.isFinite(smtpPort) || !Number.isFinite(imapPort)) {
-      toast.error(mail_ports_must_be_numbers());
       return;
     }
 
@@ -463,16 +435,11 @@ export function MailPage() {
         imapPort: String(EMAIL_PROVIDERS[0].imap.port),
         imapSecure: EMAIL_PROVIDERS[0].imap.secure,
       });
-      toast.success(mail_account_connected());
+
       void loadThreads();
       void loadIntegrations();
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : failed_to_connect_mail_account(),
-        { closeButton: true },
-      );
+      console.error(error);
     } finally {
       setSubmittingAccount(false);
     }

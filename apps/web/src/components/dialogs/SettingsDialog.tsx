@@ -125,7 +125,6 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { toast } from "@/components/ui/toast";
 import {
   ensureSystemNotificationAccess,
   sendTestNotification,
@@ -450,7 +449,7 @@ export function SettingsDialog({
     if (key === "system" && newValue) {
       const result = await ensureSystemNotificationAccess();
       if (!result.granted) {
-        toast.error(notification_permission_denied());
+        console.error(notification_permission_denied());
         // Force re-render so AppleSwitch snaps back to OFF
         onSettingsChange({ ...currentSettings });
         return;
@@ -868,11 +867,11 @@ export function SettingsDialog({
                     onClick={() => {
                       const result = sendTestNotification();
                       if (result.sent) {
-                        toast.success(notification_test_sent());
+                        console.log(notification_test_sent());
                       } else if (result.reason === "denied") {
-                        toast.error(notification_permission_denied());
+                        console.error(notification_permission_denied());
                       } else {
-                        toast.error(notification_test_failed());
+                        console.error(notification_test_failed());
                       }
                     }}
                   >

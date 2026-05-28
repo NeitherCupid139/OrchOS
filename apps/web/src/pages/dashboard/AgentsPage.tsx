@@ -18,7 +18,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useLocation } from "@tanstack/react-router";
-import { toast } from "@/components/ui/toast";
 import { useUIStore } from "@/lib/store";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { LocalDevicesView } from "@/components/panels/LocalDevicesView";
@@ -54,29 +53,20 @@ import {
 import {
   add,
   agent_provider_placeholder,
-  agent_removed,
   agent_url_help,
   agents,
-  all_fields_required,
   api_key,
   api_key_placeholder,
   cancel,
   collapse_sidebar,
-  custom_agent_created,
   custom_agent_name_placeholder,
-  custom_agent_updated,
   custom_agent_url_placeholder,
   custom_configuration,
   default_agent,
-  default_agent_cleared,
-  default_agent_updated,
   delete as delete_message,
   edit,
   edit_agent,
   expand_sidebar,
-  failed_remove_agent,
-  failed_save_custom_agent,
-  failed_update_default_agent,
   loading as loading_label,
   model,
   model_placeholder,
@@ -259,7 +249,6 @@ export function AgentsPage() {
   async function handleSaveCustomAgent() {
     const { name, url, apiKey, model } = agentForm;
     if (!name.trim() || !url.trim() || !apiKey.trim() || !model.trim()) {
-      toast.error(all_fields_required());
       return;
     }
     try {
@@ -283,13 +272,9 @@ export function AgentsPage() {
       }
       setEditingAgentId(null);
       setIsConnectDialogOpen(false);
-      toast.success(
-        editingAgentId ? custom_agent_updated() : custom_agent_created(),
-      );
+
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_save_custom_agent(),
-      );
+      console.error(error);
     }
   }
 
@@ -297,11 +282,9 @@ export function AgentsPage() {
     try {
       const nextId = await api.setDefaultCustomAgentId(agentId);
       setDefaultCustomAgentId(nextId);
-      toast.success(nextId ? default_agent_updated() : default_agent_cleared());
+
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : failed_update_default_agent(),
-      );
+      console.error(error);
     }
   }
 
@@ -347,9 +330,7 @@ export function AgentsPage() {
       });
     } catch (error) {
       setAvailableModels([]);
-      toast.error(
-        error instanceof Error ? error.message : failed_save_custom_agent(),
-      );
+      console.error(error);
     } finally {
       setLoadingModels(false);
     }
@@ -657,13 +638,9 @@ export function AgentsPage() {
                                 ? null
                                 : current,
                             );
-                            toast.success(agent_removed());
+
                           } catch (error) {
-                            toast.error(
-                              error instanceof Error
-                                ? error.message
-                                : failed_remove_agent(),
-                            );
+                            console.error(error);
                           }
                         }}
                         className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"

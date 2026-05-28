@@ -11,10 +11,9 @@ import {
   TimeQuarterPassIcon,
   ArrowTurnBackwardIcon,
 } from "@hugeicons/core-free-icons";
-import { toast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { no_inbox_selected, no_inbox_selected_desc, no_project, send_failed } from "@/paraglide/messages";
+import { no_inbox_selected, no_inbox_selected_desc, no_project } from "@/paraglide/messages";
 import { cn } from "@/lib/utils";
 import type { InboxMessage, InboxThread, InboxMessageType } from "@/lib/api";
 import type { Project } from "@/lib/types";
@@ -152,10 +151,8 @@ export function InboxDetail({ thread, messages, projects, onOpenGoal, onReply }:
           cc,
         });
         setReplyBody("");
-        toast.success(mode === "reply_all" ? "Reply sent to all recipients" : "Reply sent");
       } catch (err) {
         console.error("Failed to send inbox reply:", err);
-        toast.error(send_failed());
       } finally {
         setSendingMode(null);
       }
