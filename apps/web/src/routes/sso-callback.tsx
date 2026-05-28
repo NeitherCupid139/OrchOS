@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { loading } from "@/paraglide/messages";
 
@@ -9,6 +10,14 @@ export const Route = createFileRoute("/sso-callback")({
 });
 
 function SSOCallbackPage() {
+  return (
+    <AuthProvider>
+      <SSOCallbackPageInner />
+    </AuthProvider>
+  );
+}
+
+function SSOCallbackPageInner() {
   const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
   const hasRedirectedRef = useRef(false);

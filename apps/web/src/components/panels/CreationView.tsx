@@ -302,9 +302,9 @@ export function CreationView(props?: CreationViewProps | null) {
     }
 
     try {
-      await createConversation({
-        runtimeId: settings?.defaultRuntimeId || undefined,
-      });
+      const runtimeId =
+        settings?.defaultRuntimeId || enabledRuntimes[0]?.id || undefined;
+      await createConversation({ runtimeId });
     } catch (err) {
       console.error("Failed to create conversation:", err);
     }
@@ -314,6 +314,7 @@ export function CreationView(props?: CreationViewProps | null) {
     messages.length,
     setActiveConversationId,
     settings?.defaultRuntimeId,
+    enabledRuntimes,
   ]);
 
   const handleDeleteConversation = useCallback(async () => {
@@ -398,13 +399,15 @@ export function CreationView(props?: CreationViewProps | null) {
   const handleCreateConversation = useCallback(
     async (data: { runtimeId?: string }) => {
       try {
-        return await createConversation(data);
+        const runtimeId =
+          data.runtimeId || enabledRuntimes[0]?.id || undefined;
+        return await createConversation({ ...data, runtimeId });
       } catch (err) {
         console.error("Failed to create conversation:", err);
         throw err;
       }
     },
-    [createConversation],
+    [createConversation, enabledRuntimes],
   );
 
   /* ── Render ── */

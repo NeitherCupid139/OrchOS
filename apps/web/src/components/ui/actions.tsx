@@ -40,19 +40,21 @@ export function Action({
   if (tooltip) {
     return (
       <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className={cn(
-              "size-7 text-muted-foreground hover:text-foreground",
-              className,
-            )}
-            size="icon-xs"
-            variant="ghost"
-            onClick={onClick}
-          >
-            {children}
-            <span className="sr-only">{label || tooltip}</span>
-          </Button>
+        <TooltipTrigger
+          render={
+            <Button
+              className={cn(
+                "size-7 text-muted-foreground hover:text-foreground",
+                className,
+              )}
+              size="icon-xs"
+              variant="ghost"
+              onClick={onClick}
+            />
+          }
+        >
+          {children}
+          <span className="sr-only">{label || tooltip}</span>
         </TooltipTrigger>
         <TooltipContent>{tooltip}</TooltipContent>
       </Tooltip>

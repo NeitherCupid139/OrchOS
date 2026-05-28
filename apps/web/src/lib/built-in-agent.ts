@@ -4,17 +4,22 @@
  * This agent is available to all users (Free and Pro).
  * The difference is usage limits enforced by the credits system (in @orchos/pro).
  *
- * The API endpoint comes from PUBLIC_BUILTIN_AGENT_URL (wrangler env var)
- * or window.__ORCHOS_PUBLIC_CONFIG__.builtinAgentUrl on the client side.
+ * The built-in agent uses Cloudflare AI Gateway in BYOK (Bring Your Own Key) mode.
+ * The gateway handles authentication with the AI provider — no provider API key
+ * needs to be configured in the application.
+ *
+ * The CF AI Gateway config comes from wrangler env vars:
+ *   CF_AI_GATEWAY_ACCOUNT_ID
+ *   CF_AI_GATEWAY_NAME (default: "default")
+ *   CF_AI_GATEWAY_API_KEY
  */
-
-import { getPublicRuntimeConfig } from "@/lib/public-runtime-config";
 
 const BUILTIN_AGENT_ID = "__builtin__" as const;
 
 export interface BuiltInAgent {
   id: typeof BUILTIN_AGENT_ID;
   name: string;
+  /** In BYOK mode, url is not needed — gateway handles routing */
   url: string;
   model: string;
   /** Built-in agents cannot be deleted or edited */
@@ -24,25 +29,11 @@ export interface BuiltInAgent {
 }
 
 export function getBuiltInAgent(): BuiltInAgent {
-  let url: string;
-
-  if (typeof window !== "undefined") {
-    // Client-side: read from public runtime config
-    url =
-      getPublicRuntimeConfig().builtinAgentUrl ?? "https://api.orchos.dev/v1";
-  } else {
-    // Server-side: read from env var
-    url =
-      typeof process !== "undefined" && process.env.PUBLIC_BUILTIN_AGENT_URL
-        ? process.env.PUBLIC_BUILTIN_AGENT_URL
-        : "https://api.orchos.dev/v1";
-  }
-
   return {
     id: BUILTIN_AGENT_ID,
     name: "OrchOS Agent",
-    url,
-    model: "gemini-2.5-pro",
+    url: "",
+    model: "deepseek-v4-flash",
     readonly: true,
     badge: "Built-in",
   };

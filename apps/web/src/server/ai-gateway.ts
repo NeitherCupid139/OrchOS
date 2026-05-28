@@ -27,8 +27,8 @@ export async function getAIGatewayConfig(): Promise<AIGatewayConfig | null> {
     if (!isProEnabled()) return null;
 
     const accountId = process.env.CF_AI_GATEWAY_ACCOUNT_ID?.trim();
-    const gateway = process.env.CF_AI_GATEWAY_NAME?.trim() || "default";
-    const apiKey = process.env.CF_AI_GATEWAY_API_KEY?.trim();
+    const gateway = process.env.CF_AI_GATEWAY_NAME?.trim() || "orchos";
+    const apiKey = process.env.CF_AIG_TOKEN?.trim();
 
     if (!accountId || !apiKey) return null;
 

@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/observability")({
-  loader: () => {
+  beforeLoad: () => {
     throw redirect({ to: "/dashboard/agents", search: { view: "observability" } });
   },
 });

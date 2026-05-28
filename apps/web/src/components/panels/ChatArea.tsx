@@ -23,6 +23,7 @@ import {
   OpenRouter,
 } from "@lobehub/icons";
 import {
+  AiBrain01Icon,
   ArrowUp01Icon,
   Bookmark01Icon,
   Cancel01Icon,
@@ -58,6 +59,7 @@ import {
   type Conversation,
   type CustomAgent,
 } from "@/lib/api";
+import { getBuiltInAgent } from "@/lib/built-in-agent";
 import type { RuntimeProfile } from "@/lib/types";
 import { useUser } from "@clerk/clerk-react";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -211,7 +213,12 @@ function CustomAgentSelector({
   onOpen,
 }: CustomAgentSelectorProps) {
   const [open, setOpen] = useState(false);
-  const selectedAgent = agents.find((a) => a.id === selectedAgentId);
+  const builtInAgent = useMemo(() => getBuiltInAgent(), []);
+  // selectedAgentId === null means the built-in agent is active
+  const isBuiltIn = selectedAgentId === null;
+  const selectedAgent = isBuiltIn
+    ? builtInAgent
+    : agents.find((a) => a.id === selectedAgentId);
 
   return (
     <DropdownMenu
@@ -228,10 +235,17 @@ function CustomAgentSelector({
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden text-foreground/70">
-            <ProviderIcon
-              url={selectedAgent?.url}
-              className="size-3 shrink-0"
-            />
+            {isBuiltIn ? (
+              <HugeiconsIcon
+                icon={AiBrain01Icon}
+                className="size-3 shrink-0 text-primary"
+              />
+            ) : (
+              <ProviderIcon
+                url={selectedAgent?.url}
+                className="size-3 shrink-0"
+              />
+            )}
           </span>
           <span className="truncate">{selectedAgent?.name || agent()}</span>
         </span>
@@ -242,6 +256,24 @@ function CustomAgentSelector({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="min-w-(--anchor-width)">
+        {/* Built-in agent — always shown first */}
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(null);
+            setOpen(false);
+          }}
+          className="flex items-center gap-2"
+        >
+          <span className="inline-flex size-4 shrink-0 items-center justify-center overflow-hidden">
+            <HugeiconsIcon
+              icon={AiBrain01Icon}
+              className="size-3.5 text-primary"
+            />
+          </span>
+          <span className="truncate">{builtInAgent.name}</span>
+        </DropdownMenuItem>
+
         {agents.length === 0 ? (
           <DropdownMenuItem
             onClick={(e) => {

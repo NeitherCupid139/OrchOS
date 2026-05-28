@@ -9,10 +9,12 @@ import {
   type Message,
 } from "@/server/modules/conversation/service";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
+import { RuntimeService } from "@/server/modules/runtime/service";
 import { getLocalDb } from "@/server/runtime/local-db";
 import { createServiceCache } from "@/server/service-cache";
-import { checkCredits, deductCredits } from "@/server/credits-client";
+import { checkCredits } from "@/server/credits-client";
 import { getAIGatewayConfig } from "@/server/ai-gateway";
+import { getBuiltInAgent } from "@/lib/built-in-agent";
 import { subscriptions } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { AIGatewayConfig } from "@orchos/pro/ai-gateway";
@@ -144,10 +146,15 @@ function toAISDKTools(tools?: AgentToolDefinition[]): ToolSet | undefined {
 
 /**
  * Single-step chat completion using AI SDK's generateText.
+ *
+ * Supports three modes:
+ * - BYOK mode (url & apiKey omitted): gateway handles auth/billing
+ * - Custom agent through gateway (url + gatewayConfig): routed via CF AI Gateway
+ * - Direct mode (no gatewayConfig): direct to provider
  */
 async function requestChatCompletion(input: {
-  url: string;
-  apiKey: string;
+  url?: string;
+  apiKey?: string;
   model: string;
   messages: ChatMessage[];
   tools?: AgentToolDefinition[];
@@ -334,6 +341,89 @@ async function runCustomAgentConversation(input: {
   );
 }
 
+/**
+ * Run a conversation with the built-in agent via Cloudflare AI Gateway (BYOK mode).
+ *
+ * Unlike custom agents, the built-in agent:
+ * - Uses BYOK mode (no provider URL or API key needed)
+ * - Routes through Cloudflare AI Gateway (handles auth & observability)
+ * - Does not execute custom agent tools
+ */
+async function runBuiltinAgentConversation(input: {
+  conversationId: string;
+  userContent?: string;
+  retry?: boolean;
+}) {
+  const db = await getLocalDb();
+  const gatewayConfig = await getAIGatewayConfig();
+  const builtIn = getBuiltInAgent();
+
+  // If gateway is not configured, fall back to the previous runtime-based path
+  if (!gatewayConfig) {
+    // Auto-assign the first enabled runtime if the conversation has none
+    const conv = await ConversationService.get(db, input.conversationId);
+    if (conv && !conv.runtimeId) {
+      const enabledRuntimes = (await RuntimeService.list(db)).filter(
+        (r) => r.enabled,
+      );
+      if (enabledRuntimes.length > 0) {
+        await ConversationService.update(db, input.conversationId, {
+          runtimeId: enabledRuntimes[0].id,
+        });
+      }
+    }
+
+    if (input.retry) {
+      return ConversationService.retryLastReply(db, input.conversationId);
+    }
+    return ConversationService.sendAndReply(db, input.conversationId, input.userContent ?? "");
+  }
+
+  if (input.retry) {
+    await ConversationService.deleteLastAssistantMessage(
+      db,
+      input.conversationId,
+    );
+  } else if (input.userContent !== undefined) {
+    await ConversationService.addMessage(
+      db,
+      input.conversationId,
+      "user",
+      input.userContent,
+    );
+  }
+
+  const storedMessages = await ConversationService.getMessages(
+    db,
+    input.conversationId,
+  );
+  const chatMessages = conversationHistoryToChatMessages(storedMessages);
+
+  const completion = await requestChatCompletion({
+    model: builtIn.model,
+    messages: chatMessages,
+    gatewayConfig,
+    // No url or apiKey → BYOK mode: gateway handles auth
+  });
+
+  const assistantContent = completion.choices?.[0]?.message?.content ?? "";
+
+  return ConversationService.addMessage(
+    db,
+    input.conversationId,
+    "assistant",
+    assistantContent || "No response",
+    undefined,
+    undefined,
+    {
+      tokens:
+        completion.usage?.totalTokens && completion.usage.totalTokens > 0
+          ? completion.usage.totalTokens
+          : undefined,
+    },
+  );
+}
+
 async function sendConversationMessage(
   conversationId: string,
   content: string,
@@ -363,10 +453,10 @@ async function sendConversationMessage(
     }
   }
 
-  const conversation = await ConversationService.get(db, conversationId);
-  if (!conversation) throw new Error("Conversation not found");
-
-  return ConversationService.sendAndReply(db, conversationId, content);
+  return runBuiltinAgentConversation({
+    conversationId,
+    userContent: content,
+  });
 }
 
 async function retryConversationMessage(
@@ -397,7 +487,10 @@ async function retryConversationMessage(
     }
   }
 
-  return ConversationService.retryLastReply(db, conversationId);
+  return runBuiltinAgentConversation({
+    conversationId,
+    retry: true,
+  });
 }
 
 export const conversationsRouter = {
@@ -467,23 +560,6 @@ export const conversationsRouter = {
         input.content,
         input.customAgentId,
       );
-
-      try {
-        const auth = await authenticateORPCRequest(context.request);
-        if (auth?.userId && message.tokens && message.tokens > 0) {
-          await deductCredits(
-            {
-              apiEndpoint: process.env.CREDITS_API_ENDPOINT ?? "",
-              apiKey: process.env.CREDITS_API_KEY ?? "",
-            },
-            auth.userId,
-            message.tokens,
-            "agent_message",
-          );
-        }
-      } catch {
-        /* Deduction failure is non-fatal */
-      }
 
       return message;
     },

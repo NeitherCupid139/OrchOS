@@ -5,33 +5,22 @@
   "main": "@tanstack/react-start/server-entry",
   "vars": {
     "CLERK_SECRET_KEY": "sk_test_...",
-    "ENABLE_WEBSOCKET": "false",
-    "CREDITS_API_ENDPOINT": "",
-    "CREDITS_API_KEY": "",
-
     "TURNSTILE_SECRET_KEY": "",
     "VITE_CLERK_PUBLISHABLE_KEY": "pk_test_...",
     "VITE_TURNSTILE_SITE_KEY": "",
-
-    "DODO_PAYMENTS_API_KEY": "your-dodo-api-key",
-    "DODO_PAYMENTS_WEBHOOK_KEY": "your-webhook-secret",
-    "DODO_PAYMENTS_RETURN_URL": "https://orchos.dev/dashboard",
-    "DODO_PAYMENTS_ENVIRONMENT": "test_mode",
-
-    "PUBLIC_BUILTIN_AGENT_URL": "https://api.orchos.dev/v1"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "orchos-db",
       "database_id": "your-database-id",
-      "migrations_dir": "drizzle"
-    }
+      "migrations_dir": "drizzle",
+    },
   ],
   "assets": {
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
   },
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }
