@@ -1145,7 +1145,8 @@ function ProfileEditDialog({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
-  const [activeTab, setActiveTab] = useState<ProfileDialogTab>("profile");
+  const activeTab = useUIStore((s) => s.profileDialogTab) as ProfileDialogTab;
+  const setActiveTab = useUIStore((s) => s.setProfileDialogTab);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

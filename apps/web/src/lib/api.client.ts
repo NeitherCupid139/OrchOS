@@ -42,6 +42,67 @@ import {
   normalizeInboxThread,
 } from "./api.normalizers";
 
+const CLIENT_STORAGE_ALLOWLIST = new Set(["favicon_cache_v1"]);
+
+function isPortableClientStorageKey(key: string) {
+  return key.startsWith("orchos-") || CLIENT_STORAGE_ALLOWLIST.has(key);
+}
+
+function collectPortableClientStorage(): Record<string, string> | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const storage: Record<string, string> = {};
+
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+
+      if (!key || !isPortableClientStorageKey(key)) {
+        continue;
+      }
+
+      const value = window.localStorage.getItem(key);
+      if (value !== null) {
+        storage[key] = value;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+
+  return storage;
+}
+
+function restorePortableClientStorage(storage?: Record<string, string>) {
+  if (typeof window === "undefined" || !storage) {
+    return;
+  }
+
+  try {
+    const existingKeys: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key && isPortableClientStorageKey(key)) {
+        existingKeys.push(key);
+      }
+    }
+
+    for (const key of existingKeys) {
+      window.localStorage.removeItem(key);
+    }
+
+    for (const [key, value] of Object.entries(storage)) {
+      if (isPortableClientStorageKey(key)) {
+        window.localStorage.setItem(key, value);
+      }
+    }
+  } catch {
+    // The server-side import has already completed; local UI cache restore is best-effort.
+  }
+}
+
 export const api = {
   listRuntimes: async (): Promise<RuntimeProfile[]> => {
     return (await orpc.runtimes.list({})) as RuntimeProfile[];
@@ -306,12 +367,19 @@ export const api = {
     return (await orpc.settings.update(data)) as ControlSettings;
   },
   exportPlatformData: async (): Promise<PlatformDataExport> => {
-    return (await orpc.dataPortability.exportAll({})) as PlatformDataExport;
+    const serverData = (await orpc.dataPortability.exportAll({})) as PlatformDataExport;
+    return {
+      ...serverData,
+      clientStorage: collectPortableClientStorage(),
+    };
   },
   importPlatformData: async (
     data: PlatformDataExport,
   ): Promise<PlatformDataImportResult> => {
-    return (await orpc.dataPortability.importAll(data)) as PlatformDataImportResult;
+    const { clientStorage: _clientStorage, ...serverData } = data;
+    const result = (await orpc.dataPortability.importAll(serverData)) as PlatformDataImportResult;
+    restorePortableClientStorage(data.clientStorage);
+    return result;
   },
   listOrganizations: async (): Promise<Organization[]> => {
     return (await orpc.organizations.list({})) as Organization[];
@@ -432,6 +500,9 @@ export const api = {
     categories: BookmarkCategory[],
   ): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.replaceAll({ categories })) as BookmarkCategory[];
+  },
+  organizeBookmarksWithAi: async (): Promise<BookmarkCategory[]> => {
+    return (await orpc.bookmarks.organizeWithAi({})) as BookmarkCategory[];
   },
   createBookmarkCategory: async (name: string, icon?: string, color?: string): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.createCategory({ name, icon, color })) as BookmarkCategory[];

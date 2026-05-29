@@ -118,8 +118,6 @@ const LOCAL_CALENDAR_ICONS: { name: string; component: typeof Calendar03Icon }[]
   { name: "Calendars", component: CalendarsIcon },
 ];
 
-const TODAY = new Date();
-
 function offsetDateTime(value: string, offsetMinutes: number) {
   return new Date(new Date(value).getTime() + offsetMinutes * 60_000);
 }
@@ -127,8 +125,10 @@ function offsetDateTime(value: string, offsetMinutes: number) {
 export function CalendarPage() {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
-  const [selectedSidebarItem, setSelectedSidebarItem] = useState<string>("google-overview");
+  const activeAccountId = useUIStore((s) => s.calendarActiveAccountId);
+  const setActiveAccountId = useUIStore((s) => s.setCalendarActiveAccountId);
+  const selectedSidebarItem = useUIStore((s) => s.calendarSelectedSidebarItem);
+  const setSelectedSidebarItem = useUIStore((s) => s.setCalendarSelectedSidebarItem);
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<string[]>([]);
   const [isCalendarSourceDialogOpen, setIsCalendarSourceDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -142,11 +142,13 @@ export function CalendarPage() {
   const [, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
-  const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(TODAY));
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(TODAY));
+  const selectedLocalDate = useUIStore((s) => s.calendarSelectedLocalDate);
+  const setSelectedLocalDate = useUIStore((s) => s.setCalendarSelectedLocalDate);
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(parseDayKey(selectedLocalDate)));
   const calendarViewMode = useUIStore((s) => s.calendarViewMode);
+  const calendarSourceFilter = useUIStore((s) => s.calendarSourceFilter);
+  const setCalendarSourceFilter = useUIStore((s) => s.setCalendarSourceFilter);
   const boardTasks = useBoardStore((state) => state.tasks);
-  const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "events" | "tasks">("all");
   const [selectedEventDetailId, setSelectedEventDetailId] = useState<string | null>(null);
   const [calendarPendingDelete, setCalendarPendingDelete] = useState<LocalCalendar | null>(null);
   const [localCalendarForm, setLocalCalendarForm] = useState<LocalCalendarFormState>({

@@ -109,6 +109,10 @@ export function MailPage() {
   const activeInboxId = useUIStore((s) => s.activeInboxId);
   const setActiveInboxId = useUIStore((s) => s.setActiveInboxId);
   const mailFolderFilter = useUIStore((s) => s.mailFolderFilter);
+  const activeAccountId = useUIStore((s) => s.mailActiveAccountId);
+  const setActiveAccountIdFilter = useUIStore(
+    (s) => s.setMailActiveAccountId,
+  );
   const projects = dashboardProjects ?? [];
 
   const [threads, setThreads] = useState<InboxThread[]>([]);
@@ -130,9 +134,6 @@ export function MailPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [, setLoading] = useState(true);
   const [submittingAccount, setSubmittingAccount] = useState(false);
-  const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(
-    null,
-  );
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const collapseTimerRef = useRef<number | null>(null);

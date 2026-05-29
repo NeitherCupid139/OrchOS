@@ -14,6 +14,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Add01Icon,
+  AiMagicIcon,
   Bookmark01Icon,
   Briefcase01Icon,
   Cancel01Icon,
@@ -44,6 +45,7 @@ import {
   SchoolIcon,
   Search01Icon,
   StarIcon,
+  Undo02Icon,
   Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -52,6 +54,7 @@ import { api, type BookmarkCategory } from "@/lib/api";
 import { useDashboard } from "@/lib/dashboard-context";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   RenameDialog,
   type IconOption,
@@ -67,6 +70,10 @@ import {
 import { cn } from "@/lib/utils";
 import {
   back,
+  bookmark_ai_failed,
+  bookmark_ai_organize,
+  bookmark_ai_organizing,
+  bookmark_ai_undo,
   bookmark_count,
   bookmarks,
   bookmarks_workspace,
@@ -610,80 +617,95 @@ const BookmarkCard = memo(
           bookmark.pinned && "border border-primary/30 bg-primary/[0.02]",
         )}
       >
-        <div className="relative flex items-start gap-2">
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex min-w-0 flex-1 items-start gap-2"
-          >
-            <BookmarkFavicon
-              url={bookmark.url}
-              pinned={bookmark.pinned}
-              icon={bookmark.icon}
-              bookmarkId={bookmark.id}
-              categoryId={categoryId}
-            />
-            <div className="min-w-0 flex-1">
-              <h2 className="line-clamp-2 break-all text-sm font-medium text-foreground">
+        <a
+          href={bookmark.url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-full min-w-0 items-start gap-2"
+        >
+          <BookmarkFavicon
+            url={bookmark.url}
+            pinned={bookmark.pinned}
+            icon={bookmark.icon}
+            bookmarkId={bookmark.id}
+            categoryId={categoryId}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            {/* Top section: title row + inline action buttons */}
+            <div className="flex min-w-0 items-start gap-1">
+              <h2 className="min-w-0 flex-1 line-clamp-2 break-all text-sm font-medium text-foreground">
                 {bookmark.title}
               </h2>
-              <p className="mt-0.5 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
-                {bookmark.url}
-              </p>
+              <div
+                className={cn(
+                  "hidden shrink-0 items-center gap-0.5 rounded-lg bg-card/95 p-0.5 shadow-sm",
+                  "group-hover:inline-flex",
+                )}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  tabIndex={-1}
+                  disabled={pinPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onTogglePin(categoryId, bookmark.id, bookmark.pinned);
+                  }}
+                  className={cn(
+                    bookmark.pinned && "text-primary",
+                    pinPending && "opacity-70",
+                  )}
+                  title={bookmark.pinned ? unpin() : pin_to_home()}
+                >
+                  <HugeiconsIcon
+                    icon={PinIcon}
+                    className={cn(
+                      "size-3.5",
+                      bookmark.pinned && "fill-primary",
+                    )}
+                  />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onEdit(
+                      bookmark.id,
+                      bookmark.title,
+                      bookmark.url,
+                      bookmark.icon,
+                    );
+                  }}
+                  title={edit_bookmark()}
+                >
+                  <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onDelete(bookmark.id);
+                  }}
+                  className="hover:text-destructive"
+                  title={delete_bookmark()}
+                >
+                  <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                </Button>
+              </div>
             </div>
-          </a>
-          <div
-            className={cn(
-              "flex items-center gap-0.5 transition-opacity duration-200 ease-out",
-              "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
-            )}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              tabIndex={-1}
-              disabled={pinPending}
-              onClick={() =>
-                onTogglePin(categoryId, bookmark.id, bookmark.pinned)
-              }
-              className={cn(
-                bookmark.pinned && "text-primary",
-                pinPending && "opacity-70",
-              )}
-              title={bookmark.pinned ? unpin() : pin_to_home()}
-            >
-              <HugeiconsIcon
-                icon={PinIcon}
-                className={cn("size-3.5", bookmark.pinned && "fill-primary")}
-              />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              tabIndex={-1}
-              onClick={() =>
-                onEdit(bookmark.id, bookmark.title, bookmark.url, bookmark.icon)
-              }
-              title={edit_bookmark()}
-            >
-              <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              tabIndex={-1}
-              onClick={() => onDelete(bookmark.id)}
-              className="hover:text-destructive"
-              title={delete_bookmark()}
-            >
-              <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-            </Button>
+            {/* Bottom section: URL — completely independent of hover */}
+            <p className="mt-0.5 line-clamp-2 break-all text-xs leading-5 text-muted-foreground">
+              {bookmark.url}
+            </p>
           </div>
-        </div>
+        </a>
       </div>
     );
   },
@@ -715,6 +737,13 @@ function updateBookmarkPinnedState(
   );
 }
 
+function cloneBookmarkCategories(categories: BookmarkCategory[]) {
+  return categories.map((category) => ({
+    ...category,
+    bookmarks: category.bookmarks.map((bookmark) => ({ ...bookmark })),
+  }));
+}
+
 export function BookmarksPage() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
@@ -725,8 +754,9 @@ export function BookmarksPage() {
   const collapseTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<BookmarkCategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null,
+  const selectedCategoryId = useUIStore((s) => s.selectedBookmarkCategoryId);
+  const setSelectedCategoryId = useUIStore(
+    (s) => s.setSelectedBookmarkCategoryId,
   );
   const [renameCategoryId, setRenameCategoryId] = useState<string | null>(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
@@ -752,6 +782,12 @@ export function BookmarksPage() {
   const [pendingPinBookmarkIds, setPendingPinBookmarkIds] = useState<string[]>(
     [],
   );
+  const [aiOrganizing, setAiOrganizing] = useState(false);
+  const [aiOrganizeUndo, setAiOrganizeUndo] = useState<{
+    categories: BookmarkCategory[];
+    selectedCategoryId: string | null;
+  } | null>(null);
+  const [aiOrganizeError, setAiOrganizeError] = useState(false);
   const [isCreateBookmarkDialogOpen, setIsCreateBookmarkDialogOpen] =
     useState(false);
   const [isCreateOrImportDialogOpen, setIsCreateOrImportDialogOpen] =
@@ -851,7 +887,10 @@ export function BookmarksPage() {
       const nextCategories = await api.listBookmarks();
       setCategories(nextCategories);
       setSelectedCategoryId(
-        (current) => current ?? nextCategories[0]?.id ?? null,
+        (current) =>
+          nextCategories.some((category) => category.id === current)
+            ? current
+            : (nextCategories[0]?.id ?? null),
       );
     } catch (error) {
       console.error(error);
@@ -1030,6 +1069,63 @@ export function BookmarksPage() {
     [],
   );
 
+  async function handleAiOrganizeBookmarks() {
+    const bookmarkTotal = categories.reduce(
+      (total, category) => total + category.bookmarks.length,
+      0,
+    );
+
+    if (aiOrganizing || bookmarkTotal === 0) {
+      return;
+    }
+
+    const snapshot = {
+      categories: cloneBookmarkCategories(categories),
+      selectedCategoryId,
+    };
+
+    setAiOrganizing(true);
+    setAiOrganizeError(false);
+
+    try {
+      const organized = await api.organizeBookmarksWithAi();
+      setAiOrganizeUndo(snapshot);
+      setCategories(organized);
+      setSelectedCategoryId(organized[0]?.id ?? null);
+    } catch (error) {
+      console.error("Failed to organize bookmarks with AI:", error);
+      setAiOrganizeError(true);
+    } finally {
+      setAiOrganizing(false);
+    }
+  }
+
+  async function handleUndoAiOrganizeBookmarks() {
+    if (!aiOrganizeUndo || aiOrganizing) {
+      return;
+    }
+
+    setAiOrganizing(true);
+    setAiOrganizeError(false);
+
+    try {
+      await persistCategories(
+        aiOrganizeUndo.categories,
+        aiOrganizeUndo.selectedCategoryId,
+      );
+      setAiOrganizeUndo(null);
+    } catch (error) {
+      console.error("Failed to restore bookmarks:", error);
+      setAiOrganizeError(true);
+    } finally {
+      setAiOrganizing(false);
+    }
+  }
+
+  const totalBookmarkCount = categories.reduce(
+    (total, category) => total + category.bookmarks.length,
+    0,
+  );
   const selectedCategory =
     categories.find((category) => category.id === selectedCategoryId) ??
     categories[0] ??
@@ -1270,8 +1366,8 @@ export function BookmarksPage() {
                             {category.name}
                           </span>
                         </button>
-                        <div className="relative ml-auto h-6 w-[76px] shrink-0">
-                          <div className="absolute inset-0 flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="relative ml-auto flex h-6 shrink-0 items-center">
+                          <div className="absolute inset-y-0 right-0 z-10 flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                             <Tooltip>
                               <TooltipTrigger
                                 render={(props) => (
@@ -1322,7 +1418,7 @@ export function BookmarksPage() {
                               </TooltipContent>
                             </Tooltip>
                           </div>
-                          <span className="absolute inset-y-0 right-0 flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
+                          <span className="flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground tabular-nums transition-opacity group-hover:opacity-0">
                             {category.bookmarks.length}
                           </span>
                         </div>
@@ -1402,7 +1498,7 @@ export function BookmarksPage() {
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-4 p-4 lg:gap-6 lg:p-6">
               {selectedCategory ? (
                 <>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <h1 className="flex items-center gap-2 truncate text-xl font-semibold text-foreground lg:text-2xl">
                         <HugeiconsIcon
@@ -1420,7 +1516,39 @@ export function BookmarksPage() {
                         })}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      {aiOrganizeUndo ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={aiOrganizing}
+                          onClick={() => void handleUndoAiOrganizeBookmarks()}
+                        >
+                          <HugeiconsIcon
+                            icon={Undo02Icon}
+                            className="size-4"
+                          />
+                          {bookmark_ai_undo()}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={aiOrganizing || totalBookmarkCount === 0}
+                        onClick={() => void handleAiOrganizeBookmarks()}
+                      >
+                        {aiOrganizing ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <HugeiconsIcon
+                            icon={AiMagicIcon}
+                            className="size-4"
+                          />
+                        )}
+                        {aiOrganizing
+                          ? bookmark_ai_organizing()
+                          : bookmark_ai_organize()}
+                      </Button>
                       <Button
                         type="button"
                         onClick={() => {
@@ -1437,6 +1565,12 @@ export function BookmarksPage() {
                       </Button>
                     </div>
                   </div>
+
+                  {aiOrganizeError ? (
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      {bookmark_ai_failed()}
+                    </div>
+                  ) : null}
 
                   {/* Mobile category picker */}
                   {categories.length > 1 && (

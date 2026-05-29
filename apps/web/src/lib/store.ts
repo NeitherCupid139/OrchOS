@@ -35,11 +35,45 @@ type MailFolderFilter =
   | "completed"
   | "archived";
 type CalendarViewMode = "day" | "week" | "month";
+type CalendarSourceFilter = "all" | "events" | "tasks";
 type CapabilityViewMode = "mine" | "market";
+type ChatInputMode = "chat" | "search";
+type ObservabilityTimeRange = "24h" | "7d" | "30d";
+type SettingsDialogTab =
+  | "general"
+  | "notifications"
+  | "mail"
+  | "data"
+  | "shortcuts"
+  | "about";
+type ProfileDialogTab = "profile" | "security" | "membership";
+type SetterValue<T> = T | ((current: T) => T);
+
+function resolveSetterValue<T>(value: SetterValue<T>, current: T) {
+  return typeof value === "function"
+    ? (value as (current: T) => T)(current)
+    : value;
+}
+
+function formatLocalDayKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 interface UIState {
   // Navigation & selection
   activeInboxId: string | null;
   activeOrganizationId: string | null;
+  selectedBookmarkCategoryId: string | null;
+  mailActiveAccountId: string | null;
+  calendarActiveAccountId: string | null;
+  calendarSelectedSidebarItem: string;
+  calendarSelectedLocalDate: string;
+  creationSelectedCustomAgentId: string | null | undefined;
+  settingsDialogTab: SettingsDialogTab;
+  profileDialogTab: ProfileDialogTab;
 
   // Filters
   sourceFilter: SourceFilter;
@@ -48,8 +82,12 @@ interface UIState {
   creationArchiveFilter: CreationArchiveFilter;
   mailFolderFilter: MailFolderFilter;
   calendarViewMode: CalendarViewMode;
+  calendarSourceFilter: CalendarSourceFilter;
   capabilityViewMode: CapabilityViewMode;
   boardFilter: BoardTaskFilter;
+  chatInputMode: ChatInputMode;
+  chatSearchEngineId: string;
+  observabilityTimeRange: ObservabilityTimeRange;
 
   // Panel states
   activityPanelOpen: boolean;
@@ -71,14 +109,28 @@ interface UIState {
 interface UIActions {
   setActiveInboxId: (id: string | null) => void;
   setActiveOrganizationId: (id: string | null) => void;
+  setSelectedBookmarkCategoryId: (
+    id: SetterValue<string | null>,
+  ) => void;
+  setMailActiveAccountId: (id: string | null) => void;
+  setCalendarActiveAccountId: (id: string | null) => void;
+  setCalendarSelectedSidebarItem: (item: SetterValue<string>) => void;
+  setCalendarSelectedLocalDate: (date: SetterValue<string>) => void;
+  setCreationSelectedCustomAgentId: (id: string | null | undefined) => void;
+  setSettingsDialogTab: (tab: SettingsDialogTab) => void;
+  setProfileDialogTab: (tab: ProfileDialogTab) => void;
   setSourceFilter: (filter: SourceFilter) => void;
   setInboxStatusFilter: (filter: InboxStatusFilter) => void;
   setScopeFilter: (filter: ScopeFilter) => void;
   setCreationArchiveFilter: (filter: CreationArchiveFilter) => void;
   setMailFolderFilter: (filter: MailFolderFilter) => void;
   setCalendarViewMode: (mode: CalendarViewMode) => void;
+  setCalendarSourceFilter: (filter: CalendarSourceFilter) => void;
   setCapabilityViewMode: (mode: CapabilityViewMode) => void;
   setBoardFilter: (filter: BoardTaskFilter) => void;
+  setChatInputMode: (mode: ChatInputMode) => void;
+  setChatSearchEngineId: (id: string) => void;
+  setObservabilityTimeRange: (range: ObservabilityTimeRange) => void;
   setActivityPanelOpen: (open: boolean) => void;
   toggleActivityPanel: () => void;
   setActivityExpanded: (expanded: boolean) => void;
@@ -120,6 +172,14 @@ export const useUIStore = create<UIState & UIActions>()(
       // Navigation & selection
       activeInboxId: null,
       activeOrganizationId: null,
+      selectedBookmarkCategoryId: null,
+      mailActiveAccountId: null,
+      calendarActiveAccountId: null,
+      calendarSelectedSidebarItem: "google-overview",
+      calendarSelectedLocalDate: formatLocalDayKey(new Date()),
+      creationSelectedCustomAgentId: undefined,
+      settingsDialogTab: "general" as SettingsDialogTab,
+      profileDialogTab: "profile" as ProfileDialogTab,
 
       // Filters
       sourceFilter: "all" as SourceFilter,
@@ -128,8 +188,12 @@ export const useUIStore = create<UIState & UIActions>()(
       creationArchiveFilter: "all" as CreationArchiveFilter,
       mailFolderFilter: "all" as MailFolderFilter,
       calendarViewMode: "week" as CalendarViewMode,
+      calendarSourceFilter: "all" as CalendarSourceFilter,
       capabilityViewMode: "mine" as CapabilityViewMode,
       boardFilter: "all" as BoardTaskFilter,
+      chatInputMode: "chat" as ChatInputMode,
+      chatSearchEngineId: "google",
+      observabilityTimeRange: "24h" as ObservabilityTimeRange,
 
       // Panel states
       activityPanelOpen: false,
@@ -149,6 +213,33 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setActiveInboxId: (id) => set({ activeInboxId: id }),
       setActiveOrganizationId: (id) => set({ activeOrganizationId: id }),
+      setSelectedBookmarkCategoryId: (id) =>
+        set((state) => ({
+          selectedBookmarkCategoryId: resolveSetterValue(
+            id,
+            state.selectedBookmarkCategoryId,
+          ),
+        })),
+      setMailActiveAccountId: (id) => set({ mailActiveAccountId: id }),
+      setCalendarActiveAccountId: (id) => set({ calendarActiveAccountId: id }),
+      setCalendarSelectedSidebarItem: (item) =>
+        set((state) => ({
+          calendarSelectedSidebarItem: resolveSetterValue(
+            item,
+            state.calendarSelectedSidebarItem,
+          ),
+        })),
+      setCalendarSelectedLocalDate: (date) =>
+        set((state) => ({
+          calendarSelectedLocalDate: resolveSetterValue(
+            date,
+            state.calendarSelectedLocalDate,
+          ),
+        })),
+      setCreationSelectedCustomAgentId: (id) =>
+        set({ creationSelectedCustomAgentId: id }),
+      setSettingsDialogTab: (tab) => set({ settingsDialogTab: tab }),
+      setProfileDialogTab: (tab) => set({ profileDialogTab: tab }),
       setSourceFilter: (filter) => set({ sourceFilter: filter }),
       setInboxStatusFilter: (filter) => set({ inboxStatusFilter: filter }),
       setScopeFilter: (filter) => set({ scopeFilter: filter }),
@@ -156,8 +247,14 @@ export const useUIStore = create<UIState & UIActions>()(
         set({ creationArchiveFilter: filter }),
       setMailFolderFilter: (filter) => set({ mailFolderFilter: filter }),
       setCalendarViewMode: (mode) => set({ calendarViewMode: mode }),
+      setCalendarSourceFilter: (filter) =>
+        set({ calendarSourceFilter: filter }),
       setCapabilityViewMode: (mode) => set({ capabilityViewMode: mode }),
       setBoardFilter: (filter) => set({ boardFilter: filter }),
+      setChatInputMode: (mode) => set({ chatInputMode: mode }),
+      setChatSearchEngineId: (id) => set({ chatSearchEngineId: id }),
+      setObservabilityTimeRange: (range) =>
+        set({ observabilityTimeRange: range }),
       setActivityPanelOpen: (open) => set({ activityPanelOpen: open }),
       toggleActivityPanel: () =>
         set((s) => ({ activityPanelOpen: !s.activityPanelOpen })),
@@ -198,14 +295,26 @@ export const useUIStore = create<UIState & UIActions>()(
       // Only persist essential navigation/filter state — settings come from server API.
       partialize: (state) => ({
         activeOrganizationId: state.activeOrganizationId,
+        selectedBookmarkCategoryId: state.selectedBookmarkCategoryId,
+        mailActiveAccountId: state.mailActiveAccountId,
+        calendarActiveAccountId: state.calendarActiveAccountId,
+        calendarSelectedSidebarItem: state.calendarSelectedSidebarItem,
+        calendarSelectedLocalDate: state.calendarSelectedLocalDate,
+        creationSelectedCustomAgentId: state.creationSelectedCustomAgentId,
+        settingsDialogTab: state.settingsDialogTab,
+        profileDialogTab: state.profileDialogTab,
         sourceFilter: state.sourceFilter,
         inboxStatusFilter: state.inboxStatusFilter,
         scopeFilter: state.scopeFilter,
         creationArchiveFilter: state.creationArchiveFilter,
         mailFolderFilter: state.mailFolderFilter,
         calendarViewMode: state.calendarViewMode,
+        calendarSourceFilter: state.calendarSourceFilter,
         capabilityViewMode: state.capabilityViewMode,
         boardFilter: state.boardFilter,
+        chatInputMode: state.chatInputMode,
+        chatSearchEngineId: state.chatSearchEngineId,
+        observabilityTimeRange: state.observabilityTimeRange,
         sidebarCollapsed: state.sidebarCollapsed,
         creationSidebarCollapsed: state.creationSidebarCollapsed,
         creationSidebarWidth: state.creationSidebarWidth,

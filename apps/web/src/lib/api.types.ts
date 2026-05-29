@@ -445,6 +445,7 @@ export interface PlatformDataExport {
   schemaVersion: 1;
   exportedAt: string;
   tables: Record<string, Record<string, unknown>[]>;
+  clientStorage?: Record<string, string>;
 }
 
 export interface PlatformDataImportResult {

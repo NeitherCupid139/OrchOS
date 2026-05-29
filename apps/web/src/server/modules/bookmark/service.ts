@@ -1,7 +1,12 @@
 import { asc, inArray } from "drizzle-orm";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 import { bookmarkCategories, bookmarks } from "@/server/db/schema";
 import type { AppDb } from "@/server/db/types";
+import { getAIGatewayConfig } from "@/server/ai-gateway";
+import { createModelFromAgent } from "@/server/ai/provider";
+import { getBuiltInAgent } from "@/lib/built-in-agent";
 
 type BookmarkItem = {
   id: string;
@@ -21,6 +26,23 @@ export type BookmarkCategoryRecord = {
 
 function generateId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+const bookmarkOrganizationSchema = z.object({
+  categories: z.array(
+    z.object({
+      name: z.string().min(1).max(48),
+      bookmarkIds: z.array(z.string()),
+    }),
+  ),
+});
+
+function normalizeCategoryName(name: string) {
+  return name.trim().replace(/\s+/g, " ").slice(0, 48);
+}
+
+function categoryKey(name: string) {
+  return normalizeCategoryName(name).toLowerCase();
 }
 
 export abstract class BookmarkService {
@@ -266,5 +288,119 @@ export abstract class BookmarkService {
           : category,
       ),
     );
+  }
+
+  static async organizeWithAi(db: AppDb): Promise<BookmarkCategoryRecord[]> {
+    const categories = await BookmarkService.list(db);
+    const flatBookmarks = categories.flatMap((category) =>
+      category.bookmarks.map((bookmark) => ({
+        ...bookmark,
+        currentCategory: category.name,
+      })),
+    );
+
+    if (flatBookmarks.length === 0) {
+      return categories;
+    }
+
+    const builtIn = getBuiltInAgent();
+    const languageModel = await createModelFromAgent({
+      model: builtIn.model,
+      gatewayConfig: await getAIGatewayConfig(),
+    });
+
+    const { object } = await generateObject({
+      model: languageModel,
+      schema: bookmarkOrganizationSchema,
+      system:
+        "You organize browser bookmarks into useful folders. Return only category names and bookmark IDs. Do not invent bookmark IDs. Keep every category practical and concise.",
+      prompt: [
+        "Group these bookmarks into useful folders.",
+        "You may create new folders, merge old folders, or keep existing folders if they still make sense.",
+        "Prefer category names in the same language/style as the existing category names.",
+        "Every bookmark should appear in exactly one folder.",
+        "",
+        JSON.stringify(
+          flatBookmarks.map((bookmark) => ({
+            id: bookmark.id,
+            title: bookmark.title,
+            url: bookmark.url,
+            currentCategory: bookmark.currentCategory,
+          })),
+        ),
+      ].join("\n"),
+      temperature: 0.2,
+    });
+
+    const bookmarksById = new Map(
+      flatBookmarks.map((bookmark) => [bookmark.id, bookmark]),
+    );
+    const existingCategoriesByName = new Map(
+      categories.map((category) => [categoryKey(category.name), category]),
+    );
+    const usedBookmarkIds = new Set<string>();
+    const organizedByName = new Map<string, BookmarkCategoryRecord>();
+
+    function appendCategory(name: string, nextBookmarks: BookmarkItem[]) {
+      const normalizedName = normalizeCategoryName(name);
+      if (!normalizedName || nextBookmarks.length === 0) {
+        return;
+      }
+
+      const key = categoryKey(normalizedName);
+      const existing =
+        organizedByName.get(key) ?? existingCategoriesByName.get(key);
+      const category: BookmarkCategoryRecord = organizedByName.get(key) ?? {
+        id: existing?.id ?? generateId("bookmark_category"),
+        name: existing?.name ?? normalizedName,
+        icon: existing?.icon ?? "folder",
+        color: existing?.color,
+        bookmarks: [],
+      };
+
+      category.bookmarks.push(...nextBookmarks);
+      organizedByName.set(key, category);
+    }
+
+    for (const proposedCategory of object.categories) {
+      const nextBookmarks: BookmarkItem[] = [];
+
+      for (const bookmarkId of proposedCategory.bookmarkIds) {
+        const bookmark = bookmarksById.get(bookmarkId);
+        if (!bookmark || usedBookmarkIds.has(bookmarkId)) {
+          continue;
+        }
+
+        usedBookmarkIds.add(bookmarkId);
+        nextBookmarks.push({
+          id: bookmark.id,
+          title: bookmark.title,
+          url: bookmark.url,
+          pinned: bookmark.pinned,
+          icon: bookmark.icon,
+        });
+      }
+
+      appendCategory(proposedCategory.name, nextBookmarks);
+    }
+
+    const remainingBookmarks = flatBookmarks
+      .filter((bookmark) => !usedBookmarkIds.has(bookmark.id))
+      .map((bookmark) => ({
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+        pinned: bookmark.pinned,
+        icon: bookmark.icon,
+      }));
+
+    appendCategory("Unsorted", remainingBookmarks);
+
+    const organizedCategories = Array.from(organizedByName.values());
+    if (organizedCategories.length === 0) {
+      return categories;
+    }
+
+    return BookmarkService.replaceAll(db, organizedCategories);
   }
 }

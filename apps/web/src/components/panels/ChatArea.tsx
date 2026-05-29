@@ -414,6 +414,10 @@ export function ChatArea({
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const settings = useUIStore((s) => s.settings);
+  const mode = useUIStore((s) => s.chatInputMode);
+  const setMode = useUIStore((s) => s.setChatInputMode);
+  const searchEngineId = useUIStore((s) => s.chatSearchEngineId);
+  const setSearchEngineId = useUIStore((s) => s.setChatSearchEngineId);
   const { uiPreviewTarget } = useDashboard();
   const [isConversationUpdating, setIsConversationUpdating] = useState(false);
   const [inputCollapsed] = useState(false);
@@ -434,10 +438,6 @@ export function ChatArea({
   );
   const [bookmarks, setBookmarks] = useState<BookmarkCategory[]>([]);
   const bookmarksLoadedRef = useRef(false);
-  const [mode, setMode] = useState<"chat" | "search">("chat");
-  const [searchEngineId, setSearchEngineId] = useState<string>(
-    searchEngineMeta[0].id,
-  );
   const isSendShortcutPreviewing =
     uiPreviewTarget === "send-shortcut" && mode === "chat";
   const searchEngines = searchEngineMeta.map((e) => ({

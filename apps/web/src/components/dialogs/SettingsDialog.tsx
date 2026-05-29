@@ -50,6 +50,7 @@ import {
 import { useLocale } from "@/lib/i18n-provider";
 import { AVAILABLE_LOCALES } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { useUIStore } from "@/lib/store";
 import { playUiSound } from "@/lib/audio";
 import {
   about,
@@ -319,7 +320,8 @@ export function SettingsDialog({
   onSettingsChange,
   defaultTab,
 }: SettingsDialogProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const activeTab = useUIStore((s) => s.settingsDialogTab) as SettingsTab;
+  const setActiveTab = useUIStore((s) => s.setSettingsDialogTab);
   const [mailState, dispatchMail] = useReducer(
     (
       state: {

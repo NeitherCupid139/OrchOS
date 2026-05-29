@@ -22,6 +22,7 @@ export const bookmarksContract = {
   replaceAll: oc
     .input(z.object({ categories: z.array(bookmarkCategorySchema) }))
     .output(z.array(bookmarkCategorySchema)),
+  organizeWithAi: oc.input(z.object({}).optional()).output(z.array(bookmarkCategorySchema)),
   createCategory: oc.input(z.object({ name: z.string(), icon: z.string().optional(), color: z.string().optional() })).output(z.array(bookmarkCategorySchema)),
   createItem: oc
     .input(

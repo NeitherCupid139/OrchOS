@@ -136,9 +136,12 @@ export function CreationView(props?: CreationViewProps | null) {
   const collapseTimerRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
-  const [selectedCustomAgentId, setSelectedCustomAgentId] = useState<
-    string | null
-  >(null);
+  const selectedCustomAgentId = useUIStore(
+    (s) => s.creationSelectedCustomAgentId,
+  );
+  const setSelectedCustomAgentId = useUIStore(
+    (s) => s.setCreationSelectedCustomAgentId,
+  );
   const customAgentsLoadedRef = useRef(false);
 
   const loadCustomAgents = useCallback(async () => {
@@ -150,9 +153,14 @@ export function CreationView(props?: CreationViewProps | null) {
         api.getDefaultCustomAgentId(),
       ]);
       setCustomAgents(agents);
-      if (defaultAgentId) setSelectedCustomAgentId(defaultAgentId);
+      if (
+        defaultAgentId &&
+        useUIStore.getState().creationSelectedCustomAgentId === undefined
+      ) {
+        setSelectedCustomAgentId(defaultAgentId);
+      }
     } catch {}
-  }, []);
+  }, [setSelectedCustomAgentId]);
 
   const conversations = useConversationStore((s) => s.conversations);
   const activeConversationId = useConversationStore(
@@ -764,7 +772,7 @@ export function CreationView(props?: CreationViewProps | null) {
           onShowBookmarksChange={setShowBookmarks}
           runtimes={enabledRuntimes}
           customAgents={customAgents}
-          selectedCustomAgentId={selectedCustomAgentId}
+          selectedCustomAgentId={selectedCustomAgentId ?? null}
           onSelectCustomAgent={setSelectedCustomAgentId}
           onLoadCustomAgents={loadCustomAgents}
           onCreateConversation={handleCreateConversation}

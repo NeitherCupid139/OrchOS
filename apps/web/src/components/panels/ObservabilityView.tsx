@@ -44,6 +44,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUIStore } from "@/lib/store";
 
 type TimeRange = "24h" | "7d" | "30d";
 
@@ -228,7 +229,8 @@ function ActivityHeatmap({ data }: { data: ActivityHeatmapPoint[] }) {
 /* ── Main page ── */
 
 export function ObservabilityView() {
-  const [timeRange, setTimeRange] = useState<TimeRange>("24h");
+  const timeRange = useUIStore((s) => s.observabilityTimeRange);
+  const setTimeRange = useUIStore((s) => s.setObservabilityTimeRange);
   const [agentMetrics, setAgentMetrics] = useState<AgentMetrics | null>(null);
   const [agentTimeline, setAgentTimeline] = useState<AgentTimelinePoint[]>([]);
   const [heatmapData, setHeatmapData] = useState<ActivityHeatmapPoint[]>([]);

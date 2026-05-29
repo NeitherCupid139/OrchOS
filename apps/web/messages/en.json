@@ -108,6 +108,10 @@
       }
     }
   ],
+  "bookmark_ai_failed": "AI could not organize these bookmarks. Please try again.",
+  "bookmark_ai_organize": "Organize with AI",
+  "bookmark_ai_organizing": "Organizing...",
+  "bookmark_ai_undo": "Undo AI organize",
   "bookmark_created": "Bookmark created",
   "bookmark_deleted": "Bookmark deleted",
   "bookmark_moved": "Bookmark moved",
@@ -303,7 +307,7 @@
   "data_import_success": "Data imported. Reloading...",
   "data_import_title": "Import",
   "data_importing": "Importing...",
-  "data_sensitive_hint": "Backups can include account tokens, API keys, agent credentials, messages, bookmarks, calendar data, and settings. Store exported files somewhere private.",
+  "data_sensitive_hint": "Backups can include account tokens, API keys, agent credentials, messages, bookmarks, calendar data, board tasks, local UI state, and settings. Store exported files somewhere private.",
   "device_id": "Device ID",
   "dismiss": "Dismiss",
   "dismiss_confirm_desc": "This prompt will not be shown again after closing.",
