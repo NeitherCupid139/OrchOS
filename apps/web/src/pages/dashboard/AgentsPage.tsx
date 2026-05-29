@@ -41,7 +41,6 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useDashboard } from "@/lib/dashboard-context";
 import {
   Claude,
   DeepSeek,
@@ -145,7 +144,6 @@ export function AgentsPage() {
     new URLSearchParams(location.search).get("view") === "observability"
       ? "observability"
       : "config";
-  const { loading } = useDashboard();
 
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
   const builtInAgent = useMemo(() => getBuiltInAgent(), []);
@@ -715,7 +713,6 @@ export function AgentsPage() {
           <ObservabilityView />
         ) : (
           <LocalDevicesView
-            loading={loading}
             onConnectClick={handleOpenConnect}
             selectedAgent={selectedAgent}
             defaultCustomAgentId={defaultCustomAgentId}

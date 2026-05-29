@@ -1,6 +1,7 @@
 import { bookmarksContract } from "./bookmarks";
 import { conversationsContract } from "./conversations";
 import { customAgentsContract } from "./custom-agents";
+import { dataPortabilityContract } from "./data-portability";
 import { filesystemContract } from "./filesystem";
 import { inboxContract } from "./inbox";
 import { integrationsContract } from "./integrations";
@@ -25,6 +26,7 @@ export const appContract = {
   customAgents: customAgentsContract,
   filesystem: filesystemContract,
   conversations: conversationsContract,
+  dataPortability: dataPortabilityContract,
   observability: observabilityContract,
   runtimes: runtimesContract,
   localAgents: localAgentsContract,

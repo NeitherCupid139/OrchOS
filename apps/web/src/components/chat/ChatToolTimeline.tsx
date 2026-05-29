@@ -2,6 +2,10 @@ import { memo } from "react";
 import { cn, formatDuration } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
+import {
+  CalendarIcon,
+  FolderIcon,
+} from "lucide-react";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -233,7 +237,163 @@ function MatchedRulesCard({ output }: { output: unknown }) {
   );
 }
 
+function ReminderToolCard({ output }: { output: unknown }) {
+  const record = isRecord(output) ? output : undefined;
+  const title = readString(record?.title);
+  const notes = readString(record?.notes);
+  const remindAt = readString(record?.remindAt);
+  const completed = typeof record?.completed === "boolean" ? record.completed : undefined;
+  const provider = readString(record?.provider) || "local";
+
+  if (!title) return <ToolDetailCard input={undefined} output={output} />;
+
+  return (
+    <div className="space-y-1.5 px-2.5 py-2">
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 font-medium text-foreground/80">{title}</span>
+        {completed !== undefined && (
+          <span className={cn("rounded px-1 py-0 text-[10px]", completed ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600")}>
+            {completed ? "已完成" : "待办"}
+          </span>
+        )}
+      </div>
+      {notes && <KeyValueRow label="备注" value={notes} />}
+      {remindAt && <KeyValueRow label="提醒时间" value={remindAt} />}
+      <KeyValueRow label="来源" value={provider} />
+    </div>
+  );
+}
+
+function CalendarEventToolCard({ output }: { output: unknown }) {
+  const record = isRecord(output) ? output : undefined;
+  const event = isRecord(record?.event) ? record.event : record;
+  const title = readString(event?.title);
+  const description = readString(event?.description);
+  const location = readString(event?.location);
+  const startAt = readString(event?.startAt);
+  const endAt = readString(event?.endAt);
+  const allDay = event?.allDay === true;
+  const provider = readString(event?.provider) || readString(record?.provider) || "local";
+
+  if (!title) return <ToolDetailCard input={undefined} output={output} />;
+
+  return (
+    <div className="space-y-1.5 px-2.5 py-2">
+      <div className="flex items-center gap-2">
+        <CalendarIcon className="size-4 text-blue-500 shrink-0" />
+        <span className="font-medium text-foreground/80">{title}</span>
+      </div>
+      {description && <KeyValueRow label="描述" value={description} />}
+      {location && <KeyValueRow label="地点" value={location} />}
+      {startAt && <KeyValueRow label="开始" value={startAt} />}
+      {endAt && <KeyValueRow label="结束" value={endAt} />}
+      {allDay && <KeyValueRow label="全天" value="是" />}
+      <KeyValueRow label="来源" value={provider} />
+    </div>
+  );
+}
+
+function CurrentTimeToolCard({ output }: { output: unknown }) {
+  const record = isRecord(output) ? output : undefined;
+  const iso = readString(record?.iso);
+  const timezone = readString(record?.timezone);
+  const displayTime = iso ? formatCurrentTime(iso, timezone) : undefined;
+
+  if (!iso && !timezone) return <ToolDetailCard input={undefined} output={output} />;
+
+  return (
+    <div className="space-y-1.5 px-2.5 py-2">
+      {displayTime && <KeyValueRow label="当前时间" value={displayTime} />}
+      {timezone && <KeyValueRow label="时区" value={timezone} />}
+      {iso && <KeyValueRow label="ISO" value={iso} />}
+    </div>
+  );
+}
+
+function WebSearchToolCard({ output }: { output: unknown }) {
+  const record = isRecord(output) ? output : undefined;
+  const query = readString(record?.query);
+  const results = Array.isArray(record?.results) ? record.results.filter(isRecord) : [];
+  const success = record?.success === true;
+  const error = readString(record?.error);
+
+  return (
+    <div className="space-y-2 px-2.5 py-2">
+      {query && <KeyValueRow label="搜索" value={query} />}
+      {!success && error && <KeyValueRow label="错误" value={error} />}
+      {success && results.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-medium text-muted-foreground">搜索结果 ({results.length})</div>
+          {results.slice(0, 5).map((r, i) => {
+            const title = readString(r.title) || `结果 ${i + 1}`;
+            const snippet = readString(r.snippet) || readString(r.description);
+            const url = readString(r.url) || readString(r.link);
+            return (
+              <div key={i} className="rounded border border-border/30 px-2 py-1.5">
+                <div className="text-[11px] font-medium text-foreground/70">{title}</div>
+                {snippet && <div className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{snippet}</div>}
+                {url && <div className="mt-0.5 text-[10px] text-blue-500 truncate">{url}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {success && results.length === 0 && (
+        <div className="text-[11px] text-muted-foreground">无搜索结果</div>
+      )}
+    </div>
+  );
+}
+
+function BookmarkToolCard({ toolType, output }: { toolType: string; output: unknown }) {
+  const record = isRecord(output) ? output : undefined;
+  const name = readString(record?.name);
+  const title = readString(record?.title);
+  const url = readString(record?.url);
+  const icon = readString(record?.icon);
+  const categories = Array.isArray(record) ? record.filter(isRecord) : undefined;
+  const categoryName = name || title;
+
+  if (categories && toolType === "list_bookmarks") {
+    if (categories.length === 0) {
+      return <div className="px-2.5 py-2 text-[11px] text-muted-foreground">暂无书签</div>;
+    }
+    return (
+      <div className="space-y-1.5 px-2.5 py-2">
+        {categories.map((cat, i) => (
+          <div key={i} className="rounded border border-border/30 px-2 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <FolderIcon className="size-3.5 text-muted-foreground shrink-0" />
+              <span className="text-[11px] font-medium text-foreground/70">{readString(cat.name) || `分类 ${i + 1}`}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (categoryName) {
+    return (
+      <div className="space-y-1.5 px-2.5 py-2">
+        {icon && <KeyValueRow label="图标" value={icon} />}
+        <KeyValueRow label="名称" value={categoryName} />
+        {url && <KeyValueRow label="链接" value={url} />}
+      </div>
+    );
+  }
+
+  return <ToolDetailCard input={undefined} output={output} />;
+}
+
 function SpecializedToolCard({ toolType, input, output }: { toolType: string; input: unknown; output: unknown }) {
+  if (toolType === "get_current_time") return <CurrentTimeToolCard output={output} />;
+  if (toolType === "create_reminder") return <ReminderToolCard output={output} />;
+  if (toolType === "create_calendar_event") return <CalendarEventToolCard output={output} />;
+  if (toolType === "web_search") return <WebSearchToolCard output={output} />;
+  if (toolType === "send_email") return <ToolDetailCard input={input} output={output} />;
+  if (toolType === "list_bookmarks" || toolType === "create_bookmark_category" || toolType === "rename_bookmark_category" || toolType === "delete_bookmark_category" || toolType === "create_bookmark" || toolType === "rename_bookmark" || toolType === "move_bookmark" || toolType === "delete_bookmark" || toolType === "organize_bookmarks") {
+    return <BookmarkToolCard toolType={toolType} output={output} />;
+  }
   if (toolType === "matched_rules") return <MatchedRulesCard output={output} />;
   if (toolType === "bash") return <BashToolCard input={input} output={output} />;
   if (toolType === "read") return <ReadToolCard input={input} output={output} />;
@@ -241,6 +401,26 @@ function SpecializedToolCard({ toolType, input, output }: { toolType: string; in
   if (toolType === "grep") return <GrepToolCard input={input} output={output} />;
 
   return <ToolDetailCard input={input} output={output} />;
+}
+
+function formatCurrentTime(iso: string, timezone?: string) {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: timezone,
+      timeZoneName: "short",
+    }).format(parsed);
+  } catch {
+    return iso;
+  }
 }
 
 function ToolDetailCard({ input, output }: { input: unknown; output: unknown }) {
@@ -306,12 +486,76 @@ function ToolStateDot({ state }: { state?: string }) {
       ? "bg-destructive"
       : state === "output-denied"
         ? "bg-amber-500"
-        : state === "output-available"
+        : state === "output-available" || state === "completed"
           ? "bg-emerald-500"
           : "bg-sky-500";
 
   return <span className={cn("size-1.5 rounded-full shrink-0", tone)} />;
 }
+
+function getGroupedToolState(
+  parts: Array<Record<string, unknown> & { type: string }>,
+) {
+  if (parts.some((part) => typeof part.errorText === "string")) return "output-error";
+  if (parts.some((part) => {
+    const state = typeof part.state === "string" ? part.state : undefined;
+    return !state || state === "input-streaming" || state === "in_progress";
+  })) return "in_progress";
+  return "completed";
+}
+
+export const ChatToolTimelineGroup = memo(function ChatToolTimelineGroup({
+  displayName,
+  parts,
+}: {
+  displayName: string;
+  parts: Array<Record<string, unknown> & { type: string }>;
+}) {
+  const state = getGroupedToolState(parts);
+  const isRunning = state === "in_progress";
+  const stateLabel = getToolStateLabel(state, state === "output-error");
+
+  return (
+    <div>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs hover:bg-muted/30 transition-colors">
+          {isRunning ? (
+            <Spinner size="sm" name="braille" className="shrink-0" />
+          ) : (
+            <ToolStateDot state={state} />
+          )}
+          <span className="font-medium text-foreground/70">{displayName}</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground/70">
+            {stateLabel}
+          </span>
+          <span className="text-[10px] text-muted-foreground/45">{parts.length} 次</span>
+          <span className="ml-auto shrink-0 select-none text-[10px] opacity-30 transition-transform group-open:rotate-90">›</span>
+        </summary>
+        <div className="mt-1 space-y-1">
+          {parts.map((part, index) => {
+            const input = "input" in part ? part.input : undefined;
+            const output = "output" in part ? part.output : undefined;
+            const errorText = typeof part.errorText === "string" ? part.errorText : undefined;
+            const toolType = readToolType(part.type);
+
+            return (
+              <div key={`${part.type}-${index}`} className="rounded-md border border-border/25 bg-background/40">
+                {(input !== undefined || output !== undefined) && (
+                  <SpecializedToolCard toolType={toolType} input={input} output={output} />
+                )}
+                {errorText && (
+                  <div className="mx-2 mb-2 rounded border border-destructive/15 bg-destructive/[0.04] px-2 py-1.5 text-[11px] text-destructive/80">
+                    {errorText}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </details>
+    </div>
+  );
+});
 
 export const ChatToolTimeline = memo(function ChatToolTimeline({
   part,

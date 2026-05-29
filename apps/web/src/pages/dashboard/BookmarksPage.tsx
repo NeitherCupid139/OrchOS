@@ -50,7 +50,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 import { api, type BookmarkCategory } from "@/lib/api";
 import { useDashboard } from "@/lib/dashboard-context";
-import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,7 +89,6 @@ import {
   import as import_message,
   import_bookmarks_desc,
   import_from_file,
-  loading as loading_label,
   name,
   new_bookmark,
   new_bookmark_desc,
@@ -750,7 +748,7 @@ export function BookmarksPage() {
     url: "",
     icon: undefined,
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [pendingPinBookmarkIds, setPendingPinBookmarkIds] = useState<string[]>(
     [],
   );
@@ -1402,11 +1400,7 @@ export function BookmarksPage() {
             className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2 focus-visible:outline-1"
           >
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-              {loading ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <AsciiLoading label={loading_label()} />
-                </div>
-              ) : selectedCategory ? (
+              {selectedCategory ? (
                 <>
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">

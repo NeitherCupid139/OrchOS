@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useReducer } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useReducer,
+  useRef,
+  type ChangeEvent,
+} from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Cancel01Icon,
@@ -14,6 +21,9 @@ import {
   EyeIcon,
   ViewOffSlashIcon,
   CommandIcon,
+  DatabaseIcon,
+  Download01Icon,
+  Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import {
@@ -49,6 +59,23 @@ import {
   cancel,
   close,
   delete as delete_message,
+  data,
+  data_control_desc,
+  data_control_title,
+  data_export_button,
+  data_export_desc,
+  data_export_error,
+  data_export_success,
+  data_export_title,
+  data_exporting,
+  data_import_button,
+  data_import_confirm,
+  data_import_desc,
+  data_import_error,
+  data_import_success,
+  data_import_title,
+  data_importing,
+  data_sensitive_hint,
   display_name,
   display_name_placeholder,
   edit,
@@ -141,7 +168,13 @@ const defaultEventSounds: Record<string, string> = {
   social: "pong",
 };
 
-type SettingsTab = "general" | "notifications" | "mail" | "shortcuts" | "about";
+type SettingsTab =
+  | "general"
+  | "notifications"
+  | "mail"
+  | "data"
+  | "shortcuts"
+  | "about";
 
 type MailServerConfig = {
   host: string;
@@ -180,6 +213,7 @@ const tabDefs: {
   { id: "general", icon: SlidersHorizontalIcon, labelKey: general },
   { id: "notifications", icon: NotificationIcon, labelKey: notifications },
   { id: "mail", icon: InboxIcon, labelKey: mail },
+  { id: "data", icon: DatabaseIcon, labelKey: data },
   { id: "shortcuts", icon: CommandIcon, labelKey: shortcuts },
   { id: "about", icon: InformationCircleIcon, labelKey: about },
 ];
@@ -363,6 +397,16 @@ export function SettingsDialog({
   const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(
     EMAIL_PROVIDERS[0].id,
   );
+  const dataImportInputRef = useRef<HTMLInputElement | null>(null);
+  const [dataTransferState, setDataTransferState] = useState<
+    | "idle"
+    | "exporting"
+    | "importing"
+    | "exported"
+    | "imported"
+    | "export_error"
+    | "import_error"
+  >("idle");
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
 
   /** Try to match current SMTP/IMAP settings to a known provider */
@@ -613,6 +657,57 @@ export function SettingsDialog({
         });
       } catch (err) {
         console.error("Failed to delete mail account:", err);
+      }
+    },
+    [],
+  );
+
+  const handleExportPlatformData = useCallback(async () => {
+    setDataTransferState("exporting");
+
+    try {
+      const payload = await api.exportPlatformData();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `orchos-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setDataTransferState("exported");
+    } catch (error) {
+      console.error("Failed to export platform data:", error);
+      setDataTransferState("export_error");
+    }
+  }, []);
+
+  const handleImportPlatformDataFile = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+
+      if (!file) {
+        return;
+      }
+
+      if (!window.confirm(data_import_confirm())) {
+        return;
+      }
+
+      setDataTransferState("importing");
+
+      try {
+        const payload = JSON.parse(await file.text());
+        await api.importPlatformData(payload);
+        setDataTransferState("imported");
+        window.setTimeout(() => window.location.reload(), 800);
+      } catch (error) {
+        console.error("Failed to import platform data:", error);
+        setDataTransferState("import_error");
       }
     },
     [],
@@ -1369,6 +1464,136 @@ export function SettingsDialog({
                     </div>
                   </div>
                 </AppDialog>
+              </div>
+            )}
+
+            {activeTab === "data" && (
+              <div className="space-y-5">
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <HugeiconsIcon icon={DatabaseIcon} className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {data_control_title()}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {data_control_desc()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border/60 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <HugeiconsIcon
+                          icon={Download01Icon}
+                          className="size-4"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {data_export_title()}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {data_export_desc()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-4 w-full"
+                      disabled={dataTransferState === "exporting"}
+                      onClick={() => void handleExportPlatformData()}
+                    >
+                      {dataTransferState === "exporting" ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={Download01Icon}
+                          className="size-4"
+                        />
+                      )}
+                      {dataTransferState === "exporting"
+                        ? data_exporting()
+                        : data_export_button()}
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border border-border/60 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <HugeiconsIcon
+                          icon={Upload01Icon}
+                          className="size-4"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {data_import_title()}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {data_import_desc()}
+                        </p>
+                      </div>
+                    </div>
+                    <input
+                      ref={dataImportInputRef}
+                      type="file"
+                      accept="application/json,.json"
+                      className="hidden"
+                      onChange={(event) => void handleImportPlatformDataFile(event)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-4 w-full"
+                      disabled={dataTransferState === "importing"}
+                      onClick={() => dataImportInputRef.current?.click()}
+                    >
+                      {dataTransferState === "importing" ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={Upload01Icon}
+                          className="size-4"
+                        />
+                      )}
+                      {dataTransferState === "importing"
+                        ? data_importing()
+                        : data_import_button()}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-xs leading-5 text-muted-foreground">
+                  {data_sensitive_hint()}
+                </div>
+
+                {dataTransferState === "exported" ? (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {data_export_success()}
+                  </p>
+                ) : null}
+                {dataTransferState === "imported" ? (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {data_import_success()}
+                  </p>
+                ) : null}
+                {dataTransferState === "export_error" ? (
+                  <p className="text-xs text-destructive">
+                    {data_export_error()}
+                  </p>
+                ) : null}
+                {dataTransferState === "import_error" ? (
+                  <p className="text-xs text-destructive">
+                    {data_import_error()}
+                  </p>
+                ) : null}
               </div>
             )}
 

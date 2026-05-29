@@ -23,6 +23,8 @@ import type {
   LocalAgentProfile,
   ObservabilityMetrics,
   Organization,
+  PlatformDataExport,
+  PlatformDataImportResult,
   Problem,
   ProblemPriority,
   ProblemStatus,
@@ -302,6 +304,14 @@ export const api = {
     data: Partial<ControlSettings>,
   ): Promise<ControlSettings> => {
     return (await orpc.settings.update(data)) as ControlSettings;
+  },
+  exportPlatformData: async (): Promise<PlatformDataExport> => {
+    return (await orpc.dataPortability.exportAll({})) as PlatformDataExport;
+  },
+  importPlatformData: async (
+    data: PlatformDataExport,
+  ): Promise<PlatformDataImportResult> => {
+    return (await orpc.dataPortability.importAll(data)) as PlatformDataImportResult;
   },
   listOrganizations: async (): Promise<Organization[]> => {
     return (await orpc.organizations.list({})) as Organization[];

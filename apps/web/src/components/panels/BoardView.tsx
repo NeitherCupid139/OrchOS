@@ -15,12 +15,13 @@ import { Button } from "@/components/ui/button";
 import { InfoCard, InfoCardContent, InfoCardDescription } from "@/components/ui/info-card";
 import { CreateBoardConversationDialog, type BoardTaskEditData } from "@/components/dialogs/CreateBoardConversationDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useDashboard } from "@/lib/dashboard-context";
 import type { PlannerReminder } from "@/lib/api.types";
 import { getReminderDisplayText } from "@/lib/planner-reminders";
 import { useBoardStore } from "@/lib/stores/board";
 import { cn } from "@/lib/utils";
-import { board_completed, board_delete_conversation, board_edit_task, board_in_progress, board_no_tasks, board_planning, board_today } from "@/paraglide/messages";
+import { board_completed, board_delete_conversation, board_edit_task, board_in_progress, board_no_tasks, board_planning, board_today, delete as delete_message } from "@/paraglide/messages";
 import type { BoardTaskColumnId, BoardTaskFilter, BoardTaskPriority } from "@/lib/types";
 
 export type { BoardTaskColumnId, BoardTaskFilter };
@@ -93,18 +94,18 @@ function BoardColumn({
   columnCardCount,
   busyReminderId,
   onToggleReminderComplete,
-  onDeleteReminder,
   onEditTask,
-  onDeleteTask,
+  onRequestDeleteReminder,
+  onRequestDeleteTask,
 }: {
   column: { id: string; label: string; icon: typeof PlayCircleIcon; tone: string; bgAccent: string };
   items: BoardColumnItem[];
   columnCardCount: number;
   busyReminderId: string | null;
   onToggleReminderComplete?: (reminder: PlannerReminder) => void | Promise<void>;
-  onDeleteReminder?: (reminder: PlannerReminder) => void | Promise<void>;
   onEditTask: (task: BoardTaskEditData) => void;
-  onDeleteTask: (id: string) => void;
+  onRequestDeleteReminder?: (reminder: PlannerReminder) => void;
+  onRequestDeleteTask?: (taskId: string) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -183,7 +184,7 @@ function BoardColumn({
                                 size="icon-xs"
                                 disabled={busyReminderId === item.reminder.id}
                                 onMouseDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
-                                onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onDeleteReminder?.(item.reminder); }}
+                                onClick={(event) => { event.preventDefault(); event.stopPropagation(); onRequestDeleteReminder?.(item.reminder); }}
                                 className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
                               >
                                 <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
@@ -265,7 +266,7 @@ function BoardColumn({
                                       variant="ghost"
                                       size="icon-xs"
                                       onMouseDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
-                                      onClick={(event) => { event.preventDefault(); event.stopPropagation(); onDeleteTask(item.card.id); }}
+                                      onClick={(event) => { event.preventDefault(); event.stopPropagation(); onRequestDeleteTask?.(item.card.id); }}
                                       className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
                                     >
                                       <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
@@ -346,6 +347,8 @@ export function BoardView({
   onDeleteReminder,
 }: BoardViewProps) {
   const [editingTask, setEditingTask] = useState<BoardTaskEditData | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "reminder"; reminder: PlannerReminder } | { type: "task"; taskId: string } | null>(null);
   const { projects, settings } = useDashboard();
   const tasks = useBoardStore((state) => state.tasks);
   const updateTask = useBoardStore((state) => state.updateTask);
@@ -459,9 +462,9 @@ export function BoardView({
                   columnCardCount={columnCards.length}
                   busyReminderId={busyReminderId ?? null}
                   onToggleReminderComplete={onToggleReminderComplete}
-                  onDeleteReminder={onDeleteReminder}
                   onEditTask={setEditingTask}
-                  onDeleteTask={deleteTask}
+                  onRequestDeleteReminder={(reminder) => { setDeleteTarget({ type: "reminder", reminder }); setDeleteConfirmOpen(true); }}
+                  onRequestDeleteTask={(taskId) => { setDeleteTarget({ type: "task", taskId }); setDeleteConfirmOpen(true); }}
                 />
               );
             })}
@@ -476,6 +479,26 @@ export function BoardView({
         onUpdate={(id, values) => {
           updateTask(id, values);
           setEditingTask(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          setDeleteConfirmOpen(open);
+          if (!open) setDeleteTarget(null);
+        }}
+        title={delete_message()}
+        description={board_delete_conversation()}
+        variant="destructive"
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          if (deleteTarget.type === "reminder") {
+            void onDeleteReminder?.(deleteTarget.reminder);
+          } else {
+            deleteTask(deleteTarget.taskId);
+          }
+          setDeleteTarget(null);
         }}
       />
     </div>

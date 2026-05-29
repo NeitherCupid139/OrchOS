@@ -27,7 +27,6 @@ import {
   edit,
   endpoint,
   last_seen,
-  loading_devices,
   model,
   no_runtimes_reported,
   offline,
@@ -49,7 +48,6 @@ type SelectedAgent =
   | null;
 
 interface LocalDevicesViewProps {
-  loading: boolean;
   onConnectClick: () => void;
   selectedAgent: SelectedAgent;
   defaultCustomAgentId?: string | null;
@@ -61,21 +59,12 @@ interface LocalDevicesViewProps {
 }
 
 export function LocalDevicesView({
-  loading,
   onConnectClick,
   selectedAgent,
   defaultCustomAgentId = null,
   onSetDefaultCustomAgent,
   onUpdateCustomAgent,
 }: LocalDevicesViewProps) {
-  if (loading) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">{loading_devices()}</div>
-      </div>
-    );
-  }
-
   if (selectedAgent?.kind === "builtin") {
     const { agent } = selectedAgent;
 

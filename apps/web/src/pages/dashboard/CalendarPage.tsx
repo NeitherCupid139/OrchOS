@@ -18,7 +18,6 @@ import {
   SquareArrowDataTransferHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -140,7 +139,7 @@ export function CalendarPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
   const [selectedLocalDate, setSelectedLocalDate] = useState(() => formatDayKey(TODAY));
@@ -1017,11 +1016,7 @@ export function CalendarPage() {
           ) : null}
           <ScrollArea className="h-full">
             <div className="flex min-h-full w-full flex-col gap-6 p-6">
-              {loading ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <AsciiLoading label={loading_label()} />
-                </div>
-              ) : showLocalCalendarView ? (
+              {showLocalCalendarView ? (
                 localCalendars.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center">
                     <EmptyState

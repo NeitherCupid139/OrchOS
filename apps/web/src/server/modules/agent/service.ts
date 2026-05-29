@@ -2,7 +2,7 @@ import type { AppDb } from "@/server/db/types";
 import { BookmarkService } from "@/server/modules/bookmark/service";
 import { IntegrationService } from "@/server/modules/integration/service";
 import { PlannerService } from "@/server/modules/planner/service";
-import { parseReminderSchedule } from "@/lib/planner-reminders";
+import { normalizeReminderInput } from "@/lib/planner-reminders";
 import { searchWebWithDuckDuckGo } from "./duckduckgo";
 
 type ToolResult = unknown;
@@ -32,6 +32,17 @@ export class AgentToolService {
       {
         type: "function",
         function: {
+          name: "get_current_time",
+          description: "Get the current server date and time for interpreting relative calendar and reminder requests.",
+          parameters: {
+            type: "object",
+            properties: {},
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
           name: "web_search",
           description: "Search the web using DuckDuckGo for current information, recent news, and source URLs. Free, no API key required.",
           parameters: {
@@ -58,7 +69,7 @@ export class AgentToolService {
         type: "function",
         function: {
           name: "create_calendar_event",
-          description: "Create a calendar event in Google Calendar or the local planner store.",
+          description: "Create a calendar event in Google Calendar or the local planner store. Use ISO 8601 timestamps for startAt/endAt.",
           parameters: {
             type: "object",
             properties: {
@@ -80,13 +91,13 @@ export class AgentToolService {
         type: "function",
         function: {
           name: "create_reminder",
-          description: "Create a reminder in the local planner store.",
+          description: "Create a reminder in the local planner store. Use ISO 8601 for one-time reminders or \"每天 HH:mm\" for daily reminders.",
           parameters: {
             type: "object",
             properties: {
               title: { type: "string" },
               notes: { type: "string" },
-              remindAt: { type: "string" },
+              remindAt: { type: "string", description: "Reminder time. Use ISO 8601 for one-time reminders, or \"每天 HH:mm\" for daily reminders." },
             },
             required: ["title"],
           },
@@ -286,6 +297,21 @@ export class AgentToolService {
       throw new Error(`Invalid JSON arguments for tool ${name}`);
     }
 
+    if (name === "get_current_time") {
+      const now = new Date();
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      return {
+        iso: now.toISOString(),
+        unixMs: now.getTime(),
+        timezone,
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        day: now.getDate(),
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+      };
+    }
+
     if (name === "web_search") {
       const result = await searchWebWithDuckDuckGo(fetch, {
         query: String(args.query ?? ""),
@@ -382,12 +408,16 @@ export class AgentToolService {
       if (!title) {
         throw new Error("title is required");
       }
+      const reminderTime = normalizeReminderInput(
+        typeof args.remindAt === "string" ? args.remindAt : undefined,
+        { now: new Date() },
+      );
 
       return this.plannerService.createReminder({
         title,
         notes: typeof args.notes === "string" ? args.notes : undefined,
-        remindAt: typeof args.remindAt === "string" ? args.remindAt : undefined,
-        schedule: typeof args.remindAt === "string" ? parseReminderSchedule(args.remindAt) : undefined,
+        remindAt: reminderTime.remindAt,
+        schedule: reminderTime.schedule,
       });
     }
 

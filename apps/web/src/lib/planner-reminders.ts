@@ -20,7 +20,15 @@ interface ReminderDateFormatOptions {
   timezone?: string;
 }
 
-export function parseReminderSchedule(input: string): PlannerReminderSchedule | undefined {
+interface ParseReminderScheduleOptions {
+  now?: Date;
+  normalizeStaleYear?: boolean;
+}
+
+export function parseReminderSchedule(
+  input: string,
+  options?: ParseReminderScheduleOptions,
+): PlannerReminderSchedule | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
 
@@ -39,9 +47,31 @@ export function parseReminderSchedule(input: string): PlannerReminderSchedule | 
     return undefined;
   }
 
+  const normalized = options?.normalizeStaleYear
+    ? normalizeStaleYear(parsed, options.now ?? new Date())
+    : parsed;
+
   return {
     kind: "once",
-    at: parsed.toISOString(),
+    at: normalized.toISOString(),
+  };
+}
+
+export function normalizeReminderInput(
+  input: string | undefined,
+  options?: Omit<ParseReminderScheduleOptions, "normalizeStaleYear">,
+): { remindAt?: string; schedule?: PlannerReminderSchedule } {
+  const trimmed = input?.trim();
+  if (!trimmed) return {};
+
+  const schedule = parseReminderSchedule(trimmed, {
+    ...options,
+    normalizeStaleYear: true,
+  });
+
+  return {
+    remindAt: schedule?.kind === "once" ? schedule.at : trimmed,
+    schedule,
   };
 }
 
@@ -93,4 +123,17 @@ function formatScheduleDate(value: string, options?: ReminderDateFormatOptions) 
     minute: "2-digit",
     timeZone: options?.timezone,
   }).format(parsed);
+}
+
+function normalizeStaleYear(parsed: Date, now: Date) {
+  const parsedYear = parsed.getFullYear();
+  const currentYear = now.getFullYear();
+  if (parsedYear >= currentYear) return parsed;
+
+  const normalized = new Date(parsed.getTime());
+  normalized.setFullYear(currentYear);
+  if (normalized.getTime() < now.getTime()) {
+    normalized.setFullYear(currentYear + 1);
+  }
+  return normalized;
 }

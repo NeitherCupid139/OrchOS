@@ -19,13 +19,14 @@ import {
 } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
 import {
   api,
   type Conversation,
   type ConversationMessage,
   type CustomAgent,
 } from "@/lib/api";
-import type { ControlSettings, RuntimeProfile } from "@/lib/types";
+import type { ControlSettings, RuntimeProfile, SidebarView } from "@/lib/types";
 import { useConversationStore } from "@/lib/stores/conversation";
 import { useUIStore } from "@/lib/store";
 import { useAssistantMessageNotification } from "@/lib/hooks";
@@ -56,6 +57,35 @@ interface CreationViewProps {
 }
 
 const EMPTY_CONVERSATION_MESSAGES: ConversationMessage[] = [];
+const TOOL_SIDEBAR_NOTIFICATION_TARGETS: Partial<
+  Record<string, SidebarView>
+> = {
+  create_bookmark: "bookmarks",
+  create_bookmark_category: "bookmarks",
+  create_calendar_event: "calendar",
+  create_reminder: "board",
+  organize_bookmarks: "bookmarks",
+  send_email: "mail",
+};
+
+function getSidebarNotificationTargets(message: ConversationMessage) {
+  const targets = new Set<SidebarView>();
+
+  for (const event of message.trace ?? []) {
+    if (
+      event.kind !== "tool" ||
+      event.state !== "completed" ||
+      !event.toolName
+    ) {
+      continue;
+    }
+
+    const target = TOOL_SIDEBAR_NOTIFICATION_TARGETS[event.toolName];
+    if (target) targets.add(target);
+  }
+
+  return [...targets];
+}
 
 /* ── Component ── */
 
@@ -94,8 +124,10 @@ export function CreationView(props?: CreationViewProps | null) {
   );
   const creationSidebarWidth = useUIStore((s) => s.creationSidebarWidth);
   const setCreationSidebarWidth = useUIStore((s) => s.setCreationSidebarWidth);
+  const notifySidebarView = useUIStore((s) => s.notifySidebarView);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
+  const [exitingConvId, setExitingConvId] = useState<string | null>(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [showExpandedContent, setShowExpandedContent] = useState(
     !creationSidebarCollapsed,
@@ -201,18 +233,27 @@ export function CreationView(props?: CreationViewProps | null) {
   const availableConversations = useMemo(() => {
     if (creationArchiveFilter === "archived") {
       return conversations.filter(
-        (conversation) => conversation.archived && !conversation.deleted,
+        (conversation) =>
+          conversation.archived &&
+          !conversation.deleted &&
+          conversation.id !== exitingConvId,
       );
     }
 
     if (creationArchiveFilter === "active") {
       return conversations.filter(
-        (conversation) => !conversation.archived && !conversation.deleted,
+        (conversation) =>
+          !conversation.archived &&
+          !conversation.deleted &&
+          conversation.id !== exitingConvId,
       );
     }
 
-    return conversations.filter((conversation) => !conversation.deleted);
-  }, [conversations, creationArchiveFilter]);
+    return conversations.filter(
+      (conversation) =>
+        !conversation.deleted && conversation.id !== exitingConvId,
+    );
+  }, [conversations, creationArchiveFilter, exitingConvId]);
 
   useEffect(() => {
     loadConversations();
@@ -318,11 +359,16 @@ export function CreationView(props?: CreationViewProps | null) {
 
   const handleDeleteConversation = useCallback(async () => {
     if (!convToDelete) return;
+    setExitingConvId(convToDelete);
+    setConvToDelete(null);
+    // Wait for exit animation to finish
+    await new Promise((resolve) => setTimeout(resolve, 280));
     try {
       await deleteConversation(convToDelete);
-      setConvToDelete(null);
     } catch (err) {
       console.error("Failed to delete conversation:", err);
+    } finally {
+      setExitingConvId(null);
     }
   }, [convToDelete, deleteConversation]);
 
@@ -501,13 +547,21 @@ export function CreationView(props?: CreationViewProps | null) {
         >
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-0.5 p-1.5">
-              {availableConversations.map((conversation) => {
+              <AnimatePresence initial={false}>
+                {availableConversations.map((conversation) => {
                 const isActive =
                   conversation.id === activeConversationId && !showBookmarks;
 
                 return (
-                  <div
+                  <motion.div
                     key={conversation.id}
+                    initial={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                  <div
                     role="button"
                     tabIndex={0}
                     aria-pressed={isActive}
@@ -594,8 +648,10 @@ export function CreationView(props?: CreationViewProps | null) {
                       </Tooltip>
                     </div>
                   </div>
+                  </motion.div>
                 );
               })}
+              </AnimatePresence>
 
               {isLoadingConversations && availableConversations.length === 0 ? (
                 <div className="flex items-center justify-center py-6">
@@ -722,11 +778,16 @@ export function CreationView(props?: CreationViewProps | null) {
               setPendingUserMessage(conversation.id, content);
             }
             try {
-              await api.sendConversationMessage(
+              const assistantMessage = await api.sendConversationMessage(
                 conversation.id,
                 content,
                 customAgentId,
               );
+              for (const target of getSidebarNotificationTargets(
+                assistantMessage,
+              )) {
+                notifySidebarView(target);
+              }
               await loadMessages(conversation.id, { force: true });
               setPendingUserMessage(conversation.id, undefined);
               if (!conversation.title && messages.length === 0) {
@@ -758,7 +819,6 @@ export function CreationView(props?: CreationViewProps | null) {
         title={delete_message()}
         description={delete_conversation_confirm()}
         onConfirm={handleDeleteConversation}
-        confirmLabel={delete_message()}
         variant="destructive"
       />
     </div>

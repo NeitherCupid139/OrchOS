@@ -13,6 +13,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useRouterState,
 } from "@tanstack/react-router";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { useAuth } from "@clerk/clerk-react";
@@ -179,6 +180,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   activeOrganizationId,
   activeView,
   collapsed,
+  loading,
   onOpenSettings,
   onOrganizationChange,
   onOrganizationCreate,
@@ -191,6 +193,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   activeOrganizationId: string | null;
   activeView: SidebarView;
   collapsed: boolean;
+  loading: boolean;
   onOpenSettings: () => void;
   onOrganizationChange: (id: string) => void;
   onOrganizationCreate: (name: string) => Promise<void>;
@@ -205,6 +208,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
       activeOrganizationId={activeOrganizationId}
       activeView={activeView}
       collapsed={collapsed}
+      loading={loading}
       onOpenSettings={onOpenSettings}
       onOrganizationChange={onOrganizationChange}
       onOrganizationCreate={onOrganizationCreate}
@@ -228,6 +232,9 @@ const DashboardActivityPanel = memo(function DashboardActivityPanel({
 function DashboardContentInner() {
   const location = useLocation();
   const navigate = useNavigate();
+  const routeLoading = useRouterState({
+    select: (state) => state.isLoading,
+  });
 
   const dashboardPath = location.pathname;
   const activeView = getViewFromPath(dashboardPath);
@@ -270,6 +277,7 @@ function DashboardContentInner() {
     inboxCounts,
     loading,
   } = useDashboard();
+  const sidebarNavLoading = loading || routeLoading;
 
   const {
     activeOrganizationId,
@@ -422,6 +430,7 @@ function DashboardContentInner() {
                 activeOrganizationId={activeOrganizationId}
                 activeView={activeView}
                 collapsed={false}
+                loading={sidebarNavLoading}
                 onOpenSettings={handleMobileSettingsOpen}
                 onOrganizationChange={setActiveOrganizationId}
                 onOrganizationCreate={handleOrganizationCreate}
@@ -458,6 +467,7 @@ function DashboardContentInner() {
               activeOrganizationId={activeOrganizationId}
               activeView={activeView}
               collapsed={sidebarCollapsed}
+              loading={sidebarNavLoading}
               onOpenSettings={handleDesktopSettingsOpen}
               onOrganizationChange={setActiveOrganizationId}
               onOrganizationCreate={handleOrganizationCreate}

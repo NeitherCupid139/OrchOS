@@ -18,7 +18,13 @@ import { getBuiltInAgent } from "@/lib/built-in-agent";
 import { subscriptions } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { AIGatewayConfig } from "@orchos/pro/ai-gateway";
-import { jsonSchema, tool, type ModelMessage, type ToolSet } from "ai";
+import {
+  jsonSchema,
+  tool,
+  type ModelMessage,
+  type ToolChoice,
+  type ToolSet,
+} from "ai";
 
 // Module-level service cache
 const getCustomAgentService = createServiceCache(
@@ -73,6 +79,18 @@ function safeJsonParse(value: string): unknown {
   } catch {
     return {};
   }
+}
+
+const CURRENT_TIME_TOOL_NAME = "get_current_time";
+const TEMPORAL_REQUEST_PATTERN =
+  /(今天|明天|后天|昨天|周[一二三四五六日天]|星期|日期|时间|几点|天气|提醒|代办|待办|日历|安排|预约|today|tomorrow|yesterday|date|time|weather|remind|reminder|todo|calendar|schedule)/i;
+
+function shouldForceCurrentTimeTool(messages: ChatMessage[]) {
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "user")?.content;
+
+  return TEMPORAL_REQUEST_PATTERN.test(lastUserMessage ?? "");
 }
 
 /**
@@ -162,6 +180,7 @@ async function requestChatCompletion(input: {
   model: string;
   messages: ChatMessage[];
   tools?: AgentToolDefinition[];
+  toolChoice?: ToolChoice<ToolSet>;
   gatewayConfig?: AIGatewayConfig | null;
 }): Promise<ChatCompletionResponse> {
   const { generateText } = await import("ai");
@@ -178,7 +197,9 @@ async function requestChatCompletion(input: {
     model: languageModel,
     messages: toModelMessages(input.messages),
     tools: toAISDKTools(input.tools),
-    toolChoice: input.tools && input.tools.length > 0 ? "auto" : undefined,
+    toolChoice:
+      input.toolChoice ??
+      (input.tools && input.tools.length > 0 ? "auto" : undefined),
   });
 
   return {
@@ -248,6 +269,7 @@ async function runCustomAgentConversation(input: {
   const tools = toolService.getToolDefinitions();
   const trace: NonNullable<Message["trace"]> = [];
   let totalTokens = 0;
+  const shouldUseCurrentTime = shouldForceCurrentTimeTool(chatMessages);
 
   for (let step = 0; step < 6; step += 1) {
     const completion = await requestChatCompletion({
@@ -256,6 +278,10 @@ async function runCustomAgentConversation(input: {
       model: agent.model,
       messages: chatMessages,
       tools,
+      toolChoice:
+        step === 0 && shouldUseCurrentTime
+          ? { type: "tool", toolName: CURRENT_TIME_TOOL_NAME }
+          : undefined,
       gatewayConfig,
     });
 
@@ -336,12 +362,25 @@ async function runCustomAgentConversation(input: {
     }
   }
 
+  const finalCompletion = await requestChatCompletion({
+    url: agent.url,
+    apiKey: agent.apiKey,
+    model: agent.model,
+    messages: chatMessages,
+    gatewayConfig,
+  });
+  const finalContent = finalCompletion.choices?.[0]?.message?.content ?? "";
+  if (finalCompletion.usage?.totalTokens) {
+    totalTokens += finalCompletion.usage.totalTokens;
+  }
+  if (finalContent) trace.push({ kind: "message", text: finalContent });
+
   return ConversationService.addMessage(
     db,
     input.conversationId,
     "assistant",
-    "Agent exceeded tool execution limit.",
-    "Agent exceeded tool execution limit.",
+    finalContent || "工具调用已完成，但没有生成最终回复。",
+    undefined,
     undefined,
     { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
   );
@@ -408,12 +447,17 @@ async function runBuiltinAgentConversation(input: {
   const tools = toolService.getToolDefinitions();
   const trace: NonNullable<Message["trace"]> = [];
   let totalTokens = 0;
+  const shouldUseCurrentTime = shouldForceCurrentTimeTool(chatMessages);
 
   for (let step = 0; step < 6; step += 1) {
     const completion = await requestChatCompletion({
       model: builtIn.model,
       messages: chatMessages,
       tools,
+      toolChoice:
+        step === 0 && shouldUseCurrentTime
+          ? { type: "tool", toolName: CURRENT_TIME_TOOL_NAME }
+          : undefined,
       gatewayConfig,
       // No url or apiKey → BYOK mode: gateway handles auth
     });
@@ -495,12 +539,23 @@ async function runBuiltinAgentConversation(input: {
     }
   }
 
+  const finalCompletion = await requestChatCompletion({
+    model: builtIn.model,
+    messages: chatMessages,
+    gatewayConfig,
+  });
+  const finalContent = finalCompletion.choices?.[0]?.message?.content ?? "";
+  if (finalCompletion.usage?.totalTokens) {
+    totalTokens += finalCompletion.usage.totalTokens;
+  }
+  if (finalContent) trace.push({ kind: "message", text: finalContent });
+
   return ConversationService.addMessage(
     db,
     input.conversationId,
     "assistant",
-    "Agent exceeded tool execution limit.",
-    "Agent exceeded tool execution limit.",
+    finalContent || "工具调用已完成，但没有生成最终回复。",
+    undefined,
     undefined,
     { trace, tokens: totalTokens > 0 ? totalTokens : undefined },
   );

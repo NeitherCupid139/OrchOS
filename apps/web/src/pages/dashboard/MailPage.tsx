@@ -22,7 +22,6 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 import { InboxDetail, InboxNoSelection } from "@/components/panels/InboxDetail";
 import { InboxList } from "@/components/panels/InboxList";
-import { AsciiLoading } from "@/components/ui/ascii-loading";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,7 +128,7 @@ export function MailPage() {
     EMAIL_PROVIDERS[0].id,
   );
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [submittingAccount, setSubmittingAccount] = useState(false);
   const [activeAccountId, setActiveAccountIdFilter] = useState<string | null>(
     null,
@@ -751,11 +750,7 @@ export function MailPage() {
                 </Tooltip>
               ) : null}
 
-              {loading ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <AsciiLoading label={loading_label()} />
-                </div>
-              ) : activeThread ? (
+              {activeThread ? (
                 <InboxDetail
                   thread={activeThread}
                   messages={activeMessages}

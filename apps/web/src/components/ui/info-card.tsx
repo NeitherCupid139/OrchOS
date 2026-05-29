@@ -245,34 +245,81 @@ const InfoCardFooter = ({ children, className }: InfoCardFooterProps) => {
 const InfoCardDismiss = React.memo(
   ({ children, className, onDismiss, ...props }: InfoCardDismissProps) => {
     const { onDismiss: contextDismiss } = use(InfoCardContext);
+    const [pressProgress, setPressProgress] = useState(0);
+    const pressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const pressedRef = useRef(false);
+    const PRESS_DURATION = 800; // ms to hold before triggering
 
-    const dismissCard = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const dismissCard = useCallback(() => {
       onDismiss?.();
       contextDismiss();
-    };
+    }, [onDismiss, contextDismiss]);
+
+    const startPress = useCallback(
+      (e: React.PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        pressedRef.current = true;
+        setPressProgress(0);
+        const startTime = Date.now();
+        pressTimerRef.current = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / PRESS_DURATION, 1);
+          setPressProgress(progress);
+          if (progress >= 1) {
+            clearInterval(pressTimerRef.current!);
+            pressTimerRef.current = null;
+            pressedRef.current = false;
+            setPressProgress(0);
+            dismissCard();
+          }
+        }, 16);
+      },
+      [dismissCard],
+    );
+
+    const cancelPress = useCallback(() => {
+      if (pressTimerRef.current) {
+        clearInterval(pressTimerRef.current);
+        pressTimerRef.current = null;
+      }
+      pressedRef.current = false;
+      setPressProgress(0);
+    }, []);
+
+    useEffect(() => {
+      return () => {
+        if (pressTimerRef.current) clearInterval(pressTimerRef.current);
+      };
+    }, []);
 
     return (
       <div
         className={cn(
-          "cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground",
+          "relative cursor-pointer select-none rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground overflow-hidden",
           className,
         )}
         role="button"
         tabIndex={0}
-        onClick={dismissCard}
+        onPointerDown={startPress}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             e.stopPropagation();
-            onDismiss?.();
-            contextDismiss();
+            dismissCard();
           }
         }}
         {...props}
       >
-        {children}
+        {/* Long-press progress fill */}
+        <div
+          className="absolute inset-0 bg-destructive transition-none pointer-events-none"
+          style={{ opacity: pressProgress * 0.3 }}
+        />
+        <span className="relative z-10">{children}</span>
       </div>
     );
   },

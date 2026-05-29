@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ControlSettings } from "@/lib/types";
+import type { ControlSettings, SidebarView } from "@/lib/types";
 import type { BoardTaskFilter } from "@/components/panels/BoardView";
 import type { ThemeMode } from "@/lib/theme";
 import { migrateUIStore } from "@/lib/ui-store-migrations";
@@ -55,6 +55,7 @@ interface UIState {
   activityPanelOpen: boolean;
   activityExpanded: boolean;
   sidebarCollapsed: boolean;
+  sidebarItemNotifications: Partial<Record<SidebarView, number>>;
   creationSidebarCollapsed: boolean;
   creationSidebarWidth: number;
   sidebarWidth: number;
@@ -84,6 +85,8 @@ interface UIActions {
   toggleActivityExpanded: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  notifySidebarView: (view: SidebarView) => void;
+  clearSidebarViewNotification: (view: SidebarView) => void;
   setCreationSidebarCollapsed: (collapsed: boolean) => void;
   toggleCreationSidebar: () => void;
   setCreationSidebarWidth: (width: number) => void;
@@ -132,6 +135,7 @@ export const useUIStore = create<UIState & UIActions>()(
       activityPanelOpen: false,
       activityExpanded: false,
       sidebarCollapsed: false,
+      sidebarItemNotifications: {},
       creationSidebarCollapsed: false,
       creationSidebarWidth: 280,
       sidebarWidth: 280,
@@ -163,6 +167,20 @@ export const useUIStore = create<UIState & UIActions>()(
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      notifySidebarView: (view) =>
+        set((state) => ({
+          sidebarItemNotifications: {
+            ...state.sidebarItemNotifications,
+            [view]: (state.sidebarItemNotifications[view] ?? 0) + 1,
+          },
+        })),
+      clearSidebarViewNotification: (view) =>
+        set((state) => {
+          if (!state.sidebarItemNotifications[view]) return {};
+          const next = { ...state.sidebarItemNotifications };
+          delete next[view];
+          return { sidebarItemNotifications: next };
+        }),
       setCreationSidebarCollapsed: (collapsed) =>
         set({ creationSidebarCollapsed: collapsed }),
       toggleCreationSidebar: () =>

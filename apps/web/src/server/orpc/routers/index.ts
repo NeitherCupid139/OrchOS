@@ -1,6 +1,7 @@
 export { bookmarksRouter } from "./bookmarks";
 export { conversationsRouter } from "./conversations";
 export { customAgentsRouter } from "./custom-agents";
+export { dataPortabilityRouter } from "./data-portability";
 export { filesystemRouter } from "./filesystem";
 export { inboxRouter } from "./inbox";
 export { integrationsRouter } from "./integrations";

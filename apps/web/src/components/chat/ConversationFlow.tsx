@@ -6,7 +6,10 @@ import { assistant, user } from "@/paraglide/messages";
 import { ChatClarificationCard } from "@/components/chat/ChatClarificationCard";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatReasoningDrawer } from "@/components/chat/ChatReasoningDrawer";
-import { ChatToolTimeline } from "@/components/chat/ChatToolTimeline";
+import {
+  ChatToolTimeline,
+  ChatToolTimelineGroup,
+} from "@/components/chat/ChatToolTimeline";
 import { Actions, Action } from "@/components/ui/actions";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 
@@ -15,6 +18,7 @@ type ConversationUiPart = (
   | { type: "reasoning"; text: string }
   | { type: "clarification"; summary?: string; questions: string[] }
   | ToolConversationUiPart
+  | ToolGroupConversationUiPart
 ) & { id: string };
 
 type ToolConversationUiPart = Record<string, unknown> & {
@@ -24,6 +28,14 @@ type ToolConversationUiPart = Record<string, unknown> & {
   input?: unknown;
   output?: unknown;
   errorText?: string;
+};
+
+type ToolGroupConversationUiPart = {
+  id: string;
+  type: "tool_group";
+  toolType: string;
+  toolDisplayName: string;
+  tools: ToolConversationUiPart[];
 };
 
 function prettifyToolName(name: string) {
@@ -102,6 +114,33 @@ function buildMessageParts(message: ConversationMessage): ConversationUiPart[] {
   return parts;
 }
 
+function groupWebSearchToolParts(parts: ConversationUiPart[]) {
+  const result: ConversationUiPart[] = [];
+  let webSearchGroup: ToolGroupConversationUiPart | null = null;
+
+  for (const part of parts) {
+    if (part.type === "tool-web_search") {
+      if (!webSearchGroup) {
+        webSearchGroup = {
+          id: `${part.id}-group`,
+          type: "tool_group",
+          toolType: "web_search",
+          toolDisplayName: "Web Search",
+          tools: [],
+        };
+        result.push(webSearchGroup as ConversationUiPart);
+      }
+
+      webSearchGroup.tools.push(part);
+      continue;
+    }
+
+    result.push(part);
+  }
+
+  return result;
+}
+
 /**
  * Weak LRU cache for buildMessageParts results.
  * Avoids re-parsing message traces on every render.
@@ -114,7 +153,7 @@ function getCachedParts(message: ConversationMessage): ConversationUiPart[] {
   const cached = partsCache.get(key);
   if (cached) return cached;
 
-  const parts = buildMessageParts(message);
+  const parts = groupWebSearchToolParts(buildMessageParts(message));
 
   if (partsCache.size >= MAX_PARTS_CACHE) {
     const firstKey = partsCache.keys().next().value;
@@ -286,6 +325,16 @@ export const MessageBubble = memo(function MessageBubble({
                   key={key}
                   summary={part.summary}
                   questions={part.questions}
+                />
+              );
+            }
+
+            if (part.type === "tool_group") {
+              return (
+                <ChatToolTimelineGroup
+                  key={key}
+                  displayName={part.toolDisplayName}
+                  parts={part.tools}
                 />
               );
             }

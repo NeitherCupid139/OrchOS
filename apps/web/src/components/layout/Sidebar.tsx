@@ -148,6 +148,7 @@ interface SidebarProps {
   activeOrganizationId: string | null;
   activeView: SidebarView;
   collapsed: boolean;
+  loading?: boolean;
   isMobile?: boolean;
   onOpenSettings: () => void;
   onOrganizationChange: (id: string) => void;
@@ -162,6 +163,7 @@ export function Sidebar({
   activeOrganizationId,
   activeView,
   collapsed,
+  loading = false,
   isMobile = false,
   onOpenSettings,
   onOrganizationChange,
@@ -194,18 +196,28 @@ export function Sidebar({
   const showShortcutHints = useUIStore(
     (s) => s.settings?.showShortcutHints ?? false,
   );
+  const sidebarItemNotifications = useUIStore(
+    (s) => s.sidebarItemNotifications,
+  );
+  const clearSidebarViewNotification = useUIStore(
+    (s) => s.clearSidebarViewNotification,
+  );
   const [pendingNav, setPendingNav] = useState<string | null>(null);
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
 
-  // Clear pending nav when the active view changes (navigation completed)
   useEffect(() => {
-    setPendingNav(null);
-  }, [activeView]);
+    if (!pendingNav || activeView !== pendingNav || loading) {
+      return;
+    }
 
-  function handleNavClick(id: string) {
+    setPendingNav(null);
+  }, [activeView, loading, pendingNav]);
+
+  function handleNavClick(id: SidebarView) {
     setPendingNav(id);
+    clearSidebarViewNotification(id);
     clearTimeout(pendingTimerRef.current);
     // Safety timeout to clear if navigation fails
     pendingTimerRef.current = setTimeout(() => setPendingNav(null), 4000);
@@ -536,6 +548,8 @@ export function Sidebar({
                   }) => {
                     const isActive = activeView === id;
                     const isPending = pendingNav === id;
+                    const hasNotification =
+                      (sidebarItemNotifications[id] ?? 0) > 0;
                     const navItem = (
                       <Link
                         key={id}
@@ -543,7 +557,7 @@ export function Sidebar({
                         preload="intent"
                         onClick={() => handleNavClick(id)}
                         className={cn(
-                          "flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
+                          "relative flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
                           effectiveCollapsed
                             ? "mx-auto size-10 justify-center gap-0 px-0"
                             : "w-full gap-2.5 px-2.5 text-sm",
@@ -561,10 +575,14 @@ export function Sidebar({
                             />
                           </span>
                         ) : (
-                          <HugeiconsIcon
-                            icon={Icon}
-                            className="size-4 shrink-0"
-                          />
+                          <span
+                            className={cn(
+                              "inline-flex size-4 shrink-0 items-center justify-center transition-transform duration-300 [transition-timing-function:cubic-bezier(0.2,0,0,1)]",
+                              hasNotification && "-rotate-12",
+                            )}
+                          >
+                            <HugeiconsIcon icon={Icon} className="size-4" />
+                          </span>
                         )}
                         <span
                           className={cn(
@@ -610,6 +628,17 @@ export function Sidebar({
                             {badge}
                           </span>
                         )}
+                        {hasNotification ? (
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "shrink-0 rounded-full bg-red-500 shadow-[0_0_0_2px_var(--sidebar)] transition-[opacity,scale] duration-200",
+                              effectiveCollapsed
+                                ? "absolute right-2 top-2 size-2"
+                                : "size-2",
+                            )}
+                          />
+                        ) : null}
                       </Link>
                     );
                     if (effectiveCollapsed && !isMobile) {
