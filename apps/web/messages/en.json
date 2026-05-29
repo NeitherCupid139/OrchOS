@@ -499,6 +499,8 @@
   "notification_test_sent": "Test notification sent!",
   "notification_test_failed": "Failed to send test notification. Check your notification permissions.",
   "notifications": "Notifications",
+  "no_notifications": "No notifications",
+  "no_notifications_desc": "You're all caught up!",
   "obs_activity_heatmap": "Activity Heatmap",
   "obs_agent_timeline": "Agent Timeline",
   "obs_chart_tokens": "Tokens",

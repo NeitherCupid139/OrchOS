@@ -471,6 +471,8 @@
   "notification_test_sent": "测试通知已发送！",
   "notification_test_failed": "发送测试通知失败，请检查通知权限。",
   "notifications": "通知",
+  "no_notifications": "暂无通知",
+  "no_notifications_desc": "一切尽在掌握！",
   "obs_activity_heatmap": "活动热力图",
   "obs_agent_timeline": "Agent 时间线",
   "obs_chart_tokens": "Token",

@@ -30,17 +30,64 @@ function createFreeSubscription(userId: string) {
   };
 }
 
+async function ensureFreeSubscription(userId: string) {
+  const db = await getLocalDb();
+  const subscription = createFreeSubscription(userId);
+
+  try {
+    await db
+      .insert(subscriptions)
+      .values({
+        userId: subscription.userId,
+        plan: subscription.plan,
+        creditsBalance: String(subscription.creditsBalance),
+        creditsTotal: String(subscription.creditsTotal),
+        tokensUsed: String(subscription.tokensUsed),
+        periodStart: subscription.periodStart,
+        periodEnd: subscription.periodEnd,
+        status: subscription.status,
+        createdAt: subscription.createdAt,
+        updatedAt: subscription.updatedAt,
+      })
+      .run();
+  } catch {
+    const existing = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .get();
+
+    if (existing) {
+      return {
+        userId: existing.userId,
+        plan: existing.plan === "pro" ? "pro" as const : "free" as const,
+        creditsBalance: Number(existing.creditsBalance),
+        creditsTotal: Number(existing.creditsTotal),
+        tokensUsed: Number(existing.tokensUsed),
+        periodStart: existing.periodStart,
+        periodEnd: existing.periodEnd,
+        status: existing.status,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      };
+    }
+  }
+
+  return subscription;
+}
+
 export const subscriptionRouter = {
   get: os.subscription.get.handler(async ({ context }) => {
     const userId = await getSubscriptionUserId(context.request);
-    const row = await (await getLocalDb())
+    const db = await getLocalDb();
+    const row = await db
       .select()
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
       .get();
 
     if (!row) {
-      return createFreeSubscription(userId);
+      return ensureFreeSubscription(userId);
     }
 
     return {

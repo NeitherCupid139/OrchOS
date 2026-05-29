@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
+import { useUser } from "@clerk/clerk-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -246,6 +247,7 @@ function MinusIcon({ className }: { className?: string }) {
 
 function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const { isSignedIn } = useUser();
   const tiers = useTiers();
   const compareFeatures = useCompareFeatures();
   const faqs = useFaqs();
@@ -394,6 +396,14 @@ function Pricing() {
                       >
                         {tier.buttonLabel}
                       </a>
+                    </Button>
+                  ) : tier.key === "pro" && isSignedIn ? (
+                    <Button
+                      variant={tier.buttonVariant}
+                      className="w-full"
+                      asChild
+                    >
+                      <a href="/api/checkout">{tier.buttonLabel}</a>
                     </Button>
                   ) : (
                     <Button

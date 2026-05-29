@@ -343,6 +343,8 @@
   "not_found": "찾을 수 없음",
   "notification_permission_denied": "알림 권한이 거부되었습니다. 브라우저 설정에서 알림을 허용하세요.",
   "notifications": "알림",
+  "no_notifications": "알림 없음",
+  "no_notifications_desc": "모두 확인했습니다!",
   "obs_activity_heatmap": "활동 히트맵",
   "obs_agent_timeline": "Agent 타임라인",
   "obs_chart_tokens": "토큰",

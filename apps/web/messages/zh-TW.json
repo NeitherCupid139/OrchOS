@@ -404,6 +404,8 @@
   "not_found": "未找到",
   "notification_permission_denied": "通知權限被拒絕。請在瀏覽器設定中允許通知。",
   "notifications": "通知",
+  "no_notifications": "暫無通知",
+  "no_notifications_desc": "一切盡在掌握！",
   "obs_activity_heatmap": "活動熱力圖",
   "obs_agent_timeline": "Agent 時間線",
   "obs_chart_tokens": "Token",

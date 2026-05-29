@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useClerk, useOrganization, useUser } from "@clerk/clerk-react";
@@ -98,14 +98,11 @@ import {
   profile_username,
   profile_membership_plan,
   profile_membership_plan_desc,
-  profile_membership_credits,
-  profile_membership_credits_desc,
   profile_membership_tokens_used,
   profile_membership_tokens_used_desc,
   profile_membership_upgrade,
   profile_membership_upgrade_desc,
   profile_membership_manage,
-  profile_membership_view_usage,
   rename,
   rename_space,
   save,
@@ -1176,16 +1173,19 @@ function ProfileEditDialog({
     periodEnd: string | null;
     status: string;
   } | null>(null);
-  const [creditUsage, setCreditUsage] = useState<{
-    items: Array<{
-      id: string;
-      action: string;
-      tokens: number;
-      credits: number;
-      createdAt: string;
-    }>;
-    total: number;
-  } | null>(null);
+  const getFallbackSubscription = useCallback(
+    () => ({
+      userId: clerkUser?.id ?? "local",
+      plan: "free" as const,
+      creditsBalance: 100,
+      creditsTotal: 100,
+      tokensUsed: 0,
+      periodStart: null,
+      periodEnd: null,
+      status: "active",
+    }),
+    [clerkUser?.id],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -1215,15 +1215,9 @@ function ProfileEditDialog({
     async function load() {
       try {
         const sub = (await api.getSubscription()) as typeof subscription;
-        if (!cancelled) setSubscription(sub);
+        if (!cancelled) setSubscription(sub ?? getFallbackSubscription());
       } catch {
-        /* subscription not available */
-      }
-      try {
-        const usage = (await api.getCreditUsage(20)) as typeof creditUsage;
-        if (!cancelled) setCreditUsage(usage);
-      } catch {
-        /* usage not available */
+        if (!cancelled) setSubscription(getFallbackSubscription());
       }
       if (!cancelled) setSubLoading(false);
     }
@@ -1231,7 +1225,7 @@ function ProfileEditDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, activeTab]);
+  }, [open, activeTab, getFallbackSubscription]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -1756,43 +1750,6 @@ function ProfileEditDialog({
                             </span>
                           </div>
 
-                          {/* Credits usage bar */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
-                                {profile_membership_credits()}
-                              </span>
-                              <span className="text-xs font-medium text-foreground">
-                                {subscription.creditsBalance} /{" "}
-                                {subscription.creditsTotal}
-                              </span>
-                            </div>
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all duration-500",
-                                  subscription.creditsTotal > 0 &&
-                                    subscription.creditsBalance /
-                                      subscription.creditsTotal <
-                                      0.2
-                                    ? "bg-destructive"
-                                    : subscription.creditsTotal > 0 &&
-                                        subscription.creditsBalance /
-                                          subscription.creditsTotal <
-                                          0.5
-                                      ? "bg-amber-500"
-                                      : "bg-emerald-500",
-                                )}
-                                style={{
-                                  width: `${subscription.creditsTotal > 0 ? Math.max(2, (subscription.creditsBalance / subscription.creditsTotal) * 100) : 0}%`,
-                                }}
-                              />
-                            </div>
-                            <p className="text-[11px] text-muted-foreground">
-                              {profile_membership_credits_desc()}
-                            </p>
-                          </div>
-
                           {/* Tokens used */}
                           <div className="rounded-lg border border-border/50 px-3 py-2">
                             <div className="flex items-center justify-between">
@@ -1821,13 +1778,22 @@ function ProfileEditDialog({
 
                           {/* Upgrade CTA for free users */}
                           {subscription.plan === "free" && isProEnabled() && (
-                            <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3">
-                              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                                {profile_membership_upgrade()}
-                              </p>
-                              <p className="mt-1 text-[11px] text-amber-600/80 dark:text-amber-400/70">
-                                {profile_membership_upgrade_desc()}
-                              </p>
+                            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                    {profile_membership_upgrade()}
+                                  </p>
+                                  <p className="mt-1 text-[11px] text-amber-600/80 dark:text-amber-400/70">
+                                    {profile_membership_upgrade_desc()}
+                                  </p>
+                                </div>
+                                <Button size="sm" asChild>
+                                  <a href="/api/checkout">
+                                    {profile_membership_upgrade()}
+                                  </a>
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1842,42 +1808,6 @@ function ProfileEditDialog({
                         </div>
                       )}
                     </div>
-
-                    {/* Recent credit usage */}
-                    {creditUsage && creditUsage.items.length > 0 && (
-                      <div className="rounded-lg border border-border/50 p-4">
-                        <p className="text-sm font-medium text-foreground mb-3">
-                          {profile_membership_view_usage()}
-                        </p>
-                        <div className="space-y-2">
-                          {creditUsage.items.slice(0, 10).map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between rounded-md border border-border/30 px-3 py-2"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs text-foreground">
-                                  {item.action}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground/60">
-                                  {new Date(
-                                    item.createdAt,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="ml-3 shrink-0 text-right">
-                                <p className="text-xs font-medium text-foreground">
-                                  {item.credits.toLocaleString()} credits
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {item.tokens.toLocaleString()} tokens
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Manage link */}
                     <div className="text-center pt-2">

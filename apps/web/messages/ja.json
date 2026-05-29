@@ -343,6 +343,8 @@
   "not_found": "見つかりません",
   "notification_permission_denied": "通知の権限が拒否されました。ブラウザの設定で通知を許可してください。",
   "notifications": "通知",
+  "no_notifications": "通知はありません",
+  "no_notifications_desc": "すべて確認済みです！",
   "obs_activity_heatmap": "アクティビティヒートマップ",
   "obs_agent_timeline": "エージェントタイムライン",
   "obs_chart_tokens": "トークン",

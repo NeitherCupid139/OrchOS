@@ -260,6 +260,36 @@ export async function runLightweightMigrations(sqlite: D1LikeDatabase) {
   await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_bookmarks_category_id" ON "bookmarks" ("category_id")');
   await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_bookmarks_sort_order" ON "bookmarks" ("sort_order")');
 
+  await ensureTable(`
+    CREATE TABLE IF NOT EXISTS "credit_usage" (
+      "id" TEXT PRIMARY KEY NOT NULL,
+      "user_id" TEXT NOT NULL,
+      "action" TEXT NOT NULL,
+      "tokens" TEXT NOT NULL DEFAULT '0',
+      "credits" TEXT NOT NULL DEFAULT '0',
+      "metadata" TEXT NOT NULL DEFAULT '{}',
+      "created_at" TEXT NOT NULL
+    )
+  `);
+  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_credit_usage_user_id" ON "credit_usage" ("user_id")');
+  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_credit_usage_action" ON "credit_usage" ("action")');
+  await ensureIndex('CREATE INDEX IF NOT EXISTS "idx_credit_usage_created_at" ON "credit_usage" ("created_at")');
+
+  await ensureTable(`
+    CREATE TABLE IF NOT EXISTS "subscriptions" (
+      "user_id" TEXT PRIMARY KEY NOT NULL,
+      "plan" TEXT NOT NULL DEFAULT 'free',
+      "credits_balance" TEXT NOT NULL DEFAULT '0',
+      "credits_total" TEXT NOT NULL DEFAULT '0',
+      "tokens_used" TEXT NOT NULL DEFAULT '0',
+      "period_start" TEXT,
+      "period_end" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'active',
+      "created_at" TEXT NOT NULL,
+      "updated_at" TEXT NOT NULL
+    )
+  `);
+
   if (await hasTable("conversations") && !(await hasColumn("conversations", "archived"))) {
     await exec("ALTER TABLE conversations ADD COLUMN archived TEXT NOT NULL DEFAULT 'false'");
   }

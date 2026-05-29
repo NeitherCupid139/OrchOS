@@ -106,7 +106,7 @@ export const ChatMarkdown = memo(function ChatMarkdown({ content }: { content: s
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          a: ({ ...props }) => (
+          a: ({ node: _node, ...props }) => (
             <a
               {...props}
               className="font-medium text-primary underline-offset-4 hover:underline"
@@ -127,7 +127,12 @@ export const ChatMarkdown = memo(function ChatMarkdown({ content }: { content: s
 
             return <ChatCodeBlockClient code={code} language={match?.[1]} />;
           },
-          code: ({ className, children, ...props }: ComponentPropsWithoutRef<"code">) => {
+          code: ({
+            node: _node,
+            className,
+            children,
+            ...props
+          }: ComponentPropsWithoutRef<"code"> & { node?: unknown }) => {
             const code = String(children).replace(/\n$/, "");
 
             if (code.startsWith("/") && code.includes(".")) {

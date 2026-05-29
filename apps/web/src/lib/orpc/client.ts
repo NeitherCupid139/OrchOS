@@ -5,7 +5,7 @@ import { onError } from "@orpc/client";
 
 import type { AppContract } from "@/lib/orpc/contracts";
 
-const RPC_REQUEST_TIMEOUT_MS = 15000;
+const RPC_REQUEST_TIMEOUT_MS = 300000;
 
 function getRpcBaseUrl() {
   if (typeof window === "undefined") {
@@ -36,11 +36,32 @@ export const orpc: ContractRouterClient<AppContract> = createORPCClient(
     },
     fetch(input, init) {
       const controller = new AbortController();
-      const timeoutId = globalThis.setTimeout(() => controller.abort(), RPC_REQUEST_TIMEOUT_MS);
-      const abortFromRequest = () => controller.abort();
+      const abortRequest = (reason: DOMException) => {
+        if (!controller.signal.aborted) {
+          controller.abort(reason);
+        }
+      };
+      const timeoutId = globalThis.setTimeout(
+        () =>
+          abortRequest(
+            new DOMException(
+              `ORPC request timed out after ${RPC_REQUEST_TIMEOUT_MS}ms`,
+              "TimeoutError",
+            ),
+          ),
+        RPC_REQUEST_TIMEOUT_MS,
+      );
+      const abortFromRequest = () => {
+        const reason =
+          input.signal.reason instanceof DOMException
+            ? input.signal.reason
+            : new DOMException("ORPC request was canceled by the caller.", "AbortError");
+
+        abortRequest(reason);
+      };
 
       if (input.signal.aborted) {
-        controller.abort();
+        abortFromRequest();
       } else {
         input.signal.addEventListener("abort", abortFromRequest, { once: true });
       }

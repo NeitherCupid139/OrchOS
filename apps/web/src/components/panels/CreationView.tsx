@@ -263,6 +263,41 @@ export function CreationView(props?: CreationViewProps | null) {
     );
   }, [conversations, creationArchiveFilter, exitingConvId]);
 
+  const findEmptyConversation = useCallback(
+    (runtimeId?: string) => {
+      if (
+        activeConversation &&
+        !activeConversation.archived &&
+        !activeConversation.deleted &&
+        !activeConversation.title &&
+        messages.length === 0 &&
+        (!runtimeId ||
+          !activeConversation.runtimeId ||
+          activeConversation.runtimeId === runtimeId)
+      ) {
+        return activeConversation;
+      }
+
+      return conversations.find((conversation) => {
+        if (conversation.archived || conversation.deleted || conversation.title) {
+          return false;
+        }
+
+        if (
+          runtimeId &&
+          conversation.runtimeId &&
+          conversation.runtimeId !== runtimeId
+        ) {
+          return false;
+        }
+
+        const cachedMessages = messagesByConversationId[conversation.id];
+        return Array.isArray(cachedMessages) && cachedMessages.length === 0;
+      });
+    },
+    [activeConversation, conversations, messages.length, messagesByConversationId],
+  );
+
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
@@ -338,31 +373,29 @@ export function CreationView(props?: CreationViewProps | null) {
   }, [setCreationSidebarCollapsed]);
 
   const handleNewConversation = useCallback(async () => {
-    if (
-      activeConversation &&
-      !activeConversation.archived &&
-      !activeConversation.deleted &&
-      messages.length === 0
-    ) {
-      setActiveConversationId(activeConversation.id);
-      loadMessages(activeConversation.id);
+    const runtimeId =
+      settings?.defaultRuntimeId || enabledRuntimes[0]?.id || undefined;
+    const emptyConversation = findEmptyConversation(runtimeId);
+
+    if (emptyConversation) {
+      setActiveConversationId(emptyConversation.id);
+      setShowBookmarks(false);
+      loadMessages(emptyConversation.id);
       return;
     }
 
     try {
-      const runtimeId =
-        settings?.defaultRuntimeId || enabledRuntimes[0]?.id || undefined;
       await createConversation({ runtimeId });
     } catch (err) {
       console.error("Failed to create conversation:", err);
     }
   }, [
-    activeConversation,
     createConversation,
-    messages.length,
+    enabledRuntimes,
+    findEmptyConversation,
+    loadMessages,
     setActiveConversationId,
     settings?.defaultRuntimeId,
-    enabledRuntimes,
   ]);
 
   const handleDeleteConversation = useCallback(async () => {
@@ -454,13 +487,19 @@ export function CreationView(props?: CreationViewProps | null) {
       try {
         const runtimeId =
           data.runtimeId || enabledRuntimes[0]?.id || undefined;
+        const emptyConversation = findEmptyConversation(runtimeId);
+        if (emptyConversation) {
+          setActiveConversationId(emptyConversation.id);
+          return emptyConversation;
+        }
+
         return await createConversation({ ...data, runtimeId });
       } catch (err) {
         console.error("Failed to create conversation:", err);
         throw err;
       }
     },
-    [createConversation, enabledRuntimes],
+    [createConversation, enabledRuntimes, findEmptyConversation, setActiveConversationId],
   );
 
   /* ── Render ── */
