@@ -2,32 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Checkout } from "@dodopayments/tanstack";
 import { authenticateORPCRequest } from "@/server/orpc/context";
 
-const PRO_PRODUCT_IDS = {
-  monthly:
-    process.env.DODO_PAYMENTS_PRO_MONTHLY_PRODUCT_ID ??
-    process.env.DODO_PAYMENTS_PRO_PRODUCT_ID ??
+const TOKEN_PRODUCT_IDS = {
+  default:
     process.env.DODO_PAYMENTS_PRODUCT_ID ??
+    process.env.DODO_PAYMENTS_PRO_PRODUCT_ID ??
     "",
+  monthly: process.env.DODO_PAYMENTS_PRO_MONTHLY_PRODUCT_ID ?? "",
   yearly: process.env.DODO_PAYMENTS_PRO_YEARLY_PRODUCT_ID ?? "",
 };
-
-type ProBillingInterval = keyof typeof PRO_PRODUCT_IDS;
-
-function getBillingInterval(value: string | null): ProBillingInterval {
-  return value === "yearly" ? "yearly" : "monthly";
-}
-
-function getBillingIntervalForProductId(
-  productId: string,
-): ProBillingInterval | null {
-  if (PRO_PRODUCT_IDS.monthly && productId === PRO_PRODUCT_IDS.monthly) {
-    return "monthly";
-  }
-  if (PRO_PRODUCT_IDS.yearly && productId === PRO_PRODUCT_IDS.yearly) {
-    return "yearly";
-  }
-  return null;
-}
 
 function createCheckoutHandler() {
   const handler = Checkout({
@@ -42,30 +24,24 @@ function createCheckoutHandler() {
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
     const requestedProductId = url.searchParams.get("productId");
-    const requestedBilling = getBillingInterval(
-      url.searchParams.get("billing"),
-    );
-    const billing =
-      requestedProductId !== null
-        ? getBillingIntervalForProductId(requestedProductId)
-        : requestedBilling;
-    const productId = billing ? PRO_PRODUCT_IDS[billing] : "";
 
-    if (requestedProductId && !billing) {
-      return new Response("Only Pro checkout is enabled.", { status: 400 });
+    let productId: string;
+    if (requestedProductId) {
+      productId = requestedProductId;
+    } else {
+      productId =
+        TOKEN_PRODUCT_IDS.default ||
+        TOKEN_PRODUCT_IDS.monthly ||
+        TOKEN_PRODUCT_IDS.yearly;
     }
 
     if (!productId) {
-      return new Response(
-        `Pro ${requestedBilling} checkout is not configured.`,
-        { status: 500 },
-      );
+      return new Response("No product configured. Set DODO_PAYMENTS_PRODUCT_ID.", { status: 500 });
     }
 
     url.searchParams.set("productId", productId);
     url.searchParams.set("quantity", "1");
-    url.searchParams.set("metadata_plan", "pro");
-    url.searchParams.set("metadata_billing", billing ?? requestedBilling);
+    url.searchParams.set("metadata_type", "token_purchase");
 
     const auth = await authenticateORPCRequest(request);
     if (auth?.userId) {
@@ -96,7 +72,7 @@ export const Route = createFileRoute("/api/checkout")({
     handlers: {
       GET: async ({ request }) => createCheckoutHandler()(request),
       POST: async () =>
-        new Response("Only Pro subscription checkout is enabled.", {
+        new Response("Use GET to initiate checkout.", {
           status: 405,
           headers: { Allow: "GET" },
         }),

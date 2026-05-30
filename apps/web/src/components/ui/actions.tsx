@@ -134,12 +134,12 @@ export function Action({
               size="icon-xs"
               variant="ghost"
               onClick={handleClick}
-            />
+            >
+              {icon}
+              <span className="sr-only">{label || tooltip}</span>
+            </Button>
           }
-        >
-          {icon}
-          <span className="sr-only">{label || tooltip}</span>
-        </TooltipTrigger>
+        />
         <TooltipContent>{tooltip}</TooltipContent>
       </Tooltip>
     );

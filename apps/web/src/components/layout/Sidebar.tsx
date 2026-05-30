@@ -98,6 +98,8 @@ import {
   profile_username,
   profile_membership_plan,
   profile_membership_plan_desc,
+  profile_membership_credits,
+  profile_membership_credits_desc,
   profile_membership_tokens_used,
   profile_membership_tokens_used_desc,
   profile_membership_upgrade,
@@ -1729,25 +1731,19 @@ function ProfileEditDialog({
                         </div>
                       ) : subscription ? (
                         <div className="space-y-3">
-                          {/* Plan badge */}
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
-                                subscription.plan === "pro"
-                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                  : "bg-muted text-muted-foreground",
-                              )}
-                            >
-                              <HugeiconsIcon
-                                icon={CrownIcon}
-                                className="size-3"
-                              />
-                              {subscription.plan === "pro" ? "Pro" : "Free"}
-                            </span>
-                            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                              {subscription.status}
-                            </span>
+                          {/* Token balance */}
+                          <div className="rounded-lg border border-border/50 px-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {profile_membership_credits()}
+                              </span>
+                              <span className="text-xs font-medium text-foreground">
+                                {(subscription.creditsBalance || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {profile_membership_credits_desc()}
+                            </p>
                           </div>
 
                           {/* Tokens used */}
@@ -1767,24 +1763,15 @@ function ProfileEditDialog({
                             </p>
                           </div>
 
-                          {/* Period info */}
-                          {subscription.periodStart &&
-                            subscription.periodEnd && (
-                              <div className="text-[11px] text-muted-foreground">
-                                {subscription.periodStart} →{" "}
-                                {subscription.periodEnd}
-                              </div>
-                            )}
-
-                          {/* Upgrade CTA for free users */}
-                          {subscription.plan === "free" && isProEnabled() && (
-                            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                          {/* Buy tokens CTA */}
+                          {isProEnabled() && (
+                            <div className="rounded-lg border border-border/50 bg-background/50 p-3">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                  <p className="text-xs font-medium text-foreground">
                                     {profile_membership_upgrade()}
                                   </p>
-                                  <p className="mt-1 text-[11px] text-amber-600/80 dark:text-amber-400/70">
+                                  <p className="mt-1 text-[11px] text-muted-foreground">
                                     {profile_membership_upgrade_desc()}
                                   </p>
                                 </div>

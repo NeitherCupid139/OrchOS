@@ -5,6 +5,7 @@ import { z } from "zod";
 import { bookmarkCategories, bookmarks } from "@/server/db/schema";
 import type { AppDb } from "@/server/db/types";
 import { getAIGatewayConfig } from "@/server/ai-gateway";
+import type { AIGatewayConfig } from "@orchos/pro/ai-gateway";
 import { createModelFromAgent } from "@/server/ai/provider";
 import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getBuiltInAgent } from "@/lib/built-in-agent";
@@ -46,10 +47,43 @@ function categoryKey(name: string) {
   return normalizeCategoryName(name).toLowerCase();
 }
 
-async function getDefaultBookmarkAgentModelInput(db: AppDb) {
+async function getBookmarkAgentModelInput(
+  db: AppDb,
+  agentId?: string | null,
+): Promise<{
+  url?: string;
+  apiKey?: string;
+  model: string;
+  gatewayConfig?: AIGatewayConfig | null;
+}> {
+  const gatewayConfig = await getAIGatewayConfig();
+
+  // null explicitly means use built-in agent
+  if (agentId === null) {
+    const builtIn = getBuiltInAgent();
+    return { model: builtIn.model, gatewayConfig };
+  }
+
+  // Specific custom agent ID
+  if (agentId) {
+    const customAgentService = new CustomAgentService(db);
+    const agents = await customAgentService.list();
+    const agent = agents.find((item) => item.id === agentId);
+
+    if (agent) {
+      return {
+        url: agent.url,
+        apiKey: agent.apiKey,
+        model: agent.model,
+        gatewayConfig,
+      };
+    }
+    // Agent not found — fall through to default
+  }
+
+  // undefined — use system default agent (original behavior)
   const customAgentService = new CustomAgentService(db);
   const defaultAgentId = await customAgentService.getDefaultAgentId();
-  const gatewayConfig = await getAIGatewayConfig();
 
   if (defaultAgentId) {
     const agents = await customAgentService.list();
@@ -66,11 +100,157 @@ async function getDefaultBookmarkAgentModelInput(db: AppDb) {
   }
 
   const builtIn = getBuiltInAgent();
-  return {
-    model: builtIn.model,
-    gatewayConfig,
-  };
+  return { model: builtIn.model, gatewayConfig };
 }
+
+// ─── Page metadata fetcher (lightweight RAG) ───────────────────────────
+
+interface PageMetadata {
+  pageTitle?: string;
+  pageDescription?: string;
+}
+
+const METADATA_FETCH_TIMEOUT_MS = 4000;
+const METADATA_FETCH_CONCURRENCY = 5;
+
+/**
+ * Fetch and extract page metadata (title + description) from a URL.
+ * Uses regex-based extraction to avoid DOM parser dependencies in Workers.
+ * Returns null on any failure — the caller falls back to bookmark title/URL.
+ */
+async function fetchPageMetadata(url: string): Promise<PageMetadata | null> {
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(METADATA_FETCH_TIMEOUT_MS),
+      headers: {
+        "User-Agent": "OrchOS/1.0 (bookmark-organizer)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+    });
+
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("text/html")) return null;
+
+    // Only read first 128KB — enough for head metadata
+    const reader = response.body?.getReader();
+    if (!reader) return null;
+
+    let html = "";
+    const decoder = new TextDecoder();
+    const maxBytes = 128 * 1024;
+
+    try {
+      while (html.length < maxBytes) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        html += decoder.decode(value, { stream: true });
+      }
+    } finally {
+      reader.cancel();
+    }
+
+    // Extract <title>
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const rawTitle = titleMatch?.[1]?.trim();
+
+    // Extract og:title
+    const ogTitleMatch =
+      html.match(
+        /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i,
+      ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']*)["'][^>]+property=["']og:title["']/i,
+      );
+    const ogTitle = ogTitleMatch?.[1]?.trim();
+
+    // Extract meta description
+    const descMatch =
+      html.match(
+        /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i,
+      ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i,
+      );
+    const metaDescription = descMatch?.[1]?.trim();
+
+    // Extract og:description
+    const ogDescMatch =
+      html.match(
+        /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i,
+      ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']*)["'][^>]+property=["']og:description["']/i,
+      );
+    const ogDescription = ogDescMatch?.[1]?.trim();
+
+    const result: PageMetadata = {};
+
+    // Decode common HTML entities
+    const decode = (s: string) =>
+      s
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'");
+
+    // Prefer og:title over <title>, as og:title is usually more descriptive
+    const bestTitle = ogTitle || rawTitle;
+    if (bestTitle) {
+      result.pageTitle = decode(bestTitle).slice(0, 200);
+    }
+
+    const bestDescription = ogDescription || metaDescription;
+    if (bestDescription) {
+      result.pageDescription = decode(bestDescription).slice(0, 300);
+    }
+
+    return Object.keys(result).length > 0 ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch page metadata for multiple URLs with concurrency limiting.
+ * Returns a Map keyed by URL. Failed fetches are silently excluded.
+ */
+async function fetchAllPagesMetadata(
+  urls: string[],
+): Promise<Map<string, PageMetadata>> {
+  const results = new Map<string, PageMetadata>();
+  const uniqueUrls = [...new Set(urls)];
+
+  for (let i = 0; i < uniqueUrls.length; i += METADATA_FETCH_CONCURRENCY) {
+    const batch = uniqueUrls.slice(i, i + METADATA_FETCH_CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (url) => {
+        const metadata = await fetchPageMetadata(url);
+        if (metadata) {
+          results.set(url, metadata);
+        }
+      }),
+    );
+    // Log failures at debug level — they're expected for dead/blocked links
+    for (let j = 0; j < batchResults.length; j++) {
+      const r = batchResults[j];
+      if (r.status === "rejected") {
+        console.debug(
+          `[bookmarks] metadata fetch failed for ${batch[j]}:`,
+          r.reason,
+        );
+      }
+    }
+  }
+
+  return results;
+}
+
+// ─── BookmarkService ───────────────────────────────────────────────────
 
 export abstract class BookmarkService {
   static async list(db: AppDb): Promise<BookmarkCategoryRecord[]> {
@@ -317,7 +497,10 @@ export abstract class BookmarkService {
     );
   }
 
-  static async organizeWithAi(db: AppDb): Promise<BookmarkCategoryRecord[]> {
+  static async organizeWithAi(
+    db: AppDb,
+    agentId?: string | null,
+  ): Promise<BookmarkCategoryRecord[]> {
     const categories = await BookmarkService.list(db);
     const flatBookmarks = categories.flatMap((category) =>
       category.bookmarks.map((bookmark) => ({
@@ -330,9 +513,17 @@ export abstract class BookmarkService {
       return categories;
     }
 
-    const languageModel = await createModelFromAgent(
-      await getDefaultBookmarkAgentModelInput(db),
+    // Fetch page metadata from bookmark URLs (lightweight RAG).
+    // Runs concurrently with the model init to reduce latency.
+    const metadataPromise = fetchAllPagesMetadata(
+      flatBookmarks.map((b) => b.url),
     );
+
+    const languageModel = await createModelFromAgent(
+      await getBookmarkAgentModelInput(db, agentId),
+    );
+
+    const metadataMap = await metadataPromise;
 
     const { object } = await generateObject({
       model: languageModel,
@@ -344,14 +535,25 @@ export abstract class BookmarkService {
         "You may create new folders, merge old folders, or keep existing folders if they still make sense.",
         "Prefer category names in the same language/style as the existing category names.",
         "Every bookmark should appear in exactly one folder.",
+        "Use the pageTitle and pageDescription (when available) to understand what each page is actually about — they are more reliable than the bookmark title alone.",
         "",
         JSON.stringify(
-          flatBookmarks.map((bookmark) => ({
-            id: bookmark.id,
-            title: bookmark.title,
-            url: bookmark.url,
-            currentCategory: bookmark.currentCategory,
-          })),
+          flatBookmarks.map((bookmark) => {
+            const metadata = metadataMap.get(bookmark.url);
+            const enriched: Record<string, unknown> = {
+              id: bookmark.id,
+              title: bookmark.title,
+              url: bookmark.url,
+              currentCategory: bookmark.currentCategory,
+            };
+            if (metadata?.pageTitle && metadata.pageTitle !== bookmark.title) {
+              enriched.pageTitle = metadata.pageTitle;
+            }
+            if (metadata?.pageDescription) {
+              enriched.pageDescription = metadata.pageDescription;
+            }
+            return enriched;
+          }),
         ),
       ].join("\n"),
       temperature: 0.2,

@@ -261,6 +261,21 @@ export const api = {
   disconnectIntegration: async (id: string): Promise<{ success: boolean }> => {
     return (await orpc.integrations.disconnect({ id })) as { success: boolean };
   },
+  sendMail: async (data: {
+    provider: "smtp-imap" | "gmail";
+    accountId?: string;
+    to: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject: string;
+    body: string;
+  }): Promise<{ id: string; provider: string; accountId?: string }> => {
+    return (await orpc.integrations.sendMail(data)) as {
+      id: string;
+      provider: string;
+      accountId?: string;
+    };
+  },
   registerDetectedRuntimes: (data: {
     runtimeIds?: string[];
     registerAll?: boolean;
@@ -492,8 +507,11 @@ export const api = {
   ): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.replaceAll({ categories })) as BookmarkCategory[];
   },
-  organizeBookmarksWithAi: async (): Promise<BookmarkCategory[]> => {
-    return (await orpc.bookmarks.organizeWithAi({})) as BookmarkCategory[];
+  organizeBookmarksWithAi: async (
+    agentId?: string | null,
+  ): Promise<BookmarkCategory[]> => {
+    const input = agentId !== undefined ? { agentId } : {};
+    return (await orpc.bookmarks.organizeWithAi(input)) as BookmarkCategory[];
   },
   createBookmarkCategory: async (name: string, icon?: string, color?: string): Promise<BookmarkCategory[]> => {
     return (await orpc.bookmarks.createCategory({ name, icon, color })) as BookmarkCategory[];

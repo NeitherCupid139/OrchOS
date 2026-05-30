@@ -584,5 +584,18 @@
   "web_search": "検索",
   "welcome_desc": "1つのワークスペースで、ブックマーク、メール、カレンダー、ボード、エージェントをまとめて管理できます。",
   "welcome_to_orchos": "OrchOSへようこそ",
-  "workspace": "ワークスペース"
+  "workspace": "ワークスペース",
+  "mail_from": "送信者",
+  "mail_to": "宛先",
+  "mail_cc": "Cc",
+  "mail_bcc": "Bcc",
+  "mail_subject": "件名",
+  "sending": "送信中...",
+  "mail_sent_success": "メールを送信しました",
+  "mail_send_failed": "メール送信に失敗しました",
+  "select_mail_account": "アカウントを選択",
+  "no_mail_account_for_send": "接続されたメールアカウントがありません。先に接続してください。",
+  "recipient_placeholder": "email@example.com",
+  "subject_placeholder": "件名を入力",
+  "body_placeholder": "メッセージを入力..."
 }

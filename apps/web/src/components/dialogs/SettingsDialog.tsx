@@ -356,7 +356,7 @@ export function SettingsDialog({
             dispatchMail({
               type: "SET_INTEGRATIONS",
               payload: result.filter(
-                (i) => i.id === "smtp-imap" || i.id === "gmail",
+                (i) => i.id === "smtp-imap",
               ) as SettingsMailIntegration[],
             });
           })
@@ -366,16 +366,6 @@ export function SettingsDialog({
       }
     }
   }, [open, defaultTab]);
-
-  // Check for OAuth error from Google callback redirect
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("oauth_error");
-    if (error) {
-      setOauthError(decodeURIComponent(error));
-    }
-  }, []);
 
   const [editingMailAccount, setEditingMailAccount] = useState<{
     integrationId: string;
@@ -410,7 +400,6 @@ export function SettingsDialog({
   const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(
     EMAIL_PROVIDERS[0].id,
   );
-  const [oauthError, setOauthError] = useState<string | null>(null);
   const dataImportInputRef = useRef<HTMLInputElement | null>(null);
   const [dataTransferState, setDataTransferState] = useState<
     | "idle"
@@ -641,10 +630,9 @@ export function SettingsDialog({
       if (!editingMailAccount.account?.id) {
         // Creating a new SMTP/IMAP account
         updated = await api.createSmtpImapAccount(smtpImap);
-        // Reload integrations so the gmail integration is also up to date
         const allIntegrations = await api.listIntegrations();
         const mailIntegrations = allIntegrations.filter(
-          (i) => i.id === "smtp-imap" || i.id === "gmail",
+          (i) => i.id === "smtp-imap",
         ) as SettingsMailIntegration[];
         dispatchMail({ type: "SET_INTEGRATIONS", payload: mailIntegrations });
       } else {
@@ -691,12 +679,6 @@ export function SettingsDialog({
     },
     [],
   );
-
-  /** Redirect to the server-side Google OAuth flow for Gmail. */
-  function connectGmailOAuth() {
-    window.location.href =
-      "/api/oauth/google?type=gmail&redirect=/dashboard/settings?tab=mail";
-  }
 
   /** Open the edit dialog in "create" mode for a new SMTP/IMAP account. */
   function openNewSmtpAccount() {
@@ -1165,33 +1147,16 @@ export function SettingsDialog({
                       {mail_accounts_desc()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={connectGmailOAuth}
-                    >
-                      <HugeiconsIcon icon={InboxIcon} className="size-3.5 mr-1.5" />
-                      Connect Gmail
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={openNewSmtpAccount}
-                    >
-                      <HugeiconsIcon icon={Edit02Icon} className="size-3.5 mr-1.5" />
-                      Add SMTP/IMAP
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={openNewSmtpAccount}
+                  >
+                    <HugeiconsIcon icon={Edit02Icon} className="size-3.5 mr-1.5" />
+                    Add SMTP/IMAP
+                  </Button>
                 </div>
-
-                {oauthError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-                    {oauthError}
-                  </div>
-                )}
 
                 {mailState.loadingMail ? (
                   <div className="flex items-center justify-center py-8">
@@ -1209,16 +1174,7 @@ export function SettingsDialog({
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       {mail_accounts_empty_hint()}
                     </p>
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={connectGmailOAuth}
-                      >
-                        <HugeiconsIcon icon={InboxIcon} className="size-3.5 mr-1.5" />
-                        Connect Gmail
-                      </Button>
+                    <div className="mt-4">
                       <Button
                         type="button"
                         variant="outline"

@@ -741,5 +741,18 @@
   "web_search": "搜索",
   "welcome_desc": "在一个工作区内统一管理你的书签、邮件、日历、看板和代理。",
   "welcome_to_orchos": "欢迎使用 OrchOS",
-  "workspace": "工作区"
+  "workspace": "工作区",
+  "mail_from": "发件人",
+  "mail_to": "收件人",
+  "mail_cc": "抄送",
+  "mail_bcc": "密送",
+  "mail_subject": "主题",
+  "sending": "发送中...",
+  "mail_sent_success": "邮件发送成功",
+  "mail_send_failed": "邮件发送失败",
+  "select_mail_account": "选择账户",
+  "no_mail_account_for_send": "没有已连接的邮箱账户，请先连接一个。",
+  "recipient_placeholder": "email@example.com",
+  "subject_placeholder": "输入主题",
+  "body_placeholder": "撰写邮件内容..."
 }

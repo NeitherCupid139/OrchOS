@@ -15,7 +15,7 @@ import {
   type SourceFilter,
 } from "@/components/layout/InboxSourceTabs";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, PanelLeft, PanelRight, Settings02Icon, CodeIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Notification01Icon, Settings02Icon, CodeIcon } from "@hugeicons/core-free-icons";
 import { accounts, add, close_activity_panel, open_activity_panel } from "@/paraglide/messages";
 import { cn } from "@/lib/utils";
 import type { SidebarView } from "@/lib/types";
@@ -199,34 +199,30 @@ export function Toolbar({
           </Tooltip>
         ) : null}
 
-        {activeView === "mail" ? (
+        {activeView === "mail" && (
           <Button variant="outline" size="sm" onClick={onOpenMailAccounts}>
             <HugeiconsIcon icon={Settings02Icon} className="size-3.5" />
             {accounts()}
           </Button>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger
-              render={(props) => (
-                <Button
-                  {...props}
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={onToggleActivityPanel}
-                >
-                  {activityPanelOpen ? (
-                    <HugeiconsIcon icon={PanelLeft} className="size-4" />
-                  ) : (
-                    <HugeiconsIcon icon={PanelRight} className="size-4" />
-                  )}
-                </Button>
-              )}
-            />
-            <TooltipContent side="bottom">
-              {activityPanelOpen ? close_activity_panel() : open_activity_panel()}
-            </TooltipContent>
-          </Tooltip>
         )}
+
+        <Tooltip>
+          <TooltipTrigger
+            render={(props) => (
+              <Button
+                {...props}
+                variant="outline"
+                size="icon-sm"
+                onClick={onToggleActivityPanel}
+              >
+                <HugeiconsIcon icon={Notification01Icon} className="size-4" />
+              </Button>
+            )}
+          />
+          <TooltipContent side="bottom">
+            {activityPanelOpen ? close_activity_panel() : open_activity_panel()}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

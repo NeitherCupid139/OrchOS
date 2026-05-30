@@ -635,5 +635,18 @@
   "web_search": "搜尋",
   "welcome_desc": "在同一個工作區中整合管理你的書籤、郵件、行事曆、看板與代理。",
   "welcome_to_orchos": "歡迎使用 OrchOS",
-  "workspace": "工作區"
+  "workspace": "工作區",
+  "mail_from": "寄件人",
+  "mail_to": "收件人",
+  "mail_cc": "副本",
+  "mail_bcc": "密件副本",
+  "mail_subject": "主旨",
+  "sending": "傳送中...",
+  "mail_sent_success": "郵件傳送成功",
+  "mail_send_failed": "郵件傳送失敗",
+  "select_mail_account": "選擇帳戶",
+  "no_mail_account_for_send": "沒有已連線的郵件帳戶，請先連線一個。",
+  "recipient_placeholder": "email@example.com",
+  "subject_placeholder": "輸入主旨",
+  "body_placeholder": "撰寫郵件內容..."
 }

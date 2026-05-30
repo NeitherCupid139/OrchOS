@@ -40,4 +40,22 @@ export const integrationsRouter = {
   disconnect: os.integrations.disconnect.handler(async ({ input }) => {
     return getService(await getLocalDb()).disconnectIntegration(input.id);
   }),
+  sendMail: os.integrations.sendMail.handler(async ({ input }) => {
+    if (input.provider === "gmail") {
+      return getService(await getLocalDb()).sendGmailMessage({
+        accountId: input.accountId,
+        to: input.to,
+        cc: input.cc,
+        subject: input.subject,
+        body: input.body,
+      });
+    }
+    return getService(await getLocalDb()).sendSmtpMessage({
+      accountId: input.accountId,
+      to: input.to,
+      cc: input.cc,
+      subject: input.subject,
+      body: input.body,
+    });
+  }),
 };

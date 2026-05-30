@@ -9,8 +9,11 @@ export const bookmarksRouter = {
   replaceAll: os.bookmarks.replaceAll.handler(async ({ input }) => {
     return BookmarkService.replaceAll(await getLocalDb(), input.categories);
   }),
-  organizeWithAi: os.bookmarks.organizeWithAi.handler(async () => {
-    return BookmarkService.organizeWithAi(await getLocalDb());
+  organizeWithAi: os.bookmarks.organizeWithAi.handler(async ({ input }) => {
+    return BookmarkService.organizeWithAi(
+      await getLocalDb(),
+      input ? input.agentId : undefined,
+    );
   }),
   createCategory: os.bookmarks.createCategory.handler(async ({ input }) => {
     return BookmarkService.createCategory(await getLocalDb(), input.name, input.icon, input.color);

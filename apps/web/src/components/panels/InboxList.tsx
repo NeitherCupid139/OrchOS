@@ -9,7 +9,6 @@ import {
   SquareIcon,
   InformationCircleIcon,
   Alert01Icon,
-  GoogleIcon,
   InboxIcon,
 } from "@hugeicons/core-free-icons";
 import { ScrollBar } from "@/components/ui/scroll-area";
@@ -237,7 +236,7 @@ export function InboxList({
               ...accounts.map((a) => ({
                 id: a.id,
                 label: a.label,
-                icon: a.source === "Gmail" ? GoogleIcon : InboxIcon,
+                icon: InboxIcon,
               })),
             ].map((item) => {
               const isActive = activeAccountId === item.id;

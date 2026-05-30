@@ -11,7 +11,6 @@ import {
   Add01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  GoogleIcon,
   SquareArrowDataTransferHorizontalIcon,
   EyeIcon,
   ViewOffSlashIcon,
@@ -54,12 +53,6 @@ import {
   cancel,
   collapse_sidebar,
   compose_mail,
-  compose_mail_next_steps_intro,
-  compose_mail_pending_desc,
-  compose_mail_step_external_recipients,
-  compose_mail_step_new_thread,
-  compose_mail_step_select_identity,
-  compose_mail_wired_desc,
   connect_mail_account,
   connect_mailbox,
   connect_mailbox_desc,
@@ -89,6 +82,18 @@ import {
   use_tls_ssl,
   username,
   username_placeholder,
+  mail_from,
+  mail_to,
+  mail_cc,
+  mail_subject,
+  send,
+  sending,
+  mail_sent_success,
+  mail_send_failed,
+  no_mail_account_for_send,
+  recipient_placeholder,
+  subject_placeholder,
+  body_placeholder,
 } from "@/paraglide/messages";
 
 type MailIntegrationAccount = {
@@ -128,6 +133,16 @@ export function MailPage() {
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [isAccountsDialogOpen, setIsAccountsDialogOpen] = useState(false);
   const [isComposeDialogOpen, setIsComposeDialogOpen] = useState(false);
+  const [composeForm, setComposeForm] = useState({
+    to: "",
+    cc: "",
+    subject: "",
+    body: "",
+    accountId: "" as string,
+  });
+  const [sendingMail, setSendingMail] = useState(false);
+  const [sendMailError, setSendMailError] = useState<string | null>(null);
+  const [sendMailSent, setSendMailSent] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>(
     EMAIL_PROVIDERS[0].id,
   );
@@ -169,26 +184,17 @@ export function MailPage() {
     );
   }, [activeInboxId, filteredThreads]);
 
-  const gmailIntegration = useMemo(
-    () => integrations.find((item) => item.id === "gmail") ?? null,
-    [integrations],
-  );
   const smtpImapIntegration = useMemo(
     () => integrations.find((item) => item.id === "smtp-imap") ?? null,
     [integrations],
   );
   const mailAccounts = useMemo(
-    () => [
-      ...(gmailIntegration?.accounts?.map((account) => ({
-        ...account,
-        source: "Gmail",
-      })) ?? []),
-      ...(smtpImapIntegration?.accounts?.map((account) => ({
+    () =>
+      smtpImapIntegration?.accounts?.map((account) => ({
         ...account,
         source: "IMAP/SMTP",
-      })) ?? []),
-    ],
-    [gmailIntegration, smtpImapIntegration],
+      })) ?? [],
+    [smtpImapIntegration],
   );
 
   const activeMessages = activeThread
@@ -445,6 +451,53 @@ export function MailPage() {
     }
   }
 
+  async function handleSendMail() {
+    const toList = composeForm.to
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
+    const ccList = composeForm.cc
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
+
+    if (toList.length === 0 || !composeForm.subject.trim()) return;
+
+    const accountId = composeForm.accountId || mailAccounts[0]?.id;
+    if (!accountId) {
+      setSendMailError(no_mail_account_for_send());
+      return;
+    }
+
+    setSendingMail(true);
+    setSendMailError(null);
+    setSendMailSent(false);
+
+    try {
+      await api.sendMail({
+        provider: "smtp-imap",
+        accountId,
+        to: toList,
+        cc: ccList.length > 0 ? ccList : undefined,
+        subject: composeForm.subject.trim(),
+        body: composeForm.body,
+      });
+
+      setSendMailSent(true);
+      setComposeForm({ to: "", cc: "", subject: "", body: "", accountId: "" });
+      setTimeout(() => {
+        setSendMailSent(false);
+        setIsComposeDialogOpen(false);
+      }, 1500);
+    } catch (error) {
+      setSendMailError(
+        error instanceof Error ? error.message : mail_send_failed(),
+      );
+    } finally {
+      setSendingMail(false);
+    }
+  }
+
   const handleCollapseSidebar = useCallback(() => {
     if (collapseTimerRef.current !== null) {
       window.clearTimeout(collapseTimerRef.current);
@@ -657,7 +710,7 @@ export function MailPage() {
                     icons={[
                       <HugeiconsIcon
                         key="m1"
-                        icon={GoogleIcon}
+                        icon={MailEdit02Icon}
                         className="size-6"
                       />,
                       <HugeiconsIcon
@@ -776,7 +829,7 @@ export function MailPage() {
                     icons={[
                       <HugeiconsIcon
                         key="m1"
-                        icon={GoogleIcon}
+                        icon={MailEdit02Icon}
                         className="size-6"
                       />,
                       <HugeiconsIcon
@@ -863,24 +916,129 @@ export function MailPage() {
 
       <AppDialog
         open={isComposeDialogOpen}
-        onOpenChange={setIsComposeDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSendMailError(null);
+            setSendMailSent(false);
+          }
+          setIsComposeDialogOpen(open);
+        }}
         title={compose_mail()}
-        description={compose_mail_pending_desc()}
         size="md"
         footer={
-          <Button type="button" onClick={() => setIsComposeDialogOpen(false)}>
-            {cancel()}
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsComposeDialogOpen(false)}
+            >
+              {cancel()}
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                sendingMail ||
+                !composeForm.to.trim() ||
+                !composeForm.subject.trim() ||
+                (!composeForm.accountId && mailAccounts.length === 0)
+              }
+              onClick={() => void handleSendMail()}
+            >
+              {sendingMail ? sending() : send()}
+            </Button>
+          </>
         }
       >
-        <div className="space-y-3 text-sm text-muted-foreground">
-          <p>{compose_mail_wired_desc()}</p>
-          <p>{compose_mail_next_steps_intro()}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>{compose_mail_step_new_thread()}</li>
-            <li>{compose_mail_step_select_identity()}</li>
-            <li>{compose_mail_step_external_recipients()}</li>
-          </ul>
+        <div className="space-y-4">
+          {/* From selector */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-muted-foreground">{mail_from()}</span>
+            <select
+              value={composeForm.accountId || mailAccounts[0]?.id || ""}
+              onChange={(e) =>
+                setComposeForm((f) => ({ ...f, accountId: e.target.value }))
+              }
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+            >
+              {mailAccounts.length === 0 ? (
+                <option value="">{no_mail_account_for_send()}</option>
+              ) : (
+                mailAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.label} ({account.email || account.username})
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+
+          {/* To */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-muted-foreground">{mail_to()}</span>
+            <input
+              type="text"
+              value={composeForm.to}
+              onChange={(e) =>
+                setComposeForm((f) => ({ ...f, to: e.target.value }))
+              }
+              placeholder={recipient_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+            />
+          </label>
+
+          {/* Cc */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-muted-foreground">{mail_cc()}</span>
+            <input
+              type="text"
+              value={composeForm.cc}
+              onChange={(e) =>
+                setComposeForm((f) => ({ ...f, cc: e.target.value }))
+              }
+              placeholder={recipient_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+            />
+          </label>
+
+          {/* Subject */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-muted-foreground">{mail_subject()}</span>
+            <input
+              type="text"
+              value={composeForm.subject}
+              onChange={(e) =>
+                setComposeForm((f) => ({ ...f, subject: e.target.value }))
+              }
+              placeholder={subject_placeholder()}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+            />
+          </label>
+
+          {/* Body */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-muted-foreground">{body_placeholder()}</span>
+            <textarea
+              value={composeForm.body}
+              onChange={(e) =>
+                setComposeForm((f) => ({ ...f, body: e.target.value }))
+              }
+              placeholder={body_placeholder()}
+              rows={8}
+              className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
+            />
+          </label>
+
+          {/* Status messages */}
+          {sendMailError && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+              {sendMailError}
+            </p>
+          )}
+          {sendMailSent && (
+            <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+              {mail_sent_success()}
+            </p>
+          )}
         </div>
       </AppDialog>
 

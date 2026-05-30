@@ -106,4 +106,23 @@ export const integrationsContract = {
     )
     .output(integrationSchema),
   disconnect: oc.input(z.object({ id: z.string() })).output(z.object({ success: z.boolean() })),
+  sendMail: oc
+    .input(
+      z.object({
+        provider: z.enum(["smtp-imap", "gmail"]),
+        accountId: z.string().optional(),
+        to: z.array(z.string().email()),
+        cc: z.array(z.string().email()).optional(),
+        bcc: z.array(z.string().email()).optional(),
+        subject: z.string().min(1),
+        body: z.string(),
+      }),
+    )
+    .output(
+      z.object({
+        id: z.string(),
+        provider: z.string(),
+        accountId: z.string().optional(),
+      }),
+    ),
 };

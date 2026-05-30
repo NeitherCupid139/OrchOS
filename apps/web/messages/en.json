@@ -773,5 +773,18 @@
   "web_search": "Search",
   "welcome_desc": "Use OrchOS to organize bookmarks, mail, calendars, boards, and agents in one workspace.",
   "welcome_to_orchos": "Welcome to OrchOS",
-  "workspace": "Workspace"
+  "workspace": "Workspace",
+  "mail_from": "From",
+  "mail_to": "To",
+  "mail_cc": "Cc",
+  "mail_bcc": "Bcc",
+  "mail_subject": "Subject",
+  "sending": "Sending...",
+  "mail_sent_success": "Email sent successfully",
+  "mail_send_failed": "Failed to send email",
+  "select_mail_account": "Select account",
+  "no_mail_account_for_send": "No connected mail account. Connect one first.",
+  "recipient_placeholder": "email@example.com",
+  "subject_placeholder": "Enter subject",
+  "body_placeholder": "Write your message..."
 }

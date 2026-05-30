@@ -762,6 +762,9 @@ export function BookmarksPage() {
   const setSelectedCategoryId = useUIStore(
     (s) => s.setSelectedBookmarkCategoryId,
   );
+  const bookmarkOrganizeAgentId = useUIStore(
+    (s) => s.creationSelectedCustomAgentId,
+  );
   const [renameCategoryId, setRenameCategoryId] = useState<string | null>(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(
@@ -1092,7 +1095,9 @@ export function BookmarksPage() {
     setAiOrganizeError(false);
 
     try {
-      const organized = await api.organizeBookmarksWithAi();
+      const organized = await api.organizeBookmarksWithAi(
+        bookmarkOrganizeAgentId,
+      );
       setAiOrganizeUndo(snapshot);
       setCategories(organized);
       setSelectedCategoryId(organized[0]?.id ?? null);
