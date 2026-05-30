@@ -321,18 +321,6 @@ export interface PlannerStore {
   reminders: PlannerReminder[];
 }
 
-export interface GoogleCalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  startAt: string;
-  endAt: string;
-  allDay: boolean;
-  accountId: string;
-  provider: "google";
-}
-
 export interface ProblemSummary {
   status: Record<ProblemStatus, number>;
   inbox: {

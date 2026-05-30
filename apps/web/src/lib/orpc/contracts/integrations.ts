@@ -1,7 +1,7 @@
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 
-const integrationTypeSchema = z.enum(["github", "gitlab", "google-calendar", "gmail", "smtp-imap"]);
+const integrationTypeSchema = z.enum(["github", "gitlab", "gmail", "smtp-imap"]);
 
 const integrationAccountSchema = z.object({
   id: z.string(),
@@ -24,18 +24,6 @@ export const integrationSchema = z.object({
   username: z.string().optional(),
   apiUrl: z.string().optional(),
   accounts: z.array(integrationAccountSchema),
-});
-
-const googleCalendarEventSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  location: z.string(),
-  startAt: z.string(),
-  endAt: z.string(),
-  allDay: z.boolean(),
-  accountId: z.string(),
-  provider: z.literal("google"),
 });
 
 const smtpImapConfigSchema = z.object({
@@ -69,7 +57,7 @@ export const integrationsContract = {
   connectGoogle: oc
     .input(
       z.object({
-        id: z.enum(["google-calendar", "gmail"]),
+        id: z.enum(["gmail"]),
         clientId: z.string(),
         clientSecret: z.string(),
         refreshToken: z.string(),
@@ -117,15 +105,5 @@ export const integrationsContract = {
       }),
     )
     .output(integrationSchema),
-  listGoogleCalendarEvents: oc
-    .input(
-      z.object({
-        accountId: z.string().optional(),
-        timeMin: z.string().optional(),
-        timeMax: z.string().optional(),
-        maxResults: z.number().optional(),
-      }).optional(),
-    )
-    .output(z.array(googleCalendarEventSchema)),
   disconnect: oc.input(z.object({ id: z.string() })).output(z.object({ success: z.boolean() })),
 };

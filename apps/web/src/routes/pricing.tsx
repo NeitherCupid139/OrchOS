@@ -424,7 +424,11 @@ function Pricing({ isSignedIn }: { isSignedIn: boolean }) {
                       className="w-full"
                       asChild
                     >
-                      <a href="/api/checkout">{tier.buttonLabel}</a>
+                      <a
+                        href={`/api/checkout?billing=${yearly ? "yearly" : "monthly"}`}
+                      >
+                        {tier.buttonLabel}
+                      </a>
                     </Button>
                   ) : (
                     <Button

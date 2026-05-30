@@ -90,7 +90,7 @@ function getAppRedirect(request: Request): string {
 function validateState(
   request: Request,
   state: string | null,
-): { ok: true; type: "google-calendar" | "gmail"; redirect: string } | { ok: false; error?: string } {
+): { ok: true; type: "gmail"; redirect: string } | { ok: false; error?: string } {
   if (!state) {
     return { ok: false, error: "Missing state parameter." };
   }
@@ -104,7 +104,7 @@ function validateState(
     return { ok: false, error: "State mismatch. Possible CSRF attack." };
   }
 
-  if (parsed.type !== "google-calendar" && parsed.type !== "gmail") {
+  if (parsed.type !== "gmail") {
     return { ok: false, error: "Invalid integration type in OAuth session." };
   }
 

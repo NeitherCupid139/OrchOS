@@ -18,7 +18,6 @@ import type {
   InboxThreadKind,
   InboxThreadStatus,
   Integration,
-  GoogleCalendarEvent,
   LocalAgentPairingToken,
   LocalAgentProfile,
   ObservabilityMetrics,
@@ -210,7 +209,7 @@ export const api = {
     return (await orpc.integrations.connect({ id, ...data })) as Integration;
   },
   connectGoogleIntegration: async (
-    id: "google-calendar" | "gmail",
+    id: "gmail",
     data: {
       clientId: string;
       clientSecret: string;
@@ -258,14 +257,6 @@ export const api = {
     accountId: string,
   ): Promise<Integration> => {
     return (await orpc.integrations.deleteAccount({ id, accountId })) as Integration;
-  },
-  listGoogleCalendarEvents: async (data?: {
-    accountId?: string;
-    timeMin?: string;
-    timeMax?: string;
-    maxResults?: number;
-  }): Promise<GoogleCalendarEvent[]> => {
-    return (await orpc.integrations.listGoogleCalendarEvents(data ?? {})) as GoogleCalendarEvent[];
   },
   disconnectIntegration: async (id: string): Promise<{ success: boolean }> => {
     return (await orpc.integrations.disconnect({ id })) as { success: boolean };

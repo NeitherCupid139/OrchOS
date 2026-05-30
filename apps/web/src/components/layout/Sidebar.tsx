@@ -551,7 +551,7 @@ export function Sidebar({
                       <Link
                         key={id}
                         to={to}
-                        preload="intent"
+                        preload={import.meta.env.DEV ? undefined : "intent"}
                         onClick={() => handleNavClick(id)}
                         className={cn(
                           "relative flex h-10 items-center rounded-md transition-colors outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",

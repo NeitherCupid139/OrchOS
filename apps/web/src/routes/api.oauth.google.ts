@@ -6,7 +6,7 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
  * Initiate Google OAuth 2.0 Authorization Code flow.
  *
  * Query params:
- *   - type: "google-calendar" | "gmail" (required)
+ *   - type: "gmail" (required)
  *   - redirect: URL to redirect back to after success (optional, defaults to /dashboard)
  *
  * The user is redirected to Google's consent screen. After authorization,
@@ -21,8 +21,8 @@ export const Route = createFileRoute("/api/oauth/google")({
         const type = url.searchParams.get("type");
         const appRedirect = url.searchParams.get("redirect") || "/dashboard";
 
-        if (type !== "google-calendar" && type !== "gmail") {
-          return new Response("Missing or invalid 'type' parameter. Must be 'google-calendar' or 'gmail'.", {
+        if (type !== "gmail") {
+          return new Response("Missing or invalid 'type' parameter. Must be 'gmail'.", {
             status: 400,
           });
         }
@@ -37,17 +37,11 @@ export const Route = createFileRoute("/api/oauth/google")({
           );
         }
 
-        // Scopes required for this integration type
-        const scope =
-          type === "gmail"
-            ? [
-                "https://www.googleapis.com/auth/gmail.readonly",
-                "https://www.googleapis.com/auth/gmail.send",
-              ]
-            : [
-                "https://www.googleapis.com/auth/calendar",
-                "https://www.googleapis.com/auth/calendar.events",
-              ];
+        // Scopes required for Gmail
+        const scope = [
+          "https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.send",
+        ];
 
         // Build the callback URL (must match the redirect_uri registered in Google Cloud Console)
         const callbackUrl = `${url.origin}/api/oauth/google/callback`;

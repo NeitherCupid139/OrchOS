@@ -346,24 +346,11 @@ export class AgentToolService {
     }
 
     if (name === "create_calendar_event") {
-      const provider = args.provider === "google" ? "google" : "local";
       const title = String(args.title ?? "").trim();
       const startAt = String(args.startAt ?? "").trim();
       const endAt = String(args.endAt ?? "").trim();
       if (!title || !startAt || !endAt) {
         throw new Error("title, startAt, and endAt are required");
-      }
-
-      if (provider === "google") {
-        return this.integrationService.createGoogleCalendarEvent({
-          title,
-          description: typeof args.description === "string" ? args.description : undefined,
-          location: typeof args.location === "string" ? args.location : undefined,
-          startAt,
-          endAt,
-          allDay: args.allDay === true,
-          accountId: typeof args.accountId === "string" ? args.accountId : undefined,
-        });
       }
 
       const currentStore = await this.plannerService.getStore();

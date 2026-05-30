@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import type { AppDb } from "@/server/db/types";
 import { settings } from "@/server/db/schema";
 
-type IntegrationType = "github" | "gitlab" | "google-calendar" | "gmail" | "smtp-imap";
+type IntegrationType = "github" | "gitlab" | "gmail" | "smtp-imap";
 
 interface OAuthCredentials {
   clientId: string;
@@ -57,10 +57,6 @@ const INTEGRATION_KEY = "integrations";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_OAUTH_SCOPES = {
-  calendar: [
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/calendar.events",
-  ],
   gmail: [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",
@@ -70,7 +66,6 @@ const GOOGLE_OAUTH_SCOPES = {
 const defaultIntegrations: IntegrationConfig[] = [
   { id: "github", name: "GitHub", type: "github", connected: false, accounts: [] },
   { id: "gitlab", name: "GitLab", type: "gitlab", connected: false, accounts: [] },
-  { id: "google-calendar", name: "Google Calendar", type: "google-calendar", connected: false, accounts: [] },
   { id: "gmail", name: "Gmail", type: "gmail", connected: false, accounts: [] },
   { id: "smtp-imap", name: "SMTP / IMAP", type: "smtp-imap", connected: false, accounts: [] },
 ];
@@ -301,7 +296,7 @@ export class IntegrationService {
     return this.sanitizeIntegration(integration);
   }
 
-  async connectGoogleIntegration(id: "google-calendar" | "gmail", body: { clientId: string; clientSecret: string; refreshToken: string; label?: string }) {
+  async connectGoogleIntegration(id: "gmail", body: { clientId: string; clientSecret: string; refreshToken: string; label?: string }) {
     const integrations = await this.getIntegrations();
     const integration = this.requireIntegration(integrations, id);
     const credentials: OAuthCredentials = {
@@ -311,7 +306,7 @@ export class IntegrationService {
     };
 
     const { accessToken, scopes } = await this.exchangeGoogleRefreshToken(credentials);
-    const requiredScopes = id === "google-calendar" ? GOOGLE_OAUTH_SCOPES.calendar : GOOGLE_OAUTH_SCOPES.gmail;
+    const requiredScopes = GOOGLE_OAUTH_SCOPES.gmail;
 
     if (!this.ensureScopes(scopes, requiredScopes)) {
       throw new Error("Google account is missing required scopes");
@@ -348,7 +343,7 @@ export class IntegrationService {
    * the user to bring their own clientId/clientSecret.
    */
   async connectGoogleWithAuthCode(
-    id: "google-calendar" | "gmail",
+    id: "gmail",
     code: string,
     redirectUri: string,
   ) {
@@ -395,7 +390,7 @@ export class IntegrationService {
     }
 
     const scopes = tokenPayload.scope?.split(" ").filter(Boolean) ?? [];
-    const requiredScopes = id === "google-calendar" ? GOOGLE_OAUTH_SCOPES.calendar : GOOGLE_OAUTH_SCOPES.gmail;
+    const requiredScopes = GOOGLE_OAUTH_SCOPES.gmail;
 
     if (!this.ensureScopes(scopes, requiredScopes)) {
       throw new Error("Google account is missing required scopes. Please re-authorize with all requested permissions.");
@@ -533,65 +528,6 @@ export class IntegrationService {
     return { success: true };
   }
 
-  async createGoogleCalendarEvent(input: {
-    title: string;
-    description?: string;
-    location?: string;
-    startAt: string;
-    endAt: string;
-    allDay?: boolean;
-    accountId?: string;
-  }) {
-    const integrations = await this.getIntegrations();
-    const integration = this.requireIntegration(integrations, "google-calendar");
-    const account = this.requireAccount(integration, input.accountId);
-    const { accessToken } = await this.getGoogleAccessToken(account);
-
-    const payload = input.allDay
-      ? {
-          summary: input.title,
-          description: input.description?.trim() || undefined,
-          location: input.location?.trim() || undefined,
-          start: { date: input.startAt.slice(0, 10) },
-          end: { date: input.endAt.slice(0, 10) },
-        }
-      : {
-          summary: input.title,
-          description: input.description?.trim() || undefined,
-          location: input.location?.trim() || undefined,
-          start: { dateTime: input.startAt },
-          end: { dateTime: input.endAt },
-        };
-
-    const response = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(`Failed to create Google Calendar event: ${errorText}`);
-    }
-
-    const data = await response.json() as {
-      id?: string;
-      htmlLink?: string;
-      summary?: string;
-    };
-
-    return {
-      id: data.id ?? "",
-      url: data.htmlLink,
-      title: data.summary ?? input.title,
-      accountId: account.id,
-      provider: "google-calendar" as const,
-    };
-  }
-
   async sendGmailMessage(input: {
     to: string[];
     cc?: string[];
@@ -684,65 +620,4 @@ export class IntegrationService {
     };
   }
 
-  async listGoogleCalendarEvents(input?: {
-    accountId?: string;
-    timeMin?: string;
-    timeMax?: string;
-    maxResults?: number;
-  }) {
-    const integrations = await this.getIntegrations();
-    const integration = this.requireIntegration(integrations, "google-calendar");
-    const account = this.requireAccount(integration, input?.accountId);
-    const { accessToken } = await this.getGoogleAccessToken(account);
-
-    const params = new URLSearchParams({
-      singleEvents: "true",
-      orderBy: "startTime",
-      maxResults: String(input?.maxResults ?? 100),
-      timeMin: input?.timeMin ?? new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
-      timeMax: input?.timeMax ?? new Date(Date.now() + 1000 * 60 * 60 * 24 * 180).toISOString(),
-    });
-
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(`Failed to list Google Calendar events: ${errorText}`);
-    }
-
-    const data = await response.json() as {
-      items?: Array<{
-        id?: string;
-        summary?: string;
-        description?: string;
-        location?: string;
-        start?: { date?: string; dateTime?: string };
-        end?: { date?: string; dateTime?: string };
-      }>;
-    };
-
-    return (data.items ?? []).flatMap((item) => {
-      const startAt = item.start?.dateTime ?? (item.start?.date ? `${item.start.date}T00:00:00.000Z` : undefined);
-      const endAt = item.end?.dateTime ?? (item.end?.date ? `${item.end.date}T00:00:00.000Z` : undefined);
-      if (!item.id || !startAt || !endAt) {
-        return [];
-      }
-
-      return [{
-        id: item.id,
-        title: item.summary ?? "Untitled event",
-        description: item.description ?? "",
-        location: item.location ?? "",
-        startAt,
-        endAt,
-        allDay: Boolean(item.start?.date && !item.start?.dateTime),
-        accountId: account.id,
-        provider: "google" as const,
-      }];
-    });
-  }
 }

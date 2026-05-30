@@ -27,7 +27,6 @@ const TTL_OVERRIDES: Record<string, number> = {
   listIntegrations: 30_000,
   getPlannerStore: 30_000,
   listInboxThreads: 15_000,
-  listGoogleCalendarEvents: 15_000,
   getObservabilityThroughput: 30_000,
   getObservabilityMetrics: 30_000,
 };

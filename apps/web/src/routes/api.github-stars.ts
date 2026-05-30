@@ -27,7 +27,32 @@ async function handleGithubStars() {
       Accept: "application/vnd.github+json",
       "User-Agent": "OrchOS-Web",
     },
+  }).catch((error: unknown) => {
+    if (githubStarsCache) {
+      return null;
+    }
+
+    if (error instanceof Error && error.name === "AbortError") {
+      return null;
+    }
+
+    throw error;
   });
+
+  if (!response) {
+    if (githubStarsCache) {
+      return Response.json(
+        { stargazers_count: githubStarsCache.value, cached: true, stale: true },
+        {
+          headers: {
+            "Cache-Control": "public, max-age=300, stale-while-revalidate=86400",
+          },
+        },
+      );
+    }
+
+    return Response.json({ error: "GitHub stars request was aborted" }, { status: 499 });
+  }
 
   if (!response.ok) {
     if (githubStarsCache) {
