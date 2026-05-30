@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   Add01Icon,
   ArrowLeft01Icon,
@@ -21,13 +28,19 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { FullScreenCalendar, type FullScreenCalendarDay } from "@/components/ui/fullscreen-calendar";
+import {
+  FullScreenCalendar,
+  type FullScreenCalendarDay,
+} from "@/components/ui/fullscreen-calendar";
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import {
   api,
   type GoogleCalendarEvent,
@@ -38,11 +51,71 @@ import {
   type PlannerStore as LocalCalendarStore,
 } from "@/lib/api";
 import { useBoardStore } from "@/lib/stores/board";
-import { getReminderDisplayText, getReminderNextOccurrence } from "@/lib/planner-reminders";
+import {
+  getReminderDisplayText,
+  getReminderNextOccurrence,
+} from "@/lib/planner-reminders";
 import { useUIStore } from "@/lib/store";
 import type { BoardTaskColumnId } from "@/lib/types";
-import { cn } from "@/lib/utils";import {
-  account_label, add, calendar, calendar_account_details, calendar_account_details_desc, calendar_account_label_placeholder, calendar_add_calendar, calendar_add_calendar_desc, calendar_add_event, calendar_add_google_desc, calendar_add_google_title, calendar_all_day, calendar_all_day_event, calendar_calendar_name, calendar_connected_accounts, calendar_connected_accounts_desc, calendar_create_calendar_first, calendar_delete_calendar, calendar_delete_calendar_confirm, calendar_edit_calendar, calendar_edit_event, calendar_empty_workspace_desc, calendar_empty_workspace_title, calendar_end, calendar_event_title, calendar_event_title_placeholder, calendar_failed_load_integrations, calendar_google, calendar_google_calendar_option_desc, calendar_google_overview, calendar_google_refresh_token_placeholder, calendar_icon, calendar_local_calendar_desc, calendar_local_calendar_option, calendar_local_calendar_option_desc, calendar_local_event_desc, calendar_location, calendar_location_placeholder, calendar_n_accounts, calendar_n_scopes, calendar_name_placeholder, calendar_new_calendar, calendar_no_calendar_connected, calendar_no_calendar_desc, calendar_no_groups_desc, calendar_notes, calendar_remove_account, calendar_required_scopes, calendar_select_account, calendar_start, calendar_use_color, cancel, client_id, client_secret, close, collapse_sidebar, color, connect, connected, delete as delete_message, edit, expand_sidebar, google_oauth_client_id_placeholder, google_oauth_client_secret_placeholder, loading as loading_label, refresh_token, resize_calendar_sidebar, save
+import { cn } from "@/lib/utils";
+import {
+  add,
+  calendar,
+  calendar_account_details,
+  calendar_account_details_desc,
+  calendar_add_calendar,
+  calendar_add_calendar_desc,
+  calendar_add_event,
+  calendar_add_google_desc,
+  calendar_add_google_title,
+  calendar_all_day,
+  calendar_all_day_event,
+  calendar_calendar_name,
+  calendar_connected_accounts,
+  calendar_connected_accounts_desc,
+  calendar_create_calendar_first,
+  calendar_delete_calendar,
+  calendar_delete_calendar_confirm,
+  calendar_edit_calendar,
+  calendar_edit_event,
+  calendar_empty_workspace_desc,
+  calendar_empty_workspace_title,
+  calendar_end,
+  calendar_event_title,
+  calendar_event_title_placeholder,
+  calendar_failed_load_integrations,
+  calendar_google,
+  calendar_google_calendar_option_desc,
+  calendar_google_overview,
+  calendar_icon,
+  calendar_local_calendar_desc,
+  calendar_local_calendar_option,
+  calendar_local_calendar_option_desc,
+  calendar_local_event_desc,
+  calendar_location,
+  calendar_location_placeholder,
+  calendar_n_accounts,
+  calendar_n_scopes,
+  calendar_name_placeholder,
+  calendar_new_calendar,
+  calendar_no_calendar_connected,
+  calendar_no_calendar_desc,
+  calendar_no_groups_desc,
+  calendar_notes,
+  calendar_remove_account,
+  calendar_select_account,
+  calendar_start,
+  calendar_use_color,
+  cancel,
+  close,
+  collapse_sidebar,
+  color,
+  connected,
+  delete as delete_message,
+  edit,
+  expand_sidebar,
+  resize_calendar_sidebar,
+  save,
 } from "@/paraglide/messages";
 
 type CalendarIntegrationAccount = {
@@ -76,9 +149,12 @@ type ReminderRenderableEvent = {
   status: string;
 };
 
-type CalendarRenderableEvent = (LocalCalendarEvent & {
-  source?: "calendar" | "task";
-}) | GoogleRenderableEvent | ReminderRenderableEvent;
+type CalendarRenderableEvent =
+  | (LocalCalendarEvent & {
+      source?: "calendar" | "task";
+    })
+  | GoogleRenderableEvent
+  | ReminderRenderableEvent;
 
 type CalendarEventDetail = {
   event: CalendarRenderableEvent;
@@ -106,8 +182,19 @@ type LocalEventFormState = {
   allDay: boolean;
 };
 
-const LOCAL_CALENDAR_COLORS = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#ea580c", "#dc2626", "#db2777"];
-const LOCAL_CALENDAR_ICONS: { name: string; component: typeof Calendar03Icon }[] = [
+const LOCAL_CALENDAR_COLORS = [
+  "#7c3aed",
+  "#2563eb",
+  "#0891b2",
+  "#059669",
+  "#ea580c",
+  "#dc2626",
+  "#db2777",
+];
+const LOCAL_CALENDAR_ICONS: {
+  name: string;
+  component: typeof Calendar03Icon;
+}[] = [
   { name: "Calendar01", component: Calendar01Icon },
   { name: "Calendar03", component: Calendar03Icon },
   { name: "Calendar04", component: Calendar04Icon },
@@ -128,11 +215,14 @@ export function CalendarPage() {
   const activeAccountId = useUIStore((s) => s.calendarActiveAccountId);
   const setActiveAccountId = useUIStore((s) => s.setCalendarActiveAccountId);
   const selectedSidebarItem = useUIStore((s) => s.calendarSelectedSidebarItem);
-  const setSelectedSidebarItem = useUIStore((s) => s.setCalendarSelectedSidebarItem);
+  const setSelectedSidebarItem = useUIStore(
+    (s) => s.setCalendarSelectedSidebarItem,
+  );
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<string[]>([]);
-  const [isCalendarSourceDialogOpen, setIsCalendarSourceDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isLocalCalendarDialogOpen, setIsLocalCalendarDialogOpen] = useState(false);
+  const [isCalendarSourceDialogOpen, setIsCalendarSourceDialogOpen] =
+    useState(false);
+  const [isLocalCalendarDialogOpen, setIsLocalCalendarDialogOpen] =
+    useState(false);
   const [isLocalEventDialogOpen, setIsLocalEventDialogOpen] = useState(false);
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
@@ -140,49 +230,59 @@ export function CalendarPage() {
   const [showExpandedContent, setShowExpandedContent] = useState(true);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [localStore, setLocalStore] = useState<LocalCalendarStore>(createInitialLocalCalendarStore);
+  const [localStore, setLocalStore] = useState<LocalCalendarStore>(
+    createInitialLocalCalendarStore,
+  );
   const selectedLocalDate = useUIStore((s) => s.calendarSelectedLocalDate);
-  const setSelectedLocalDate = useUIStore((s) => s.setCalendarSelectedLocalDate);
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(parseDayKey(selectedLocalDate)));
+  const setSelectedLocalDate = useUIStore(
+    (s) => s.setCalendarSelectedLocalDate,
+  );
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    startOfMonth(parseDayKey(selectedLocalDate)),
+  );
   const calendarViewMode = useUIStore((s) => s.calendarViewMode);
   const calendarSourceFilter = useUIStore((s) => s.calendarSourceFilter);
   const setCalendarSourceFilter = useUIStore((s) => s.setCalendarSourceFilter);
   const boardTasks = useBoardStore((state) => state.tasks);
-  const [selectedEventDetailId, setSelectedEventDetailId] = useState<string | null>(null);
-  const [calendarPendingDelete, setCalendarPendingDelete] = useState<LocalCalendar | null>(null);
-  const [localCalendarForm, setLocalCalendarForm] = useState<LocalCalendarFormState>({
-    id: null,
-    groupId: "",
-    name: "",
-    color: LOCAL_CALENDAR_COLORS[0],
-    description: "",
-    icon: "Calendar03",
-  });
-  const [localEventForm, setLocalEventForm] = useState<LocalEventFormState>(() => createEmptyEventForm());
+  const [selectedEventDetailId, setSelectedEventDetailId] = useState<
+    string | null
+  >(null);
+  const [calendarPendingDelete, setCalendarPendingDelete] =
+    useState<LocalCalendar | null>(null);
+  const [localCalendarForm, setLocalCalendarForm] =
+    useState<LocalCalendarFormState>({
+      id: null,
+      groupId: "",
+      name: "",
+      color: LOCAL_CALENDAR_COLORS[0],
+      description: "",
+      icon: "Calendar03",
+    });
+  const [localEventForm, setLocalEventForm] = useState<LocalEventFormState>(
+    () => createEmptyEventForm(),
+  );
   const collapseTimerRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
-  const [form, setForm] = useState({
-    label: "",
-    clientId: "",
-    clientSecret: "",
-    refreshToken: "",
-  });
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   const integration = useMemo(
     () => integrations.find((item) => item.id === "google-calendar") ?? null,
     [integrations],
   );
   const accounts = integration?.accounts ?? [];
-  const activeAccount = accounts.find((account) => account.id === activeAccountId) ?? accounts[0] ?? null;
+  const activeAccount =
+    accounts.find((account) => account.id === activeAccountId) ??
+    accounts[0] ??
+    null;
   const localCalendars = localStore.calendars;
   const localEvents = localStore.events;
   const reminders = localStore.reminders;
   const hasSidebarCalendars = accounts.length > 0 || localCalendars.length > 0;
 
   const activeLocalCalendarIds = useMemo(() => {
-    return localCalendars
-      .flatMap((calendar) => !hiddenCalendarIds.includes(calendar.id) ? [calendar.id] : []);
+    return localCalendars.flatMap((calendar) =>
+      !hiddenCalendarIds.includes(calendar.id) ? [calendar.id] : [],
+    );
   }, [hiddenCalendarIds, localCalendars]);
 
   const localEventsInScope = useMemo(() => {
@@ -190,7 +290,10 @@ export function CalendarPage() {
 
     return localEvents
       .filter((event) => ids.has(event.calendarId))
-      .sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime());
+      .sort(
+        (left, right) =>
+          new Date(left.startAt).getTime() - new Date(right.startAt).getTime(),
+      );
   }, [activeLocalCalendarIds, localEvents]);
 
   const eventsByDay = useMemo(() => {
@@ -208,7 +311,10 @@ export function CalendarPage() {
 
   const renderableEvents = useMemo<CalendarRenderableEvent[]>(
     () => [
-      ...localEventsInScope.map((event) => ({ ...event, source: "calendar" as const })),
+      ...localEventsInScope.map((event) => ({
+        ...event,
+        source: "calendar" as const,
+      })),
       ...googleEvents.map((event) => ({
         ...event,
         calendarId: `google:${event.accountId}`,
@@ -229,33 +335,37 @@ export function CalendarPage() {
           return true;
         })
         .reduce<FullScreenCalendarDay[]>((groups, event) => {
-        const day = new Date(event.startAt);
-        const dayKey = formatDayKey(day);
-        const entry = {
-          id: event.id,
-          name: event.title,
-          time: event.allDay ? calendar_all_day() : formatTime(event.startAt),
-          datetime: event.startAt,
-          endDatetime: event.endAt,
-          source: event.source,
-        };
-        const existing = groups.find((item) => formatDayKey(item.day) === dayKey);
+          const day = new Date(event.startAt);
+          const dayKey = formatDayKey(day);
+          const entry = {
+            id: event.id,
+            name: event.title,
+            time: event.allDay ? calendar_all_day() : formatTime(event.startAt),
+            datetime: event.startAt,
+            endDatetime: event.endAt,
+            source: event.source,
+          };
+          const existing = groups.find(
+            (item) => formatDayKey(item.day) === dayKey,
+          );
 
-        if (existing) {
-          existing.events.push(entry);
+          if (existing) {
+            existing.events.push(entry);
+            return groups;
+          }
+
+          groups.push({ day, events: [entry] });
           return groups;
-        }
-
-        groups.push({ day, events: [entry] });
-        return groups;
-      }, []),
+        }, []),
     [calendarSourceFilter, renderableEvents],
   );
 
   const selectedEventDetail = useMemo<CalendarEventDetail | null>(() => {
     if (!selectedEventDetailId) return null;
 
-    const event = renderableEvents.find((item) => String(item.id) === selectedEventDetailId);
+    const event = renderableEvents.find(
+      (item) => String(item.id) === selectedEventDetailId,
+    );
     if (!event) return null;
 
     if (event.source === "task" && String(event.id).startsWith("task-")) {
@@ -267,19 +377,33 @@ export function CalendarPage() {
       };
     }
 
-    const calendar = localCalendars.find((item) => item.id === event.calendarId);
+    const calendar = localCalendars.find(
+      (item) => item.id === event.calendarId,
+    );
     return {
       event,
       calendar,
     };
   }, [boardTasks, localCalendars, renderableEvents, selectedEventDetailId]);
 
-  const showLocalCalendarView = localCalendars.length > 0
-    && (selectedSidebarItem.startsWith("local") || accounts.length === 0);
+  const showLocalCalendarView =
+    localCalendars.length > 0 &&
+    (selectedSidebarItem.startsWith("local") || accounts.length === 0);
 
   useEffect(() => {
     void loadIntegrations();
     void loadPlannerStore();
+
+    // Check for OAuth error returned from the callback redirect
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("oauth_error");
+    if (error) {
+      setOauthError(decodeURIComponent(error));
+      // Clean up the URL so the error isn't shown again on refresh
+      const url = new URL(window.location.href);
+      url.searchParams.delete("oauth_error");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, []);
 
   useEffect(() => {
@@ -309,7 +433,9 @@ export function CalendarPage() {
         setActiveAccountId(null);
       }
       setGoogleEvents((current) => (current.length === 0 ? current : []));
-      setSelectedSidebarItem((current) => (current.startsWith("google-account:") ? "google-overview" : current));
+      setSelectedSidebarItem((current) =>
+        current.startsWith("google-account:") ? "google-overview" : current,
+      );
       return;
     }
 
@@ -331,7 +457,9 @@ export function CalendarPage() {
       return;
     }
 
-    setSelectedSidebarItem((current) => (current.startsWith("local") ? current : "local-overview"));
+    setSelectedSidebarItem((current) =>
+      current.startsWith("local") ? current : "local-overview",
+    );
   }, [accounts.length, localCalendars.length]);
 
   useEffect(() => {
@@ -351,59 +479,73 @@ export function CalendarPage() {
     setVisibleMonth(startOfMonth(day));
   }, []);
 
-  const handleCalendarMonthChange = useCallback((day: Date) => {
-    const nextMonth = startOfMonth(day);
-    setVisibleMonth(nextMonth);
-    setSelectedLocalDate((current) => {
-      const currentDate = parseDayKey(current);
-      if (calendarViewMode !== "month") {
-        return formatDayKey(day);
-      }
-      return currentDate.getMonth() === nextMonth.getMonth() && currentDate.getFullYear() === nextMonth.getFullYear()
-        ? current
-        : formatDayKey(nextMonth);
-    });
-  }, [calendarViewMode]);
+  const handleCalendarMonthChange = useCallback(
+    (day: Date) => {
+      const nextMonth = startOfMonth(day);
+      setVisibleMonth(nextMonth);
+      setSelectedLocalDate((current) => {
+        const currentDate = parseDayKey(current);
+        if (calendarViewMode !== "month") {
+          return formatDayKey(day);
+        }
+        return currentDate.getMonth() === nextMonth.getMonth() &&
+          currentDate.getFullYear() === nextMonth.getFullYear()
+          ? current
+          : formatDayKey(nextMonth);
+      });
+    },
+    [calendarViewMode],
+  );
 
   const updateBoardTask = useBoardStore((state) => state.updateTask);
 
-  const handleCreateCalendarSlot = useCallback((start: Date, end: Date) => {
-    const defaultCalendarId = activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
-    if (!defaultCalendarId) {
-      return;
-    }
+  const handleCreateCalendarSlot = useCallback(
+    (start: Date, end: Date) => {
+      const defaultCalendarId =
+        activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
+      if (!defaultCalendarId) {
+        return;
+      }
 
-    setSelectedLocalDate(formatDayKey(start));
-    setVisibleMonth(startOfMonth(start));
-    setLocalEventForm({
-      id: null,
-      calendarId: defaultCalendarId,
-      title: "",
-      description: "",
-      location: "",
-      startAt: toDateTimeLocalValue(start),
-      endAt: toDateTimeLocalValue(end),
-      allDay: false,
-    });
-    setIsLocalEventDialogOpen(true);
-  }, [activeLocalCalendarIds, localCalendars]);
+      setSelectedLocalDate(formatDayKey(start));
+      setVisibleMonth(startOfMonth(start));
+      setLocalEventForm({
+        id: null,
+        calendarId: defaultCalendarId,
+        title: "",
+        description: "",
+        location: "",
+        startAt: toDateTimeLocalValue(start),
+        endAt: toDateTimeLocalValue(end),
+        allDay: false,
+      });
+      setIsLocalEventDialogOpen(true);
+    },
+    [activeLocalCalendarIds, localCalendars],
+  );
 
-  const handleUpdateTaskEvent = useCallback((eventId: string, updates: { start: Date; end: Date }) => {
-    const taskId = eventId.replace(/^task-/, "");
-    updateBoardTask(taskId, {
-      dueDate: formatDayKey(updates.start),
-    });
-  }, [updateBoardTask]);
+  const handleUpdateTaskEvent = useCallback(
+    (eventId: string, updates: { start: Date; end: Date }) => {
+      const taskId = eventId.replace(/^task-/, "");
+      updateBoardTask(taskId, {
+        dueDate: formatDayKey(updates.start),
+      });
+    },
+    [updateBoardTask],
+  );
 
-  const handleCycleTaskStatus = useCallback((eventId: string) => {
-    const taskId = eventId.replace(/^task-/, "");
-    const task = boardTasks.find((item) => item.id === taskId);
-    if (!task) return;
+  const handleCycleTaskStatus = useCallback(
+    (eventId: string) => {
+      const taskId = eventId.replace(/^task-/, "");
+      const task = boardTasks.find((item) => item.id === taskId);
+      if (!task) return;
 
-    const order = ["planning", "in_progress", "review", "completed"] as const;
-    const nextColumn = order[(order.indexOf(task.column) + 1) % order.length];
-    updateBoardTask(taskId, { column: nextColumn });
-  }, [boardTasks, updateBoardTask]);
+      const order = ["planning", "in_progress", "review", "completed"] as const;
+      const nextColumn = order[(order.indexOf(task.column) + 1) % order.length];
+      updateBoardTask(taskId, { column: nextColumn });
+    },
+    [boardTasks, updateBoardTask],
+  );
 
   const toggleCalendarVisibility = useCallback((calendarId: string) => {
     setHiddenCalendarIds((current) =>
@@ -413,43 +555,61 @@ export function CalendarPage() {
     );
   }, []);
 
-  const openEventDetail = useCallback((eventId: string) => {
-    setSelectedEventDetailId(eventId);
-    const event = renderableEvents.find((item) => String(item.id) === eventId);
-    if (!event) return;
+  const openEventDetail = useCallback(
+    (eventId: string) => {
+      setSelectedEventDetailId(eventId);
+      const event = renderableEvents.find(
+        (item) => String(item.id) === eventId,
+      );
+      if (!event) return;
 
-    const date = new Date(event.startAt);
-    setSelectedLocalDate(formatDayKey(date));
-    setVisibleMonth(startOfMonth(date));
-  }, [renderableEvents]);
+      const date = new Date(event.startAt);
+      setSelectedLocalDate(formatDayKey(date));
+      setVisibleMonth(startOfMonth(date));
+    },
+    [renderableEvents],
+  );
 
-  const handleOpenCalendarEvent = useCallback((event: FullScreenCalendarDay["events"][number]) => {
-    openEventDetail(String(event.id));
-  }, [openEventDetail]);
+  const handleOpenCalendarEvent = useCallback(
+    (event: FullScreenCalendarDay["events"][number]) => {
+      openEventDetail(String(event.id));
+    },
+    [openEventDetail],
+  );
 
   const handleCloseEventDetail = useCallback(() => {
     setSelectedEventDetailId(null);
   }, []);
 
   const handleEditSelectedEvent = useCallback(() => {
-    if (!selectedEventDetail || selectedEventDetail.event.source === "task") return;
-    openLocalEventDialog(formatDayKey(new Date(selectedEventDetail.event.startAt)), selectedEventDetail.event);
+    if (!selectedEventDetail || selectedEventDetail.event.source === "task")
+      return;
+    openLocalEventDialog(
+      formatDayKey(new Date(selectedEventDetail.event.startAt)),
+      selectedEventDetail.event,
+    );
   }, [selectedEventDetail]);
 
-  const handleMoveSelectedTaskDate = useCallback((days: number) => {
-    if (!selectedEventDetail?.task?.dueDate) return;
-    const current = parseDayKey(selectedEventDetail.task.dueDate);
-    const next = new Date(current);
-    next.setDate(current.getDate() + days);
-    updateBoardTask(selectedEventDetail.task.id, {
-      dueDate: formatDayKey(next),
-    });
-  }, [selectedEventDetail, updateBoardTask]);
+  const handleMoveSelectedTaskDate = useCallback(
+    (days: number) => {
+      if (!selectedEventDetail?.task?.dueDate) return;
+      const current = parseDayKey(selectedEventDetail.task.dueDate);
+      const next = new Date(current);
+      next.setDate(current.getDate() + days);
+      updateBoardTask(selectedEventDetail.task.id, {
+        dueDate: formatDayKey(next),
+      });
+    },
+    [selectedEventDetail, updateBoardTask],
+  );
 
-  const handleSetSelectedTaskColumn = useCallback((column: BoardTaskColumnId) => {
-    if (!selectedEventDetail?.task) return;
-    updateBoardTask(selectedEventDetail.task.id, { column });
-  }, [selectedEventDetail, updateBoardTask]);
+  const handleSetSelectedTaskColumn = useCallback(
+    (column: BoardTaskColumnId) => {
+      if (!selectedEventDetail?.task) return;
+      updateBoardTask(selectedEventDetail.task.id, { column });
+    },
+    [selectedEventDetail, updateBoardTask],
+  );
 
   async function loadIntegrations() {
     setLoading(true);
@@ -466,7 +626,11 @@ export function CalendarPage() {
     try {
       setLocalStore(await api.getPlannerStore());
     } catch (error) {
-      console.error(error instanceof Error ? error.message : calendar_failed_load_integrations());
+      console.error(
+        error instanceof Error
+          ? error.message
+          : calendar_failed_load_integrations(),
+      );
     }
   }
 
@@ -474,46 +638,25 @@ export function CalendarPage() {
     try {
       setGoogleEvents(await api.listGoogleCalendarEvents({ accountId }));
     } catch (error) {
-      console.error(error instanceof Error ? error.message : calendar_failed_load_integrations());
-    }
-  }
-
-  async function handleConnect() {
-    if (!form.clientId.trim() || !form.clientSecret.trim() || !form.refreshToken.trim()) {
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const updated = await api.connectGoogleIntegration("google-calendar", {
-        label: form.label.trim() || undefined,
-        clientId: form.clientId.trim(),
-        clientSecret: form.clientSecret.trim(),
-        refreshToken: form.refreshToken.trim(),
-      });
-      setIntegrations((current) => [...current.filter((item) => item.id !== updated.id), updated]);
-      setForm({
-        label: "",
-        clientId: "",
-        clientSecret: "",
-        refreshToken: "",
-      });
-      setIsAddDialogOpen(false);
-      await loadGoogleEvents((updated as CalendarIntegration).accounts?.[0]?.id);
-
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSubmitting(false);
+      console.error(
+        error instanceof Error
+          ? error.message
+          : calendar_failed_load_integrations(),
+      );
     }
   }
 
   async function handleDeleteAccount(accountId: string) {
     try {
-      const updated = await api.deleteIntegrationAccount("google-calendar", accountId);
-      setIntegrations((current) => [...current.filter((item) => item.id !== updated.id), updated]);
+      const updated = await api.deleteIntegrationAccount(
+        "google-calendar",
+        accountId,
+      );
+      setIntegrations((current) => [
+        ...current.filter((item) => item.id !== updated.id),
+        updated,
+      ]);
       setSelectedSidebarItem("google-overview");
-
     } catch (error) {
       console.error(error);
     }
@@ -521,7 +664,10 @@ export function CalendarPage() {
 
   function openGoogleCalendarDialog() {
     setIsCalendarSourceDialogOpen(false);
-    setIsAddDialogOpen(true);
+    // Redirect to server-side OAuth flow. Google will bring the user back
+    // to /dashboard/calendar after authorization.
+    window.location.href =
+      "/api/oauth/google?type=google-calendar&redirect=/dashboard/calendar";
   }
 
   function openLocalCalendarDialog(calendar?: LocalCalendar) {
@@ -549,7 +695,11 @@ export function CalendarPage() {
   }
 
   function openLocalEventDialog(dayKey?: string, event?: LocalCalendarEvent) {
-    const defaultCalendarId = event?.calendarId ?? activeLocalCalendarIds[0] ?? localCalendars[0]?.id ?? "";
+    const defaultCalendarId =
+      event?.calendarId ??
+      activeLocalCalendarIds[0] ??
+      localCalendars[0]?.id ??
+      "";
 
     if (!defaultCalendarId) {
       return;
@@ -619,7 +769,8 @@ export function CalendarPage() {
 
     setLocalStore(nextStore);
     if (!localCalendarForm.id) {
-      const createdCalendar = nextStore.calendars[nextStore.calendars.length - 1];
+      const createdCalendar =
+        nextStore.calendars[nextStore.calendars.length - 1];
       if (createdCalendar) {
         setSelectedSidebarItem(`local-calendar:${createdCalendar.id}`);
       }
@@ -685,8 +836,12 @@ export function CalendarPage() {
 
     const calendar = calendarPendingDelete;
     setLocalStore(await api.deletePlannerCalendar(calendar.id));
-    setHiddenCalendarIds((current) => current.filter((id) => id !== calendar.id));
-    setSelectedSidebarItem((current) => current === `local-calendar:${calendar.id}` ? "local-overview" : current);
+    setHiddenCalendarIds((current) =>
+      current.filter((id) => id !== calendar.id),
+    );
+    setSelectedSidebarItem((current) =>
+      current === `local-calendar:${calendar.id}` ? "local-overview" : current,
+    );
     setCalendarPendingDelete(null);
   }
 
@@ -712,34 +867,40 @@ export function CalendarPage() {
     setSidebarCollapsed(false);
   }, []);
 
-  const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const sidebarEl = sidebarRef.current;
-    if (!sidebarEl) return;
-    const sidebarLeft = sidebarEl.getBoundingClientRect().left;
+  const handleResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const sidebarEl = sidebarRef.current;
+      if (!sidebarEl) return;
+      const sidebarLeft = sidebarEl.getBoundingClientRect().left;
 
-    setIsResizingSidebar(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-    sidebarEl.style.transition = "none";
+      setIsResizingSidebar(true);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      sidebarEl.style.transition = "none";
 
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const nextWidth = Math.min(Math.max(moveEvent.clientX - sidebarLeft, 200), 420);
-      setSidebarWidth(nextWidth);
-    };
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const nextWidth = Math.min(
+          Math.max(moveEvent.clientX - sidebarLeft, 200),
+          420,
+        );
+        setSidebarWidth(nextWidth);
+      };
 
-    const handlePointerUp = () => {
-      setIsResizingSidebar(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      sidebarEl.style.transition = "";
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
+      const handlePointerUp = () => {
+        setIsResizingSidebar(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        sidebarEl.style.transition = "";
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+      };
 
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-  }, []);
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+    },
+    [],
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
@@ -748,24 +909,32 @@ export function CalendarPage() {
           ref={sidebarRef}
           className={cn(
             "relative hidden min-h-0 shrink-0 flex-col bg-card transition-[width] duration-300 ease-out lg:flex",
-            sidebarCollapsed ? "w-0 overflow-hidden" : "w-[var(--calendar-sidebar-width)] overflow-visible border-r",
+            sidebarCollapsed
+              ? "w-0 overflow-hidden"
+              : "w-[var(--calendar-sidebar-width)] overflow-visible border-r",
             isResizingSidebar ? "border-r-transparent" : "border-border",
           )}
           style={
             sidebarCollapsed
               ? undefined
-              : ({ "--calendar-sidebar-width": `${Math.min(sidebarWidth, 420)}px` } as CSSProperties)
+              : ({
+                  "--calendar-sidebar-width": `${Math.min(sidebarWidth, 420)}px`,
+                } as CSSProperties)
           }
         >
           <div
             className={cn(
               "border-b border-border p-2 transition-[opacity,filter] duration-300 ease-out",
-              showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+              showExpandedContent
+                ? "opacity-100 blur-0"
+                : "pointer-events-none opacity-0 blur-[6px]",
             )}
             aria-hidden={!showExpandedContent}
           >
             <div className="flex h-10 items-center justify-between rounded-md px-2">
-              <div className="text-sm font-semibold text-foreground">{calendar()}</div>
+              <div className="text-sm font-semibold text-foreground">
+                {calendar()}
+              </div>
               <div className="flex items-center gap-1">
                 <Tooltip>
                   <TooltipTrigger
@@ -793,11 +962,16 @@ export function CalendarPage() {
                         className="active:-translate-y-0"
                         onClick={handleCollapseSidebar}
                       >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+                        <HugeiconsIcon
+                          icon={ArrowLeft01Icon}
+                          className="size-4"
+                        />
                       </Button>
                     )}
                   />
-                  <TooltipContent side="bottom">{collapse_sidebar()}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {collapse_sidebar()}
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -806,7 +980,9 @@ export function CalendarPage() {
           <div
             className={cn(
               "min-h-0 flex flex-1 flex-col transition-[opacity,filter] duration-300 ease-out",
-              showExpandedContent ? "opacity-100 blur-0" : "pointer-events-none opacity-0 blur-[6px]",
+              showExpandedContent
+                ? "opacity-100 blur-0"
+                : "pointer-events-none opacity-0 blur-[6px]",
             )}
             aria-hidden={!showExpandedContent}
           >
@@ -815,10 +991,14 @@ export function CalendarPage() {
                 <div className="space-y-5 p-3">
                   {accounts.length > 0 ? (
                     <section className="space-y-2">
-                      <div className="px-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{calendar_google()}</div>
+                      <div className="px-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                        {calendar_google()}
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setSelectedSidebarItem("google-overview")}
+                        onClick={() =>
+                          setSelectedSidebarItem("google-overview")
+                        }
                         className={cn(
                           "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
                           selectedSidebarItem === "google-overview"
@@ -830,7 +1010,9 @@ export function CalendarPage() {
                           <HugeiconsIcon icon={GoogleIcon} className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-foreground">{calendar_google_overview()}</div>
+                          <div className="text-sm font-medium text-foreground">
+                            {calendar_google_overview()}
+                          </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">
                             {calendar_n_accounts({ n: accounts.length })}
                           </div>
@@ -839,7 +1021,9 @@ export function CalendarPage() {
 
                       <div className="space-y-1">
                         {accounts.map((account) => {
-                          const isActive = selectedSidebarItem === `google-account:${account.id}`;
+                          const isActive =
+                            selectedSidebarItem ===
+                            `google-account:${account.id}`;
 
                           return (
                             <button
@@ -847,21 +1031,35 @@ export function CalendarPage() {
                               type="button"
                               onClick={() => {
                                 setActiveAccountId(account.id);
-                                setSelectedSidebarItem(`google-account:${account.id}`);
+                                setSelectedSidebarItem(
+                                  `google-account:${account.id}`,
+                                );
                               }}
                               className={cn(
                                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-                                isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/40",
+                                isActive
+                                  ? "bg-accent text-accent-foreground"
+                                  : "hover:bg-accent/40",
                               )}
                             >
                               <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                <HugeiconsIcon icon={Calendar03Icon} className="size-3.5" />
+                                <HugeiconsIcon
+                                  icon={Calendar03Icon}
+                                  className="size-3.5"
+                                />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-medium text-foreground">{account.label}</div>
-                                <div className="truncate text-xs text-muted-foreground">{account.email || account.username}</div>
+                                <div className="truncate text-sm font-medium text-foreground">
+                                  {account.label}
+                                </div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  {account.email || account.username}
+                                </div>
                               </div>
-                              <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5 text-muted-foreground" />
+                              <HugeiconsIcon
+                                icon={ArrowRight01Icon}
+                                className="size-3.5 text-muted-foreground"
+                              />
                             </button>
                           );
                         })}
@@ -873,32 +1071,51 @@ export function CalendarPage() {
                     {localCalendars.length > 0 ? (
                       <div className="space-y-0.5">
                         {localCalendars.map((calendar) => {
-                          const isHidden = hiddenCalendarIds.includes(calendar.id);
+                          const isHidden = hiddenCalendarIds.includes(
+                            calendar.id,
+                          );
 
                           return (
                             <div
                               key={calendar.id}
                               role="button"
                               tabIndex={0}
-                              onClick={() => setSelectedSidebarItem(`local-calendar:${calendar.id}`)}
+                              onClick={() =>
+                                setSelectedSidebarItem(
+                                  `local-calendar:${calendar.id}`,
+                                )
+                              }
                               onKeyDown={(event) => {
-                                if (event.key === "Enter" || event.key === " ") {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
                                   event.preventDefault();
-                                  setSelectedSidebarItem(`local-calendar:${calendar.id}`);
+                                  setSelectedSidebarItem(
+                                    `local-calendar:${calendar.id}`,
+                                  );
                                 }
                               }}
                               className={cn(
                                 "group flex w-full min-h-9 items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground",
-                                selectedSidebarItem === `local-calendar:${calendar.id}` && "bg-accent text-foreground",
+                                selectedSidebarItem ===
+                                  `local-calendar:${calendar.id}` &&
+                                  "bg-accent text-foreground",
                                 isHidden && "opacity-45",
                               )}
                             >
                               <HugeiconsIcon
-                                icon={LOCAL_CALENDAR_ICONS.find((i) => i.name === calendar.icon)?.component ?? Calendar03Icon}
+                                icon={
+                                  LOCAL_CALENDAR_ICONS.find(
+                                    (i) => i.name === calendar.icon,
+                                  )?.component ?? Calendar03Icon
+                                }
                                 className="size-3.5 shrink-0"
                                 style={{ color: calendar.color }}
                               />
-                              <span className="min-w-0 flex-1 truncate">{calendar.name}</span>
+                              <span className="min-w-0 flex-1 truncate">
+                                {calendar.name}
+                              </span>
                               <div className="grid items-center justify-items-center">
                                 <div className="col-start-1 row-start-1 flex items-center opacity-0 transition-opacity group-hover:opacity-100">
                                   <Button
@@ -912,7 +1129,10 @@ export function CalendarPage() {
                                     }}
                                     title={edit()}
                                   >
-                                    <HugeiconsIcon icon={Edit02Icon} className="size-3.5" />
+                                    <HugeiconsIcon
+                                      icon={Edit02Icon}
+                                      className="size-3.5"
+                                    />
                                   </Button>
                                   <Button
                                     type="button"
@@ -924,9 +1144,17 @@ export function CalendarPage() {
                                       handleDeleteLocalCalendar(calendar);
                                     }}
                                     className="hover:text-destructive"
-                                    title={typeof calendar_delete_calendar === "function" ? calendar_delete_calendar() : delete_message()}
+                                    title={
+                                      typeof calendar_delete_calendar ===
+                                      "function"
+                                        ? calendar_delete_calendar()
+                                        : delete_message()
+                                    }
                                   >
-                                    <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                                    <HugeiconsIcon
+                                      icon={Delete02Icon}
+                                      className="size-3.5"
+                                    />
                                   </Button>
                                   <Button
                                     type="button"
@@ -937,13 +1165,28 @@ export function CalendarPage() {
                                       e.stopPropagation();
                                       toggleCalendarVisibility(calendar.id);
                                     }}
-                                    title={isHidden ? "Show calendar" : "Hide calendar"}
+                                    title={
+                                      isHidden
+                                        ? "Show calendar"
+                                        : "Hide calendar"
+                                    }
                                   >
-                                    <HugeiconsIcon icon={ViewOffSlashIcon} className={cn("size-3.5", isHidden && "opacity-60")} />
+                                    <HugeiconsIcon
+                                      icon={ViewOffSlashIcon}
+                                      className={cn(
+                                        "size-3.5",
+                                        isHidden && "opacity-60",
+                                      )}
+                                    />
                                   </Button>
                                 </div>
                                 <span className="pointer-events-none col-start-1 row-start-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
-                                  {localEvents.filter((event) => event.calendarId === calendar.id).length}
+                                  {
+                                    localEvents.filter(
+                                      (event) =>
+                                        event.calendarId === calendar.id,
+                                    ).length
+                                  }
                                 </span>
                               </div>
                             </div>
@@ -956,7 +1199,9 @@ export function CalendarPage() {
                           icon={Calendar03Icon}
                           className="mx-auto mb-1.5 size-5 text-muted-foreground/30"
                         />
-                        <p className="text-xs text-muted-foreground">{calendar_no_groups_desc()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {calendar_no_groups_desc()}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -967,34 +1212,33 @@ export function CalendarPage() {
             )}
           </div>
 
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={resize_calendar_sidebar()}
-          onPointerDown={handleResizeStart}
-          className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
-            sidebarCollapsed && "hidden",
-            isResizingSidebar &&
-              "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
-          )}
-        >
           <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={resize_calendar_sidebar()}
+            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
-              isResizingSidebar && "border-border bg-muted shadow-md",
+              "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
+              sidebarCollapsed && "hidden",
+              isResizingSidebar &&
+                "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
             )}
           >
             <div
               className={cn(
-                "h-8 w-px rounded-full bg-border transition-[background-color] duration-150 ease-out group-hover:bg-foreground/35",
-                isResizingSidebar && "opacity-0",
+                "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+                isResizingSidebar && "border-border bg-muted shadow-md",
               )}
-            />
+            >
+              <div
+                className={cn(
+                  "h-8 w-px rounded-full bg-border transition-[background-color] duration-150 ease-out group-hover:bg-foreground/35",
+                  isResizingSidebar && "opacity-0",
+                )}
+              />
+            </div>
           </div>
         </div>
-
-          </div>
 
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {sidebarCollapsed ? (
@@ -1027,13 +1271,27 @@ export function CalendarPage() {
                       title={calendar_empty_workspace_title()}
                       description={calendar_empty_workspace_desc()}
                       icons={[
-                        <HugeiconsIcon key="l1" icon={SquareArrowDataTransferHorizontalIcon} className="size-6" />,
-                        <HugeiconsIcon key="l2" icon={Calendar03Icon} className="size-6" />,
-                        <HugeiconsIcon key="l3" icon={Add01Icon} className="size-6" />,
+                        <HugeiconsIcon
+                          key="l1"
+                          icon={SquareArrowDataTransferHorizontalIcon}
+                          className="size-6"
+                        />,
+                        <HugeiconsIcon
+                          key="l2"
+                          icon={Calendar03Icon}
+                          className="size-6"
+                        />,
+                        <HugeiconsIcon
+                          key="l3"
+                          icon={Add01Icon}
+                          className="size-6"
+                        />,
                       ]}
                       action={{
                         label: calendar_new_calendar(),
-                        icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                        icon: (
+                          <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                        ),
                         onClick: () => openLocalCalendarDialog(),
                       }}
                       className="w-full max-w-lg"
@@ -1043,7 +1301,14 @@ export function CalendarPage() {
                   <section className="space-y-6">
                     <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
                       <div className="border-b border-border/60 px-4 py-3">
-                        <Tabs value={calendarSourceFilter} onValueChange={(value) => setCalendarSourceFilter(value as "all" | "events" | "tasks")}>
+                        <Tabs
+                          value={calendarSourceFilter}
+                          onValueChange={(value) =>
+                            setCalendarSourceFilter(
+                              value as "all" | "events" | "tasks",
+                            )
+                          }
+                        >
                           <TabsList>
                             <TabsTrigger value="all">All</TabsTrigger>
                             <TabsTrigger value="events">Events</TabsTrigger>
@@ -1058,7 +1323,9 @@ export function CalendarPage() {
                         viewMode={calendarViewMode}
                         onSelectDay={handleCalendarSelectDay}
                         onCurrentMonthChange={handleCalendarMonthChange}
-                        onCreateEvent={() => openLocalEventDialog(selectedLocalDate)}
+                        onCreateEvent={() =>
+                          openLocalEventDialog(selectedLocalDate)
+                        }
                         onCreateSlot={handleCreateCalendarSlot}
                         onUpdateTaskEvent={handleUpdateTaskEvent}
                         onCycleTaskStatus={handleCycleTaskStatus}
@@ -1075,13 +1342,27 @@ export function CalendarPage() {
                     title={calendar_no_calendar_connected()}
                     description={calendar_no_calendar_desc()}
                     icons={[
-                      <HugeiconsIcon key="c1" icon={Calendar03Icon} className="size-6" />,
-                      <HugeiconsIcon key="c2" icon={GoogleIcon} className="size-6" />,
-                      <HugeiconsIcon key="c3" icon={Add01Icon} className="size-6" />,
+                      <HugeiconsIcon
+                        key="c1"
+                        icon={Calendar03Icon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="c2"
+                        icon={GoogleIcon}
+                        className="size-6"
+                      />,
+                      <HugeiconsIcon
+                        key="c3"
+                        icon={Add01Icon}
+                        className="size-6"
+                      />,
                     ]}
                     action={{
                       label: add(),
-                      icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
+                      icon: (
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                      ),
                       onClick: () => setIsCalendarSourceDialogOpen(true),
                     }}
                     className="w-full"
@@ -1092,7 +1373,9 @@ export function CalendarPage() {
                   <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h2 className="text-base font-semibold text-foreground">{calendar_connected_accounts()}</h2>
+                        <h2 className="text-base font-semibold text-foreground">
+                          {calendar_connected_accounts()}
+                        </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {calendar_connected_accounts_desc()}
                         </p>
@@ -1115,16 +1398,24 @@ export function CalendarPage() {
                             onClick={() => setActiveAccountId(account.id)}
                             className={cn(
                               "w-full rounded-xl border px-4 py-3 text-left transition-colors",
-                              isActive ? "border-primary/40 bg-primary/5" : "border-border/70 bg-background/70 hover:bg-accent/40",
+                              isActive
+                                ? "border-primary/40 bg-primary/5"
+                                : "border-border/70 bg-background/70 hover:bg-accent/40",
                             )}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="truncate text-sm font-medium text-foreground">{account.label}</div>
-                                <div className="mt-1 truncate text-xs text-muted-foreground">{account.email || account.username}</div>
+                                <div className="truncate text-sm font-medium text-foreground">
+                                  {account.label}
+                                </div>
+                                <div className="mt-1 truncate text-xs text-muted-foreground">
+                                  {account.email || account.username}
+                                </div>
                               </div>
                               <span className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-                                {calendar_n_scopes({ n: account.scopes.length })}
+                                {calendar_n_scopes({
+                                  n: account.scopes.length,
+                                })}
                               </span>
                             </div>
                           </button>
@@ -1136,10 +1427,19 @@ export function CalendarPage() {
                   <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h2 className="text-base font-semibold text-foreground">{calendar_account_details()}</h2>
-                        <p className="mt-1 text-sm text-muted-foreground">{calendar_account_details_desc()}</p>
+                        <h2 className="text-base font-semibold text-foreground">
+                          {calendar_account_details()}
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {calendar_account_details_desc()}
+                        </p>
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={() => setIsCalendarSourceDialogOpen(true)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCalendarSourceDialogOpen(true)}
+                      >
                         <HugeiconsIcon icon={Add01Icon} className="size-4" />
                         {add()}
                       </Button>
@@ -1150,26 +1450,45 @@ export function CalendarPage() {
                         <div className="rounded-xl border border-border/70 bg-background/70 p-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="truncate text-sm font-medium text-foreground">{activeAccount.label}</div>
-                              <div className="truncate text-xs text-muted-foreground">{activeAccount.email || activeAccount.username}</div>
+                              <div className="truncate text-sm font-medium text-foreground">
+                                {activeAccount.label}
+                              </div>
+                              <div className="truncate text-xs text-muted-foreground">
+                                {activeAccount.email || activeAccount.username}
+                              </div>
                             </div>
                             <Tooltip>
                               <TooltipTrigger
-                                render={<button
-                                  type="button"
-                                  onClick={() => void handleDeleteAccount(activeAccount.id)}
-                                  className="rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                >
-                                  <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
-                                </button>}
+                                render={
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void handleDeleteAccount(activeAccount.id)
+                                    }
+                                    className="rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                  >
+                                    <HugeiconsIcon
+                                      icon={Delete02Icon}
+                                      className="size-3.5"
+                                    />
+                                  </button>
+                                }
                               />
-                              <TooltipContent side="top">{calendar_remove_account()}</TooltipContent>
+                              <TooltipContent side="top">
+                                {calendar_remove_account()}
+                              </TooltipContent>
                             </Tooltip>
                           </div>
                           <div className="mt-4 flex flex-wrap gap-2">
                             {activeAccount.scopes.map((scope) => (
-                              <span key={scope} className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-                                {scope.replace("https://www.googleapis.com/auth/", "")}
+                              <span
+                                key={scope}
+                                className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground"
+                              >
+                                {scope.replace(
+                                  "https://www.googleapis.com/auth/",
+                                  "",
+                                )}
                               </span>
                             ))}
                           </div>
@@ -1206,11 +1525,15 @@ export function CalendarPage() {
                             : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
                         )}
                       >
-                        {selectedEventDetail.event.source === "task" ? "Task" : "Event"}
+                        {selectedEventDetail.event.source === "task"
+                          ? "Task"
+                          : "Event"}
                       </span>
                       {selectedEventDetail.task ? (
                         <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                          {formatBoardColumnLabel(selectedEventDetail.task.column)}
+                          {formatBoardColumnLabel(
+                            selectedEventDetail.task.column,
+                          )}
                         </span>
                       ) : null}
                     </div>
@@ -1221,8 +1544,16 @@ export function CalendarPage() {
                       {formatEventDateTime(selectedEventDetail.event)}
                     </p>
                   </div>
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={handleCloseEventDetail}>
-                    <HugeiconsIcon icon={Delete02Icon} className="size-4 rotate-45" />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleCloseEventDetail}
+                  >
+                    <HugeiconsIcon
+                      icon={Delete02Icon}
+                      className="size-4 rotate-45"
+                    />
                   </Button>
                 </div>
 
@@ -1234,9 +1565,17 @@ export function CalendarPage() {
                           Calendar
                         </div>
                         <div className="mt-3 flex items-center gap-3">
-                          <span className="size-3 rounded-full" style={{ backgroundColor: selectedEventDetail.calendar.color }} />
+                          <span
+                            className="size-3 rounded-full"
+                            style={{
+                              backgroundColor:
+                                selectedEventDetail.calendar.color,
+                            }}
+                          />
                           <div>
-                            <div className="text-sm font-medium text-foreground">{selectedEventDetail.calendar.name}</div>
+                            <div className="text-sm font-medium text-foreground">
+                              {selectedEventDetail.calendar.name}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1247,7 +1586,9 @@ export function CalendarPage() {
                         <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                           {calendar_location()}
                         </div>
-                        <p className="mt-2 text-sm text-foreground">{selectedEventDetail.event.location}</p>
+                        <p className="mt-2 text-sm text-foreground">
+                          {selectedEventDetail.event.location}
+                        </p>
                       </div>
                     ) : null}
 
@@ -1269,13 +1610,26 @@ export function CalendarPage() {
                             Status
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {(["planning", "in_progress", "review", "completed"] as BoardTaskColumnId[]).map((column) => (
+                            {(
+                              [
+                                "planning",
+                                "in_progress",
+                                "review",
+                                "completed",
+                              ] as BoardTaskColumnId[]
+                            ).map((column) => (
                               <Button
                                 key={column}
                                 type="button"
                                 size="sm"
-                                variant={selectedEventDetail.task?.column === column ? "default" : "outline"}
-                                onClick={() => handleSetSelectedTaskColumn(column)}
+                                variant={
+                                  selectedEventDetail.task?.column === column
+                                    ? "default"
+                                    : "outline"
+                                }
+                                onClick={() =>
+                                  handleSetSelectedTaskColumn(column)
+                                }
                               >
                                 {formatBoardColumnLabel(column)}
                               </Button>
@@ -1288,22 +1642,64 @@ export function CalendarPage() {
                             Schedule
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleMoveSelectedTaskDate(-1)}>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleMoveSelectedTaskDate(-1)}
+                            >
                               -1 day
                             </Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
-                              start: offsetDateTime(selectedEventDetail.event.startAt, -30),
-                              end: offsetDateTime(selectedEventDetail.event.endAt, -30),
-                            })}>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleUpdateTaskEvent(
+                                  String(selectedEventDetail.event.id),
+                                  {
+                                    start: offsetDateTime(
+                                      selectedEventDetail.event.startAt,
+                                      -30,
+                                    ),
+                                    end: offsetDateTime(
+                                      selectedEventDetail.event.endAt,
+                                      -30,
+                                    ),
+                                  },
+                                )
+                              }
+                            >
                               -30m
                             </Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleUpdateTaskEvent(String(selectedEventDetail.event.id), {
-                              start: offsetDateTime(selectedEventDetail.event.startAt, 30),
-                              end: offsetDateTime(selectedEventDetail.event.endAt, 30),
-                            })}>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleUpdateTaskEvent(
+                                  String(selectedEventDetail.event.id),
+                                  {
+                                    start: offsetDateTime(
+                                      selectedEventDetail.event.startAt,
+                                      30,
+                                    ),
+                                    end: offsetDateTime(
+                                      selectedEventDetail.event.endAt,
+                                      30,
+                                    ),
+                                  },
+                                )
+                              }
+                            >
                               +30m
                             </Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleMoveSelectedTaskDate(1)}>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleMoveSelectedTaskDate(1)}
+                            >
                               +1 day
                             </Button>
                           </div>
@@ -1327,7 +1723,11 @@ export function CalendarPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Button type="button" className="w-full" onClick={handleEditSelectedEvent}>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={handleEditSelectedEvent}
+                        >
                           <HugeiconsIcon icon={Edit02Icon} className="size-4" />
                           {calendar_edit_event()}
                         </Button>
@@ -1348,7 +1748,11 @@ export function CalendarPage() {
         description={calendar_add_calendar_desc()}
         size="md"
         footer={
-          <Button type="button" variant="outline" onClick={() => setIsCalendarSourceDialogOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsCalendarSourceDialogOpen(false)}
+          >
             {cancel()}
           </Button>
         }
@@ -1364,7 +1768,9 @@ export function CalendarPage() {
               <HugeiconsIcon icon={GoogleIcon} className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-foreground">{calendar_google_overview()}</div>
+              <div className="text-sm font-medium text-foreground">
+                {calendar_google_overview()}
+              </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 {calendar_google_calendar_option_desc()}
               </div>
@@ -1377,10 +1783,15 @@ export function CalendarPage() {
             className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-              <HugeiconsIcon icon={SquareArrowDataTransferHorizontalIcon} className="size-5" />
+              <HugeiconsIcon
+                icon={SquareArrowDataTransferHorizontalIcon}
+                className="size-5"
+              />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-foreground">{calendar_local_calendar_option()}</div>
+              <div className="text-sm font-medium text-foreground">
+                {calendar_local_calendar_option()}
+              </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 {calendar_local_calendar_option_desc()}
               </div>
@@ -1389,71 +1800,45 @@ export function CalendarPage() {
         </div>
       </AppDialog>
 
+      {/* OAuth error dialog — shown when Google OAuth callback returns an error */}
       <AppDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+        open={!!oauthError}
+        onOpenChange={() => setOauthError(null)}
         title={calendar_add_google_title()}
         description={calendar_add_google_desc()}
-        size="lg"
+        size="md"
         footer={
-          <>
-            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              {cancel()}
-            </Button>
-            <Button type="button" onClick={() => void handleConnect()} disabled={submitting}>
-              {submitting ? loading_label() : connect()}
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOauthError(null)}
+          >
+            {close()}
+          </Button>
         }
       >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{account_label()}</span>
-            <Input
-              value={form.label}
-              onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
-              placeholder={calendar_account_label_placeholder()}
-            />
-          </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{client_id()}</span>
-            <Input
-              value={form.clientId}
-              onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))}
-              placeholder={google_oauth_client_id_placeholder()}
-            />
-          </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{client_secret()}</span>
-            <Input
-              type="password"
-              value={form.clientSecret}
-              onChange={(event) => setForm((current) => ({ ...current, clientSecret: event.target.value }))}
-              placeholder={google_oauth_client_secret_placeholder()}
-            />
-          </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-foreground">{refresh_token()}</span>
-            <Textarea
-              value={form.refreshToken}
-              onChange={(event) => setForm((current) => ({ ...current, refreshToken: event.target.value }))}
-              placeholder={calendar_google_refresh_token_placeholder()}
-              className="min-h-32"
-            />
-          </label>
-          <p className="text-xs text-muted-foreground">{calendar_required_scopes()}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          {oauthError}
         </div>
       </AppDialog>
 
       <AppDialog
         open={isLocalCalendarDialogOpen}
         onOpenChange={setIsLocalCalendarDialogOpen}
-        title={localCalendarForm.id ? calendar_edit_calendar() : calendar_new_calendar()}
+        title={
+          localCalendarForm.id
+            ? calendar_edit_calendar()
+            : calendar_new_calendar()
+        }
         description={calendar_local_calendar_desc()}
         size="lg"
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setIsLocalCalendarDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsLocalCalendarDialogOpen(false)}
+            >
               {cancel()}
             </Button>
             <Button type="button" onClick={handleSaveLocalCalendar}>
@@ -1463,58 +1848,77 @@ export function CalendarPage() {
         }
       >
         <div className="grid gap-4">
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{calendar_calendar_name()}</span>
-              <Input
-                value={localCalendarForm.name}
-                onChange={(event) => setLocalCalendarForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder={calendar_name_placeholder()}
-              />
-            </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">
+              {calendar_calendar_name()}
+            </span>
+            <Input
+              value={localCalendarForm.name}
+              onChange={(event) =>
+                setLocalCalendarForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              placeholder={calendar_name_placeholder()}
+            />
+          </label>
 
-            <div className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{color()}</span>
-              <div className="flex flex-wrap gap-2">
-                {LOCAL_CALENDAR_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setLocalCalendarForm((current) => ({ ...current, color }))}
-                    className={cn(
-                      "size-10 rounded-full border border-transparent bg-background/60 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.96]",
-                      localCalendarForm.color === color
-                        ? "border-border/50 bg-background shadow-[0_0_0_2px_rgba(15,23,42,0.04)] dark:shadow-[0_0_0_2px_rgba(255,255,255,0.07)]"
-                        : "hover:border-border/35 hover:bg-background/80",
-                    )}
-                    style={{ backgroundColor: color }}
-                    aria-label={calendar_use_color({ color })}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{calendar_icon()}</span>
-              <div className="flex flex-wrap gap-2">
-                {LOCAL_CALENDAR_ICONS.map((iconEntry) => (
-                  <button
-                    key={iconEntry.name}
-                    type="button"
-                    onClick={() => setLocalCalendarForm((current) => ({ ...current, icon: iconEntry.name }))}
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-lg border transition-[border-color,background-color,color,box-shadow]",
-                      localCalendarForm.icon === iconEntry.name
-                        ? "border-slate-300 bg-slate-100/80 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
-                        : "border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-accent/35 hover:text-foreground",
-                    )}
-                    aria-label={iconEntry.name}
-                  >
-                    <HugeiconsIcon icon={iconEntry.component} className="size-5" />
-                  </button>
-                ))}
-              </div>
+          <div className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">{color()}</span>
+            <div className="flex flex-wrap gap-2">
+              {LOCAL_CALENDAR_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() =>
+                    setLocalCalendarForm((current) => ({ ...current, color }))
+                  }
+                  className={cn(
+                    "size-10 rounded-full border border-transparent bg-background/60 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.96]",
+                    localCalendarForm.color === color
+                      ? "border-border/50 bg-background shadow-[0_0_0_2px_rgba(15,23,42,0.04)] dark:shadow-[0_0_0_2px_rgba(255,255,255,0.07)]"
+                      : "hover:border-border/35 hover:bg-background/80",
+                  )}
+                  style={{ backgroundColor: color }}
+                  aria-label={calendar_use_color({ color })}
+                />
+              ))}
             </div>
           </div>
+
+          <div className="grid gap-2 text-sm">
+            <span className="font-medium text-foreground">
+              {calendar_icon()}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {LOCAL_CALENDAR_ICONS.map((iconEntry) => (
+                <button
+                  key={iconEntry.name}
+                  type="button"
+                  onClick={() =>
+                    setLocalCalendarForm((current) => ({
+                      ...current,
+                      icon: iconEntry.name,
+                    }))
+                  }
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-lg border transition-[border-color,background-color,color,box-shadow]",
+                    localCalendarForm.icon === iconEntry.name
+                      ? "border-slate-300 bg-slate-100/80 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+                      : "border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-accent/35 hover:text-foreground",
+                  )}
+                  aria-label={iconEntry.name}
+                >
+                  <HugeiconsIcon
+                    icon={iconEntry.component}
+                    className="size-5"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </AppDialog>
 
       <AppDialog
@@ -1525,10 +1929,18 @@ export function CalendarPage() {
         size="lg"
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setIsLocalEventDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsLocalEventDialogOpen(false)}
+            >
               {cancel()}
             </Button>
-            <Button type="button" onClick={handleSaveLocalEvent} disabled={localCalendars.length === 0}>
+            <Button
+              type="button"
+              onClick={handleSaveLocalEvent}
+              disabled={localCalendars.length === 0}
+            >
               {localEventForm.id ? save() : calendar_add_event()}
             </Button>
           </>
@@ -1540,43 +1952,69 @@ export function CalendarPage() {
               <span className="font-medium text-foreground">{calendar()}</span>
               <select
                 value={localEventForm.calendarId}
-                onChange={(event) => setLocalEventForm((current) => ({ ...current, calendarId: event.target.value }))}
+                onChange={(event) =>
+                  setLocalEventForm((current) => ({
+                    ...current,
+                    calendarId: event.target.value,
+                  }))
+                }
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition-[border-color,box-shadow] outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
               >
                 {localCalendars.map((calendar) => {
-                    return (
-                      <option key={calendar.id} value={calendar.id}>
-                        {calendar.name}
-                      </option>
-                    );
-                  })}
+                  return (
+                    <option key={calendar.id} value={calendar.id}>
+                      {calendar.name}
+                    </option>
+                  );
+                })}
               </select>
             </label>
 
             <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{calendar_event_title()}</span>
+              <span className="font-medium text-foreground">
+                {calendar_event_title()}
+              </span>
               <Input
                 value={localEventForm.title}
-                onChange={(event) => setLocalEventForm((current) => ({ ...current, title: event.target.value }))}
+                onChange={(event) =>
+                  setLocalEventForm((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
                 placeholder={calendar_event_title_placeholder()}
               />
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">{calendar_start()}</span>
+                <span className="font-medium text-foreground">
+                  {calendar_start()}
+                </span>
                 <Input
                   type="datetime-local"
                   value={localEventForm.startAt}
-                  onChange={(event) => setLocalEventForm((current) => ({ ...current, startAt: event.target.value }))}
+                  onChange={(event) =>
+                    setLocalEventForm((current) => ({
+                      ...current,
+                      startAt: event.target.value,
+                    }))
+                  }
                 />
               </label>
               <label className="grid gap-2 text-sm">
-                <span className="font-medium text-foreground">{calendar_end()}</span>
+                <span className="font-medium text-foreground">
+                  {calendar_end()}
+                </span>
                 <Input
                   type="datetime-local"
                   value={localEventForm.endAt}
-                  onChange={(event) => setLocalEventForm((current) => ({ ...current, endAt: event.target.value }))}
+                  onChange={(event) =>
+                    setLocalEventForm((current) => ({
+                      ...current,
+                      endAt: event.target.value,
+                    }))
+                  }
                 />
               </label>
             </div>
@@ -1585,21 +2023,32 @@ export function CalendarPage() {
               <input
                 type="checkbox"
                 checked={localEventForm.allDay}
-                onChange={(event) => setLocalEventForm((current) => ({ ...current, allDay: event.target.checked }))}
+                onChange={(event) =>
+                  setLocalEventForm((current) => ({
+                    ...current,
+                    allDay: event.target.checked,
+                  }))
+                }
                 className="size-4 rounded border-border"
               />
               {calendar_all_day_event()}
             </label>
 
             <label className="grid gap-2 text-sm">
-              <span className="font-medium text-foreground">{calendar_location()}</span>
+              <span className="font-medium text-foreground">
+                {calendar_location()}
+              </span>
               <Input
                 value={localEventForm.location}
-                onChange={(event) => setLocalEventForm((current) => ({ ...current, location: event.target.value }))}
+                onChange={(event) =>
+                  setLocalEventForm((current) => ({
+                    ...current,
+                    location: event.target.value,
+                  }))
+                }
                 placeholder={calendar_location_placeholder()}
               />
             </label>
-
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
@@ -1610,10 +2059,19 @@ export function CalendarPage() {
 
       <ConfirmDialog
         open={calendarPendingDelete !== null}
-        title={typeof calendar_delete_calendar === "function" ? calendar_delete_calendar() : delete_message()}
-        description={calendarPendingDelete && typeof calendar_delete_calendar_confirm === "function"
-          ? calendar_delete_calendar_confirm({ name: calendarPendingDelete.name })
-          : delete_message()}
+        title={
+          typeof calendar_delete_calendar === "function"
+            ? calendar_delete_calendar()
+            : delete_message()
+        }
+        description={
+          calendarPendingDelete &&
+          typeof calendar_delete_calendar_confirm === "function"
+            ? calendar_delete_calendar_confirm({
+                name: calendarPendingDelete.name,
+              })
+            : delete_message()
+        }
         confirmLabel={delete_message()}
         onOpenChange={(open) => {
           if (!open) setCalendarPendingDelete(null);
@@ -1684,7 +2142,10 @@ function formatLongDate(dayKey: string) {
   return longDateFormatter.format(parseDayKey(dayKey));
 }
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 function formatTime(value: string) {
   return timeFormatter.format(new Date(value));
@@ -1707,13 +2168,15 @@ function formatBoardColumnLabel(column: BoardTaskColumnId) {
   return "Completed";
 }
 
-function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getState>["tasks"]) {
-  return tasks
-    .flatMap((task) => {
-      if (!task.dueDate) return [];
-      const startAt = `${task.dueDate}T09:00`;
-      const endAt = `${task.dueDate}T10:00`;
-      return [{
+function boardTasksToCalendarEvents(
+  tasks: ReturnType<typeof useBoardStore.getState>["tasks"],
+) {
+  return tasks.flatMap((task) => {
+    if (!task.dueDate) return [];
+    const startAt = `${task.dueDate}T09:00`;
+    const endAt = `${task.dueDate}T10:00`;
+    return [
+      {
         id: `task-${task.id}`,
         calendarId: "board-tasks",
         title: task.title,
@@ -1724,11 +2187,14 @@ function boardTasksToCalendarEvents(tasks: ReturnType<typeof useBoardStore.getSt
         allDay: false,
         provider: "local" as const,
         source: "task" as const,
-      }];
-    });
+      },
+    ];
+  });
 }
 
-function plannerRemindersToCalendarEvents(reminders: PlannerReminder[]): ReminderRenderableEvent[] {
+function plannerRemindersToCalendarEvents(
+  reminders: PlannerReminder[],
+): ReminderRenderableEvent[] {
   return reminders.flatMap((reminder) => {
     if (reminder.completed) return [];
 
@@ -1737,23 +2203,27 @@ function plannerRemindersToCalendarEvents(reminders: PlannerReminder[]): Reminde
     const range = nextOccurrence ? reminderToDateRange(nextOccurrence) : null;
     if (!range) return [];
 
-    return [{
-      id: `reminder-${reminder.id}`,
-      calendarId: "planner-reminders",
-      title: reminder.title,
-      description: reminder.notes || displayText || "",
-      location: "",
-      startAt: range.startAt,
-      endAt: range.endAt,
-      allDay: false,
-      provider: "local",
-      source: "task",
-      status: "reminder",
-    }];
+    return [
+      {
+        id: `reminder-${reminder.id}`,
+        calendarId: "planner-reminders",
+        title: reminder.title,
+        description: reminder.notes || displayText || "",
+        location: "",
+        startAt: range.startAt,
+        endAt: range.endAt,
+        allDay: false,
+        provider: "local",
+        source: "task",
+        status: "reminder",
+      },
+    ];
   });
 }
 
-function reminderToDateRange(start: Date): { startAt: string; endAt: string } | null {
+function reminderToDateRange(
+  start: Date,
+): { startAt: string; endAt: string } | null {
   if (Number.isNaN(start.getTime())) {
     return null;
   }

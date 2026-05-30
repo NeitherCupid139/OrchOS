@@ -6,6 +6,7 @@ import { bookmarkCategories, bookmarks } from "@/server/db/schema";
 import type { AppDb } from "@/server/db/types";
 import { getAIGatewayConfig } from "@/server/ai-gateway";
 import { createModelFromAgent } from "@/server/ai/provider";
+import { CustomAgentService } from "@/server/modules/custom-agents/service";
 import { getBuiltInAgent } from "@/lib/built-in-agent";
 
 type BookmarkItem = {
@@ -43,6 +44,32 @@ function normalizeCategoryName(name: string) {
 
 function categoryKey(name: string) {
   return normalizeCategoryName(name).toLowerCase();
+}
+
+async function getDefaultBookmarkAgentModelInput(db: AppDb) {
+  const customAgentService = new CustomAgentService(db);
+  const defaultAgentId = await customAgentService.getDefaultAgentId();
+  const gatewayConfig = await getAIGatewayConfig();
+
+  if (defaultAgentId) {
+    const agents = await customAgentService.list();
+    const agent = agents.find((item) => item.id === defaultAgentId);
+
+    if (agent) {
+      return {
+        url: agent.url,
+        apiKey: agent.apiKey,
+        model: agent.model,
+        gatewayConfig,
+      };
+    }
+  }
+
+  const builtIn = getBuiltInAgent();
+  return {
+    model: builtIn.model,
+    gatewayConfig,
+  };
 }
 
 export abstract class BookmarkService {
@@ -303,11 +330,9 @@ export abstract class BookmarkService {
       return categories;
     }
 
-    const builtIn = getBuiltInAgent();
-    const languageModel = await createModelFromAgent({
-      model: builtIn.model,
-      gatewayConfig: await getAIGatewayConfig(),
-    });
+    const languageModel = await createModelFromAgent(
+      await getDefaultBookmarkAgentModelInput(db),
+    );
 
     const { object } = await generateObject({
       model: languageModel,

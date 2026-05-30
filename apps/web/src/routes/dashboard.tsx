@@ -29,7 +29,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import type { SidebarView, Organization, Problem } from "@/lib/types";
+import type { SidebarView, Organization } from "@/lib/types";
 import {
   getCapabilityModeFromPath,
   getCapabilityPath,
@@ -220,13 +220,11 @@ const DashboardSidebar = memo(function DashboardSidebar({
 });
 
 const DashboardActivityPanel = memo(function DashboardActivityPanel({
-  problems,
   collapsed,
 }: {
-  problems: Problem[];
   collapsed: boolean;
 }) {
-  return <ActivityPanel problems={problems} collapsed={collapsed} />;
+  return <ActivityPanel collapsed={collapsed} />;
 });
 
 function DashboardContentInner() {
@@ -262,7 +260,6 @@ function DashboardContentInner() {
 
   const {
     organizations,
-    problems,
     settings,
     refreshAll,
     handleOrganizationCreate,
@@ -333,6 +330,29 @@ function DashboardContentInner() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  // Handle OAuth callback redirects with URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("oauth_error");
+    const tab = params.get("tab");
+
+    if (tab) {
+      setSettingsDefaultTab(tab as "general" | "notifications" | "mail" | "about");
+    }
+
+    if (tab === "mail" || error) {
+      setShowSettingsDialog(true);
+    }
+
+    if (error || tab) {
+      // Clean up the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("oauth_error");
+      url.searchParams.delete("tab");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, []);
 
   useEffect(() => {
@@ -449,7 +469,7 @@ function DashboardContentInner() {
               onClick={toggleActivityPanel}
             />
             <div className="fixed right-0 top-0 z-50 h-full w-full max-w-sm transition-transform duration-300 ease-out translate-x-0">
-              <DashboardActivityPanel problems={problems} collapsed={false} />
+              <DashboardActivityPanel collapsed={false} />
             </div>
           </>
         )}
@@ -565,10 +585,7 @@ function DashboardContentInner() {
             </div>
           </div>
           {!isMobile && (
-            <DashboardActivityPanel
-              problems={problems}
-              collapsed={!activityPanelOpen}
-            />
+            <DashboardActivityPanel collapsed={!activityPanelOpen} />
           )}
         </div>
         <Suspense fallback={null}>

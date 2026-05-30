@@ -17,13 +17,14 @@ import {
   Settings01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useUIStore } from "@/lib/store";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { LocalDevicesView } from "@/components/panels/LocalDevicesView";
 import { ObservabilityView } from "@/components/panels/ObservabilityView";
 import { api, type CustomAgent } from "@/lib/api";
 import { getBuiltInAgent } from "@/lib/built-in-agent";
+import { isProEnabled } from "@/lib/pro-loader";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -54,6 +55,8 @@ import {
   agent_provider_placeholder,
   agent_url_help,
   agents,
+  agents_pro_required_cta,
+  agents_pro_required_title,
   api_key,
   api_key_placeholder,
   cancel,
@@ -140,12 +143,16 @@ function ProviderIcon({ url, className }: { url: string; className?: string }) {
 
 export function AgentsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const agentsView =
     new URLSearchParams(location.search).get("view") === "observability"
       ? "observability"
       : "config";
 
   const [customAgents, setCustomAgents] = useState<CustomAgent[]>([]);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<"free" | "pro">(
+    "free",
+  );
   const builtInAgent = useMemo(() => getBuiltInAgent(), []);
   const [defaultCustomAgentId, setDefaultCustomAgentId] = useState<
     string | null
@@ -166,10 +173,23 @@ export function AgentsPage() {
   );
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
+  const proFeaturesEnabled = isProEnabled();
+  const canCreateCustomAgents =
+    !proFeaturesEnabled || subscriptionPlan === "pro";
+
   useEffect(() => {
     let cancelled = false;
 
     void loadCustomAgents();
+    if (proFeaturesEnabled) {
+      void api
+        .getSubscription()
+        .then((subscription) => {
+          const plan = (subscription as { plan?: string } | null)?.plan;
+          if (!cancelled) setSubscriptionPlan(plan === "pro" ? "pro" : "free");
+        })
+        .catch(() => {});
+    }
     void api
       .getDefaultCustomAgentId()
       .then((id) => {
@@ -185,7 +205,7 @@ export function AgentsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [proFeaturesEnabled]);
 
   async function loadCustomAgents() {
     try {
@@ -236,6 +256,11 @@ export function AgentsPage() {
   }, [sidebarCollapsed]);
 
   function handleOpenConnect() {
+    if (!canCreateCustomAgents) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+
     setEditingAgentId(null);
     setAgentForm({ name: "", url: "", apiKey: "", model: "" });
     setAvailableModels([]);
@@ -249,6 +274,11 @@ export function AgentsPage() {
     if (!name.trim() || !url.trim() || !apiKey.trim() || !model.trim()) {
       return;
     }
+    if (!editingAgentId && !canCreateCustomAgents) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+
     try {
       const agents = editingAgentId
         ? await api.updateCustomAgent(editingAgentId, {
@@ -272,6 +302,12 @@ export function AgentsPage() {
       setIsConnectDialogOpen(false);
 
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Custom agents require Pro")
+      ) {
+        void navigate({ to: "/pricing" });
+      }
       console.error(error);
     }
   }
@@ -459,13 +495,17 @@ export function AgentsPage() {
                       size="icon-sm"
                       className="active:-translate-y-0"
                       onClick={handleOpenConnect}
-                      aria-label={add()}
+                      aria-label={
+                        canCreateCustomAgents ? add() : agents_pro_required_cta()
+                      }
                     >
                       <HugeiconsIcon icon={Add01Icon} className="size-4" />
                     </Button>
                   }
                 />
-                <TooltipContent side="bottom">{add()}</TooltipContent>
+                <TooltipContent side="bottom">
+                  {canCreateCustomAgents ? add() : agents_pro_required_title()}
+                </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -533,7 +573,9 @@ export function AgentsPage() {
                   </div>
                 </div>
                 <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary shrink-0">
-                  {builtInAgent.badge}
+                  {defaultCustomAgentId === null
+                    ? default_agent()
+                    : builtInAgent.badge}
                 </span>
               </div>
 
@@ -718,6 +760,10 @@ export function AgentsPage() {
             defaultCustomAgentId={defaultCustomAgentId}
             onSetDefaultCustomAgent={handleSetDefaultCustomAgent}
             onUpdateCustomAgent={handleUpdateCustomAgent}
+            canCreateCustomAgents={canCreateCustomAgents}
+            onUpgradeClick={() => {
+              void navigate({ to: "/pricing" });
+            }}
           />
         )}
       </div>

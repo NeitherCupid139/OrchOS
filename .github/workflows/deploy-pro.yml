@@ -41,11 +41,18 @@ jobs:
           sed -i "s|your-dodo-api-key|${{ secrets.DODO_PAYMENTS_API_KEY }}|g" apps/web/wrangler.jsonc
           sed -i "s|your-webhook-secret|${{ secrets.DODO_PAYMENTS_WEBHOOK_KEY }}|g" apps/web/wrangler.jsonc
           sed -i "s|https://orchos.dev/dashboard|${{ secrets.DODO_PAYMENTS_RETURN_URL }}|g" apps/web/wrangler.jsonc
+          sed -i "s|test_mode|${{ vars.DODO_PAYMENTS_ENVIRONMENT || 'test_mode' }}|g" apps/web/wrangler.jsonc
+          sed -i "s|your-dodo-pro-product-id|${{ secrets.DODO_PAYMENTS_PRO_PRODUCT_ID }}|g" apps/web/wrangler.jsonc
 
       - name: Build
         run: bun run build
         env:
           VITE_ENABLE_PRO: "true"
+
+      - name: Apply D1 migrations
+        run: bun run --filter=web db:migrate:remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy to Cloudflare
         run: bun run deploy:cf

@@ -356,7 +356,7 @@ export function SettingsDialog({
             dispatchMail({
               type: "SET_INTEGRATIONS",
               payload: result.filter(
-                (i) => i.id === "smtp-imap",
+                (i) => i.id === "smtp-imap" || i.id === "gmail",
               ) as SettingsMailIntegration[],
             });
           })
@@ -366,6 +366,17 @@ export function SettingsDialog({
       }
     }
   }, [open, defaultTab]);
+
+  // Check for OAuth error from Google callback redirect
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("oauth_error");
+    if (error) {
+      setOauthError(decodeURIComponent(error));
+    }
+  }, []);
+
   const [editingMailAccount, setEditingMailAccount] = useState<{
     integrationId: string;
     account: MailIntegrationAccount;
@@ -399,6 +410,7 @@ export function SettingsDialog({
   const [selectedEditProviderId, setSelectedEditProviderId] = useState<string>(
     EMAIL_PROVIDERS[0].id,
   );
+  const [oauthError, setOauthError] = useState<string | null>(null);
   const dataImportInputRef = useRef<HTMLInputElement | null>(null);
   const [dataTransferState, setDataTransferState] = useState<
     | "idle"
@@ -607,40 +619,56 @@ export function SettingsDialog({
     try {
       const smtpPort = parseInt(editMailForm.smtpPort, 10);
       const imapPort = parseInt(editMailForm.imapPort, 10);
-      const updated = await api.updateIntegrationAccount(
-        editingMailAccount.integrationId,
-        editingMailAccount.account.id,
-        {
-          label: editMailForm.label,
-          email: editMailForm.email,
-          username: editMailForm.username || undefined,
-          smtpImap: {
-            email: editMailForm.email,
-            displayName: editMailForm.displayName || undefined,
-            username: editMailForm.username,
-            password: editMailForm.password,
-            smtp: {
-              host: editMailForm.smtpHost,
-              port: isNaN(smtpPort) ? 587 : smtpPort,
-              secure: editMailForm.smtpSecure,
-            },
-            imap: {
-              host: editMailForm.imapHost,
-              port: isNaN(imapPort) ? 993 : imapPort,
-              secure: editMailForm.imapSecure,
-            },
-          },
+      const smtpImap = {
+        email: editMailForm.email,
+        displayName: editMailForm.displayName || undefined,
+        username: editMailForm.username,
+        password: editMailForm.password,
+        smtp: {
+          host: editMailForm.smtpHost,
+          port: isNaN(smtpPort) ? 587 : smtpPort,
+          secure: editMailForm.smtpSecure,
         },
-      );
-      dispatchMail({
-        type: "SET_INTEGRATIONS",
-        payload: mailState.mailIntegrations.map((i) =>
-          i.id === updated.id ? updated : i,
-        ),
-      });
+        imap: {
+          host: editMailForm.imapHost,
+          port: isNaN(imapPort) ? 993 : imapPort,
+          secure: editMailForm.imapSecure,
+        },
+      };
+
+      let updated: SettingsMailIntegration;
+
+      if (!editingMailAccount.account?.id) {
+        // Creating a new SMTP/IMAP account
+        updated = await api.createSmtpImapAccount(smtpImap);
+        // Reload integrations so the gmail integration is also up to date
+        const allIntegrations = await api.listIntegrations();
+        const mailIntegrations = allIntegrations.filter(
+          (i) => i.id === "smtp-imap" || i.id === "gmail",
+        ) as SettingsMailIntegration[];
+        dispatchMail({ type: "SET_INTEGRATIONS", payload: mailIntegrations });
+      } else {
+        // Updating an existing account
+        updated = await api.updateIntegrationAccount(
+          editingMailAccount.integrationId,
+          editingMailAccount.account.id,
+          {
+            label: editMailForm.label,
+            email: editMailForm.email,
+            username: editMailForm.username || undefined,
+            smtpImap,
+          },
+        );
+        dispatchMail({
+          type: "SET_INTEGRATIONS",
+          payload: mailState.mailIntegrations.map((i) =>
+            i.id === updated.id ? updated : i,
+          ),
+        });
+      }
       setEditingMailAccount(null);
     } catch (err) {
-      console.error("Failed to update mail account:", err);
+      console.error("Failed to save mail account:", err);
     }
   }, [editingMailAccount, editMailForm]);
 
@@ -663,6 +691,32 @@ export function SettingsDialog({
     },
     [],
   );
+
+  /** Redirect to the server-side Google OAuth flow for Gmail. */
+  function connectGmailOAuth() {
+    window.location.href =
+      "/api/oauth/google?type=gmail&redirect=/dashboard/settings?tab=mail";
+  }
+
+  /** Open the edit dialog in "create" mode for a new SMTP/IMAP account. */
+  function openNewSmtpAccount() {
+    setEditMailForm({
+      label: "",
+      email: "",
+      username: "",
+      displayName: "",
+      smtpHost: EMAIL_PROVIDERS[0].smtp.host,
+      smtpPort: String(EMAIL_PROVIDERS[0].smtp.port),
+      smtpSecure: EMAIL_PROVIDERS[0].smtp.secure,
+      imapHost: EMAIL_PROVIDERS[0].imap.host,
+      imapPort: String(EMAIL_PROVIDERS[0].imap.port),
+      imapSecure: EMAIL_PROVIDERS[0].imap.secure,
+      password: "",
+    });
+    setSelectedEditProviderId(EMAIL_PROVIDERS[0].id);
+    // Use a special marker so handleSaveMailAccount knows to create instead of update
+    setEditingMailAccount({ integrationId: "smtp-imap", account: null as unknown as MailIntegrationAccount });
+  }
 
   const handleExportPlatformData = useCallback(async () => {
     setDataTransferState("exporting");
@@ -767,7 +821,7 @@ export function SettingsDialog({
                           dispatchMail({
                             type: "SET_INTEGRATIONS",
                             payload: result.filter(
-                              (i) => i.id === "smtp-imap",
+                              (i) => i.id === "smtp-imap" || i.id === "gmail",
                             ) as SettingsMailIntegration[],
                           });
                         })
@@ -1111,7 +1165,33 @@ export function SettingsDialog({
                       {mail_accounts_desc()}
                     </p>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={connectGmailOAuth}
+                    >
+                      <HugeiconsIcon icon={InboxIcon} className="size-3.5 mr-1.5" />
+                      Connect Gmail
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={openNewSmtpAccount}
+                    >
+                      <HugeiconsIcon icon={Edit02Icon} className="size-3.5 mr-1.5" />
+                      Add SMTP/IMAP
+                    </Button>
+                  </div>
                 </div>
+
+                {oauthError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+                    {oauthError}
+                  </div>
+                )}
 
                 {mailState.loadingMail ? (
                   <div className="flex items-center justify-center py-8">
@@ -1129,6 +1209,26 @@ export function SettingsDialog({
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       {mail_accounts_empty_hint()}
                     </p>
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={connectGmailOAuth}
+                      >
+                        <HugeiconsIcon icon={InboxIcon} className="size-3.5 mr-1.5" />
+                        Connect Gmail
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={openNewSmtpAccount}
+                      >
+                        <HugeiconsIcon icon={Edit02Icon} className="size-3.5 mr-1.5" />
+                        Add SMTP/IMAP
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">

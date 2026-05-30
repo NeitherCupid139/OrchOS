@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { isClerkConfigured } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { AppleSwitch } from "@/components/unlumen-ui/apple-switch";
 import { useLocale } from "@/lib/i18n-provider";
@@ -23,6 +25,7 @@ import {
   pricing_free_cta,
   pricing_free_price,
   pricing_free_feature_core,
+  pricing_free_feature_builtin_agent,
   pricing_free_feature_cloud,
   pricing_free_feature_sync,
   pricing_free_feature_tokens,
@@ -37,7 +40,6 @@ import {
   pricing_save_yearly,
   pricing_btn_get_started,
   pricing_toggle_label,
-  pricing_feature_agents,
   pricing_feature_api,
   pricing_feature_bookmarks,
   pricing_feature_calendar,
@@ -46,6 +48,8 @@ import {
   pricing_feature_agents_label,
   pricing_feature_column,
   pricing_feature_unlimited_agents,
+  pricing_compare_builtin_agent,
+  pricing_compare_custom_agents,
   pricing_pro_feature_agents,
   pricing_pro_feature_web_search,
   pricing_pro_feature_everything_free,
@@ -67,7 +71,7 @@ import {
 const GITHUB_REPO = "https://github.com/NeitherCupid139/OrchOS";
 
 export const Route = createFileRoute("/pricing")({
-  component: Pricing,
+  component: PricingRoute,
 });
 
 type Tier = {
@@ -118,7 +122,7 @@ function useTiers(): Tier[] {
         popular: false,
         href: "/sign-up",
         features: [
-          pricing_feature_agents({ count: "5" }),
+          pricing_free_feature_builtin_agent(),
           pricing_free_feature_core(),
           pricing_free_feature_cloud(),
           pricing_free_feature_sync(),
@@ -157,8 +161,8 @@ function useCompareFeatures() {
       {
         label: pricing_feature_agents_label(),
         oss: "Unlimited",
-        free: "10",
-        pro: "10",
+        free: pricing_compare_builtin_agent(),
+        pro: pricing_compare_custom_agents({ count: "10" }),
       },
       {
         label: pricing_feature_bookmarks(),
@@ -245,9 +249,26 @@ function MinusIcon({ className }: { className?: string }) {
   );
 }
 
-function Pricing() {
-  const [yearly, setYearly] = useState(false);
+function PricingRoute() {
+  if (!isClerkConfigured()) {
+    return <Pricing isSignedIn={false} />;
+  }
+
+  return (
+    <AuthProvider>
+      <PricingWithAuth />
+    </AuthProvider>
+  );
+}
+
+function PricingWithAuth() {
   const { isSignedIn } = useUser();
+
+  return <Pricing isSignedIn={Boolean(isSignedIn)} />;
+}
+
+function Pricing({ isSignedIn }: { isSignedIn: boolean }) {
+  const [yearly, setYearly] = useState(false);
   const tiers = useTiers();
   const compareFeatures = useCompareFeatures();
   const faqs = useFaqs();

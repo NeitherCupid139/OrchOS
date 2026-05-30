@@ -160,6 +160,10 @@ const categoryIconOptions: IconOption[] = [
   { value: "school", icon: SchoolIcon },
 ];
 
+const BOOKMARK_ROW_ESTIMATE = 124;
+const BOOKMARK_ROW_OVERSCAN = 8;
+const BOOKMARK_VIRTUALIZATION_ROW_THRESHOLD = 40;
+
 function getBookmarkCategoryIcon(icon: string) {
   const option = categoryIconOptions.find((o) => o.value === icon);
   if (option) return option.icon;
@@ -611,7 +615,7 @@ const BookmarkCard = memo(
         onDragOver={(event) => event.preventDefault()}
         onDrop={() => onDropReorder(bookmark.id)}
         className={cn(
-          "group h-[108px] rounded-2xl bg-card p-4 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96] [contain-intrinsic-size:108px] [content-visibility:auto]",
+          "group h-[108px] rounded-2xl bg-card p-4 transition-[background-color,scale,box-shadow] duration-200 ease-out hover:bg-accent/30 active:scale-[0.96]",
           !bookmark.pinned &&
             "ring-1 ring-black/[0.06] hover:ring-black/[0.08] dark:ring-white/[0.08] dark:hover:ring-white/[0.13]",
           bookmark.pinned && "border border-primary/30 bg-primary/[0.02]",
@@ -1152,7 +1156,6 @@ export function BookmarksPage() {
     return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [normalizedSearchQuery, selectedCategory]);
 
-  const contentContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const breakpoint = useBreakpoint();
   const columns =
@@ -1162,12 +1165,15 @@ export function BookmarksPage() {
     () => Math.ceil(filteredBookmarks.length / columns),
     [filteredBookmarks.length],
   );
+  const shouldVirtualizeBookmarks =
+    rowCount > BOOKMARK_VIRTUALIZATION_ROW_THRESHOLD;
 
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => viewportRef.current,
-    estimateSize: () => 124,
-    overscan: 1,
+    estimateSize: () => BOOKMARK_ROW_ESTIMATE,
+    overscan: BOOKMARK_ROW_OVERSCAN,
+    enabled: shouldVirtualizeBookmarks,
   });
 
   const handleEditBookmark = useCallback(
@@ -1603,60 +1609,86 @@ export function BookmarksPage() {
                   )}
 
                   {filteredBookmarks.length > 0 ? (
-                    <div ref={contentContainerRef} className="min-h-0 flex-1">
-                      <div
-                        style={{
-                          height: virtualizer.getTotalSize(),
-                          position: "relative",
-                          width: "100%",
-                        }}
-                      >
-                        {virtualizer.getVirtualItems().map((virtualRow) => {
-                          const startIndex = virtualRow.index * columns;
-                          const rowBookmarks = filteredBookmarks.slice(
-                            startIndex,
-                            startIndex + columns,
-                          );
+                    shouldVirtualizeBookmarks ? (
+                      <div className="min-h-0 flex-1">
+                        <div
+                          style={{
+                            height: virtualizer.getTotalSize(),
+                            position: "relative",
+                            width: "100%",
+                          }}
+                        >
+                          {virtualizer.getVirtualItems().map((virtualRow) => {
+                            const startIndex = virtualRow.index * columns;
+                            const rowBookmarks = filteredBookmarks.slice(
+                              startIndex,
+                              startIndex + columns,
+                            );
 
-                          return (
-                            <div
-                              key={virtualRow.key}
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
+                            return (
                               <div
-                                className="grid gap-4"
+                                key={virtualRow.key}
                                 style={{
-                                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  transform: `translateY(${virtualRow.start}px)`,
                                 }}
                               >
-                                {rowBookmarks.map((bookmark) => (
-                                  <BookmarkCard
-                                    key={bookmark.id}
-                                    bookmark={bookmark}
-                                    categoryId={selectedCategory.id}
-                                    pinPending={pendingPinBookmarkIds.includes(
-                                      bookmark.id,
-                                    )}
-                                    onTogglePin={handleTogglePin}
-                                    onEdit={handleEditBookmark}
-                                    onDelete={handleDeleteBookmark}
-                                    onDragStart={handleBookmarkDragStart}
-                                    onDragEnd={handleBookmarkDragEnd}
-                                    onDropReorder={handleBookmarkDropReorder}
-                                  />
-                                ))}
+                                <div
+                                  className="grid gap-4"
+                                  style={{
+                                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                                  }}
+                                >
+                                  {rowBookmarks.map((bookmark) => (
+                                    <BookmarkCard
+                                      key={bookmark.id}
+                                      bookmark={bookmark}
+                                      categoryId={selectedCategory.id}
+                                      pinPending={pendingPinBookmarkIds.includes(
+                                        bookmark.id,
+                                      )}
+                                      onTogglePin={handleTogglePin}
+                                      onEdit={handleEditBookmark}
+                                      onDelete={handleDeleteBookmark}
+                                      onDragStart={handleBookmarkDragStart}
+                                      onDragEnd={handleBookmarkDragEnd}
+                                      onDropReorder={handleBookmarkDropReorder}
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div
+                        className="grid gap-4"
+                        style={{
+                          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                        }}
+                      >
+                        {filteredBookmarks.map((bookmark) => (
+                          <BookmarkCard
+                            key={bookmark.id}
+                            bookmark={bookmark}
+                            categoryId={selectedCategory.id}
+                            pinPending={pendingPinBookmarkIds.includes(
+                              bookmark.id,
+                            )}
+                            onTogglePin={handleTogglePin}
+                            onEdit={handleEditBookmark}
+                            onDelete={handleDeleteBookmark}
+                            onDragStart={handleBookmarkDragStart}
+                            onDragEnd={handleBookmarkDragEnd}
+                            onDropReorder={handleBookmarkDropReorder}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-1 items-center justify-center">
                       <EmptyState

@@ -36,6 +36,8 @@ import { Route as ApiCustomerPortalRouteImport } from './routes/api.customer-por
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
+import { Route as ApiOauthGoogleRouteImport } from './routes/api.oauth.google'
+import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api.oauth.google.callback'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -172,6 +174,16 @@ const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthGoogleRoute = ApiOauthGoogleRouteImport.update({
+  id: '/api/oauth/google',
+  path: '/api/oauth/google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOauthGoogleCallbackRoute = ApiOauthGoogleCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => ApiOauthGoogleRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -200,7 +212,9 @@ export interface FileRoutesByFullPath {
   '/dashboard/mail': typeof DashboardMailRoute
   '/dashboard/observability': typeof DashboardObservabilityRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/oauth/google': typeof ApiOauthGoogleRouteWithChildren
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -228,7 +242,9 @@ export interface FileRoutesByTo {
   '/dashboard/mail': typeof DashboardMailRoute
   '/dashboard/observability': typeof DashboardObservabilityRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/oauth/google': typeof ApiOauthGoogleRouteWithChildren
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -258,7 +274,9 @@ export interface FileRoutesById {
   '/dashboard/mail': typeof DashboardMailRoute
   '/dashboard/observability': typeof DashboardObservabilityRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/oauth/google': typeof ApiOauthGoogleRouteWithChildren
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -289,7 +307,9 @@ export interface FileRouteTypes {
     | '/dashboard/mail'
     | '/dashboard/observability'
     | '/dashboard/'
+    | '/api/oauth/google'
     | '/api/rpc/$'
+    | '/api/oauth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -317,7 +337,9 @@ export interface FileRouteTypes {
     | '/dashboard/mail'
     | '/dashboard/observability'
     | '/dashboard'
+    | '/api/oauth/google'
     | '/api/rpc/$'
+    | '/api/oauth/google/callback'
   id:
     | '__root__'
     | '/'
@@ -346,7 +368,9 @@ export interface FileRouteTypes {
     | '/dashboard/mail'
     | '/dashboard/observability'
     | '/dashboard/'
+    | '/api/oauth/google'
     | '/api/rpc/$'
+    | '/api/oauth/google/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -367,6 +391,7 @@ export interface RootRouteChildren {
   ApiGithubStarsRoute: typeof ApiGithubStarsRoute
   ApiTurnstileVerifyRoute: typeof ApiTurnstileVerifyRoute
   ApiWebhookRoute: typeof ApiWebhookRoute
+  ApiOauthGoogleRoute: typeof ApiOauthGoogleRouteWithChildren
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
@@ -561,6 +586,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/google': {
+      id: '/api/oauth/google'
+      path: '/api/oauth/google'
+      fullPath: '/api/oauth/google'
+      preLoaderRoute: typeof ApiOauthGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/oauth/google/callback': {
+      id: '/api/oauth/google/callback'
+      path: '/callback'
+      fullPath: '/api/oauth/google/callback'
+      preLoaderRoute: typeof ApiOauthGoogleCallbackRouteImport
+      parentRoute: typeof ApiOauthGoogleRoute
+    }
   }
 }
 
@@ -592,6 +631,18 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface ApiOauthGoogleRouteChildren {
+  ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
+}
+
+const ApiOauthGoogleRouteChildren: ApiOauthGoogleRouteChildren = {
+  ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
+}
+
+const ApiOauthGoogleRouteWithChildren = ApiOauthGoogleRoute._addFileChildren(
+  ApiOauthGoogleRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -610,6 +661,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGithubStarsRoute: ApiGithubStarsRoute,
   ApiTurnstileVerifyRoute: ApiTurnstileVerifyRoute,
   ApiWebhookRoute: ApiWebhookRoute,
+  ApiOauthGoogleRoute: ApiOauthGoogleRouteWithChildren,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport

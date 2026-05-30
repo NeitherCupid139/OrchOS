@@ -18,6 +18,7 @@ import type { BuiltInAgent } from "@/lib/built-in-agent";
 import {
   api_key,
   app_version,
+  built_in_agent_desc,
   cancel,
   connect_agent,
   connect_local_device,
@@ -32,6 +33,9 @@ import {
   offline,
   online,
   pair_any_machine_desc,
+  agents_pro_required_cta,
+  agents_pro_required_desc,
+  agents_pro_required_title,
   registered,
   runtimes,
   save,
@@ -49,6 +53,8 @@ type SelectedAgent =
 
 interface LocalDevicesViewProps {
   onConnectClick: () => void;
+  canCreateCustomAgents?: boolean;
+  onUpgradeClick?: () => void;
   selectedAgent: SelectedAgent;
   defaultCustomAgentId?: string | null;
   onSetDefaultCustomAgent?: (agentId: string | null) => void | Promise<void>;
@@ -60,6 +66,8 @@ interface LocalDevicesViewProps {
 
 export function LocalDevicesView({
   onConnectClick,
+  canCreateCustomAgents = true,
+  onUpgradeClick,
   selectedAgent,
   defaultCustomAgentId = null,
   onSetDefaultCustomAgent,
@@ -67,6 +75,7 @@ export function LocalDevicesView({
 }: LocalDevicesViewProps) {
   if (selectedAgent?.kind === "builtin") {
     const { agent } = selectedAgent;
+    const isDefault = defaultCustomAgentId === null;
 
     return (
       <div className="flex min-h-0 flex-1 bg-background p-6">
@@ -78,19 +87,27 @@ export function LocalDevicesView({
                   <HugeiconsIcon icon={ComputerIcon} className="size-5" />
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
-                  {agent.badge}
+                  {isDefault ? default_agent() : agent.badge}
                 </span>
               </div>
               <h2 className="mt-4 text-xl font-semibold text-foreground">{agent.name}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Pre-configured agent. Available to all users. Usage limits apply based on your plan.
+                {built_in_agent_desc()}
               </p>
             </div>
+            {!isDefault ? (
+              <Button
+                type="button"
+                onClick={() => onSetDefaultCustomAgent?.(null)}
+              >
+                {set_as_default()}
+              </Button>
+            ) : null}
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DetailCard label="Endpoint" value={agent.url} mono />
-            <DetailCard label="Model" value={agent.model} mono />
+            <DetailCard label={endpoint()} value={agent.url} mono />
+            <DetailCard label={model()} value={agent.model} mono />
           </div>
         </section>
       </div>
@@ -179,17 +196,29 @@ export function LocalDevicesView({
       <EmptyState
         variant="subtle"
         size="lg"
-        title={connect_local_device()}
-        description={pair_any_machine_desc()}
+        title={
+          canCreateCustomAgents
+            ? connect_local_device()
+            : agents_pro_required_title()
+        }
+        description={
+          canCreateCustomAgents
+            ? pair_any_machine_desc()
+            : agents_pro_required_desc()
+        }
         icons={[
           <HugeiconsIcon key="d1" icon={ComputerIcon} className="size-6" />,
           <HugeiconsIcon key="d2" icon={LinkSquare02Icon} className="size-6" />,
           <HugeiconsIcon key="d3" icon={Add01Icon} className="size-6" />,
         ]}
         action={{
-          label: connect_agent(),
+          label: canCreateCustomAgents
+            ? connect_agent()
+            : agents_pro_required_cta(),
           icon: <HugeiconsIcon icon={Add01Icon} className="size-4" />,
-          onClick: onConnectClick,
+          onClick: canCreateCustomAgents
+            ? onConnectClick
+            : (onUpgradeClick ?? onConnectClick),
         }}
         className="w-full max-w-lg"
       />

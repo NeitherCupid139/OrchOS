@@ -14,7 +14,6 @@ import {
   InboxSourceTabs,
   type SourceFilter,
 } from "@/components/layout/InboxSourceTabs";
-import { NotificationPopover } from "@/components/panels/NotificationPopover";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, PanelLeft, PanelRight, Settings02Icon, CodeIcon } from "@hugeicons/core-free-icons";
 import { accounts, add, close_activity_panel, open_activity_panel } from "@/paraglide/messages";
@@ -199,8 +198,6 @@ export function Toolbar({
             <TooltipContent side="bottom">{add()}</TooltipContent>
           </Tooltip>
         ) : null}
-
-        <NotificationPopover />
 
         {activeView === "mail" ? (
           <Button variant="outline" size="sm" onClick={onOpenMailAccounts}>

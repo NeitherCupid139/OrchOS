@@ -342,6 +342,102 @@ export class IntegrationService {
     return this.sanitizeIntegration(integration);
   }
 
+  /**
+   * Exchange an OAuth authorization code for tokens and connect a Google integration.
+   * Uses the server-side Google OAuth app credentials (env vars) instead of requiring
+   * the user to bring their own clientId/clientSecret.
+   */
+  async connectGoogleWithAuthCode(
+    id: "google-calendar" | "gmail",
+    code: string,
+    redirectUri: string,
+  ) {
+    const clientId = (process.env.GOOGLE_OAUTH_CLIENT_ID ?? "").trim();
+    const clientSecret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "").trim();
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Google OAuth is not configured on this server. Set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET.");
+    }
+
+    // Exchange authorization code for tokens
+    const tokenBody = new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    });
+
+    const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: tokenBody,
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text().catch(() => "Unknown error");
+      throw new Error(`Failed to exchange authorization code: ${errorText}`);
+    }
+
+    const tokenPayload = (await tokenResponse.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      scope?: string;
+      error?: string;
+    };
+
+    if (!tokenPayload.access_token) {
+      throw new Error(`Google token response did not include an access token: ${tokenPayload.error ?? "unknown error"}`);
+    }
+
+    if (!tokenPayload.refresh_token) {
+      throw new Error("Google did not return a refresh token. The user may have already authorized this app. They need to revoke access and try again, or add `prompt=consent` to the auth URL.");
+    }
+
+    const scopes = tokenPayload.scope?.split(" ").filter(Boolean) ?? [];
+    const requiredScopes = id === "google-calendar" ? GOOGLE_OAUTH_SCOPES.calendar : GOOGLE_OAUTH_SCOPES.gmail;
+
+    if (!this.ensureScopes(scopes, requiredScopes)) {
+      throw new Error("Google account is missing required scopes. Please re-authorize with all requested permissions.");
+    }
+
+    // Fetch profile
+    const profile = await this.fetchGoogleProfile(tokenPayload.access_token);
+
+    // Store the integration with the server-side credentials
+    const credentials: OAuthCredentials = {
+      clientId,
+      clientSecret,
+      refreshToken: tokenPayload.refresh_token,
+    };
+
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, id);
+
+    const account: IntegrationAccount = {
+      id: this.createAccountId(id),
+      label: profile.label,
+      email: profile.email,
+      username: profile.email,
+      scopes,
+      connectedAt: new Date().toISOString(),
+      oauth: credentials,
+    };
+
+    const existingIndex = integration.accounts.findIndex((item) => item.email === profile.email);
+    if (existingIndex >= 0) {
+      integration.accounts[existingIndex] = account;
+    } else {
+      integration.accounts.push(account);
+    }
+
+    integration.accessToken = tokenPayload.access_token;
+    integration.username = profile.email;
+    this.recomputeConnectionState(integration);
+    await this.saveIntegrations(integrations);
+    return this.sanitizeIntegration(integration);
+  }
+
   async createSmtpImapAccount(body: {
     email: string;
     displayName?: string;

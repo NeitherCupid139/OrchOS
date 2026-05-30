@@ -1,41 +1,128 @@
+import { useCallback, useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Alert01Icon,
+  ComputerIcon,
   InformationCircleIcon,
+  NotificationIcon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
-import type { Problem } from "@/lib/types";
-import { activity_panel, needs_attention, open_items } from "@/paraglide/messages";
+import { api } from "@/lib/api";
+import type { Event } from "@/lib/api.types";
+import {
+  activity_panel,
+  no_notifications,
+  no_notifications_desc,
+} from "@/paraglide/messages";
+
+const POLL_INTERVAL = 30_000;
+const MAX_NOTIFICATIONS = 20;
 
 interface ActivityPanelProps {
-  problems: Problem[];
   collapsed: boolean;
   expanded?: boolean;
 }
 
-function getAttentionItems(problems: Problem[]) {
-  return problems.filter((problem) => problem.status === "open").slice(0, 8);
-}
+const EVENT_TYPE_META: Record<
+  string,
+  { label: string; icon: typeof InformationCircleIcon }
+> = {
+  agent_response: { label: "Agent", icon: ComputerIcon },
+  agent_started: { label: "Agent", icon: ComputerIcon },
+  agent_completed: { label: "Agent", icon: ComputerIcon },
+  agent_error: { label: "Agent Error", icon: Alert01Icon },
+  system: { label: "System", icon: InformationCircleIcon },
+  system_update: { label: "System", icon: InformationCircleIcon },
+  reminder: { label: "Reminder", icon: InformationCircleIcon },
+  integration: { label: "Integration", icon: Tick02Icon },
+};
 
-function SectionHeader({ title, meta }: { title: string; meta?: string }) {
+function getEventMeta(type: string) {
   return (
-    <div className="mb-2 flex items-center gap-2 px-3">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
-        {title}
-      </div>
-      <div className="h-px flex-1 bg-border/50" />
-      {meta ? <div className="text-[10px] text-muted-foreground/50">{meta}</div> : null}
-    </div>
+    EVENT_TYPE_META[type] ?? {
+      label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      icon: InformationCircleIcon,
+    }
   );
 }
 
-export function ActivityPanel({ problems, collapsed, expanded }: ActivityPanelProps) {
+function formatRelativeTime(timestamp: string): string {
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diff = now - then;
+
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
+
+function extractEventPreview(event: Event): {
+  title: string;
+  description?: string;
+} {
+  const typeMeta = getEventMeta(event.type);
+  const payload = event.payload ?? {};
+
+  if (typeof payload.title === "string") {
+    return {
+      title: payload.title,
+      description:
+        typeof payload.description === "string"
+          ? payload.description
+          : undefined,
+    };
+  }
+
+  if (typeof payload.message === "string") {
+    return { title: typeMeta.label, description: payload.message };
+  }
+
+  const content =
+    typeof payload.content === "string"
+      ? payload.content
+      : typeof payload.summary === "string"
+        ? payload.summary
+        : null;
+
+  if (content) {
+    return { title: typeMeta.label, description: content };
+  }
+
+  return { title: typeMeta.label };
+}
+
+export function ActivityPanel({ collapsed, expanded }: ActivityPanelProps) {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      const metrics = await api.getObservabilityMetrics("24h");
+      setEvents(metrics?.recentEvents?.slice(0, MAX_NOTIFICATIONS) ?? []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (collapsed) return;
+
+    void fetchEvents();
+    const interval = window.setInterval(fetchEvents, POLL_INTERVAL);
+    return () => window.clearInterval(interval);
+  }, [collapsed, fetchEvents]);
+
   if (collapsed) {
     return null;
   }
 
-  const attentionItems = getAttentionItems(problems);
+  const hasNotifications = events.length > 0;
 
   return (
     <aside
@@ -51,38 +138,67 @@ export function ActivityPanel({ problems, collapsed, expanded }: ActivityPanelPr
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="space-y-4 py-3">
-          {attentionItems.length > 0 ? (
-            <section>
-              <SectionHeader
-                title={needs_attention()}
-                meta={open_items({ count: attentionItems.length })}
-              />
-              <div className="space-y-2 px-3">
-                {attentionItems.map((problem) => (
-                  <div key={problem.id} className="rounded-lg border border-border/50 bg-background/70 px-3 py-2">
-                    <div className="flex items-start gap-2">
-                      <HugeiconsIcon
-                        icon={problem.priority === "critical" ? Alert01Icon : InformationCircleIcon}
-                        className={cn(
-                          "mt-0.5 size-3.5 shrink-0",
-                          problem.priority === "critical" ? "text-destructive" : "text-amber-500",
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium text-foreground/85">{problem.title}</div>
-                        {problem.context ? (
-                          <div className="mt-1 line-clamp-3 text-[11px] text-muted-foreground/75">{problem.context}</div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
+        {loading && events.length === 0 ? (
+          <div className="flex h-40 items-center justify-center">
+            <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60" />
+          </div>
+        ) : !hasNotifications ? (
+          <div className="flex h-56 flex-col items-center justify-center px-4 text-center">
+            <HugeiconsIcon
+              icon={NotificationIcon}
+              className="mb-3 size-8 text-muted-foreground/30"
+            />
+            <p className="text-sm font-medium text-muted-foreground">
+              {no_notifications()}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              {no_notifications_desc()}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {events.map((event) => {
+              const meta = getEventMeta(event.type);
+              const preview = extractEventPreview(event);
 
-        </div>
+              return (
+                <div
+                  key={event.id}
+                  className="flex gap-3 px-4 py-3 transition-colors hover:bg-accent/50"
+                >
+                  <div
+                    className={cn(
+                      "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
+                      event.type.includes("error")
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <HugeiconsIcon icon={meta.icon} className="size-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {preview.title}
+                      </p>
+                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/60">
+                        {formatRelativeTime(event.timestamp)}
+                      </span>
+                    </div>
+                    {preview.description ? (
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {preview.description}
+                      </p>
+                    ) : null}
+                    <p className="mt-0.5 text-[10px] text-muted-foreground/50">
+                      {meta.label}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </ScrollArea>
     </aside>
   );
