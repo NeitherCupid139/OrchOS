@@ -302,12 +302,13 @@ export function ComposePanel({
                       setForm((f) => ({ ...f, subject: e.target.value }))
                     }
                     placeholder={subject_placeholder()}
+                    aria-label={mail_subject()}
                     className="flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60"
                   />
                 </div>
 
                 {/* Body - Rich text editor */}
-                <div className="px-3 py-3">
+                <div className="p-3">
                   <RichTextEditor
                     value={form.bodyHtml}
                     onChange={(html) =>

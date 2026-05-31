@@ -403,12 +403,13 @@ function SpecializedToolCard({ toolType, input, output }: { toolType: string; in
   return <ToolDetailCard input={input} output={output} />;
 }
 
-function formatCurrentTime(iso: string, timezone?: string) {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso;
+const timeFormatCache = new Map<string, Intl.DateTimeFormat>();
 
-  try {
-    return new Intl.DateTimeFormat(undefined, {
+function getTimeFormatter(timezone?: string) {
+  const key = timezone ?? "_default_";
+  let formatter = timeFormatCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(undefined, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -417,7 +418,18 @@ function formatCurrentTime(iso: string, timezone?: string) {
       second: "2-digit",
       timeZone: timezone,
       timeZoneName: "short",
-    }).format(parsed);
+    });
+    timeFormatCache.set(key, formatter);
+  }
+  return formatter;
+}
+
+function formatCurrentTime(iso: string, timezone?: string) {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+
+  try {
+    return getTimeFormatter(timezone).format(parsed);
   } catch {
     return iso;
   }

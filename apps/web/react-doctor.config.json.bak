@@ -7,28 +7,16 @@
       "react-doctor/no-cascading-set-state",
       "react-doctor/no-polymorphic-children",
       "react-doctor/rerender-state-only-in-handlers",
-      "react-doctor/async-parallel",
-      "react-doctor/exhaustive-deps",
-      "react-doctor/no-event-handler",
-      "react-doctor/no-chain-state-updates",
-      "react-doctor/no-initialize-state",
-      "react-doctor/no-render-in-render",
-      "react-doctor/no-derived-useState",
-      "react-doctor/no-effect-chain",
-      "react-doctor/no-reset-all-state-on-prop-change",
-      "react-doctor/no-derived-state",
-      "react-doctor/no-derived-state-effect",
-      "react-doctor/advanced-event-handler-refs",
-      "react-doctor/prefer-use-effect-event",
-      "react-doctor/jsx-no-constructed-context-values",
-      "react-doctor/jsx-no-jsx-as-prop",
-      "react-doctor/js-combine-iterations",
-      "react-doctor/only-export-components"
+      "react-doctor/async-parallel"
     ],
     "overrides": [
       {
         "files": ["src/components/ui/header-1.tsx"],
         "rules": ["react-doctor/no-fetch-in-effect"]
+      },
+      {
+        "files": ["src/routes/**/*.tsx"],
+        "rules": ["react-doctor/only-export-components"]
       },
       {
         "files": ["src/components/ui/chart.tsx", "src/components/panels/ObservabilityView.tsx"],
@@ -39,10 +27,7 @@
           "src/components/ui/ai-input.tsx",
           "src/components/ui/info-card.tsx",
           "src/components/panels/CreationView.tsx",
-          "src/components/unlumen-ui/apple-switch.tsx",
-          "src/components/panels/ChatArea.tsx",
-          "src/components/panels/ComposePanel.tsx",
-          "src/components/ui/framer-carousel.tsx"
+          "src/components/unlumen-ui/apple-switch.tsx"
         ],
         "rules": ["react-doctor/use-lazy-motion"]
       },
@@ -60,16 +45,22 @@
         "rules": ["deslop/unused-file"]
       },
       {
-        "files": ["src/lib/orpc/contracts/**"],
+        "files": [
+          "src/lib/orpc/contracts/custom-agents.ts",
+          "src/lib/orpc/contracts/data-portability.ts",
+          "src/lib/orpc/contracts/filesystem.ts",
+          "src/lib/orpc/contracts/inbox.ts",
+          "src/lib/orpc/contracts/integrations.ts",
+          "src/lib/orpc/contracts/local-agents.ts",
+          "src/lib/orpc/contracts/observability.ts",
+          "src/lib/orpc/contracts/organizations.ts",
+          "src/lib/orpc/contracts/problems.ts",
+          "src/lib/orpc/contracts/projects.ts",
+          "src/lib/orpc/contracts/runtimes.ts",
+          "src/lib/orpc/contracts/settings.ts",
+          "src/lib/orpc/contracts/subscription.ts"
+        ],
         "rules": ["deslop/unused-export"]
-      },
-      {
-        "files": ["package.json"],
-        "rules": ["deslop/unused-dependency", "deslop/unused-dev-dependency"]
-      },
-      {
-        "files": ["src/components/dialogs/SettingsDialog.tsx"],
-        "rules": ["react-doctor/interactive-supports-focus"]
       }
     ]
   }

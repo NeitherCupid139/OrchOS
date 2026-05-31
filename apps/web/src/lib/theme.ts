@@ -38,7 +38,7 @@ export function parsePersistedThemeMode(raw: string | null): ThemeMode {
   }
 }
 
-export function getSystemThemeMode(): ResolvedTheme {
+function getSystemThemeMode(): ResolvedTheme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 

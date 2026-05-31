@@ -370,6 +370,8 @@ export function AgentsPage() {
       setLoadingModels(false);
     }
   }
+  const agentModelRef = useRef(agentForm.model);
+  agentModelRef.current = agentForm.model;
 
   useEffect(() => {
     if (!isConnectDialogOpen) return;
@@ -383,11 +385,11 @@ export function AgentsPage() {
     }
 
     const timer = window.setTimeout(() => {
-      void loadCustomAgentModels(url, apiKey, agentForm.model.trim());
+      void loadCustomAgentModels(url, apiKey, agentModelRef.current.trim());
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [agentForm.apiKey, agentForm.url, isConnectDialogOpen]);
+  }, [agentForm.apiKey, agentForm.url, isConnectDialogOpen, loadCustomAgentModels]);
 
   const handleCollapseSidebar = useCallback(() => {
     if (collapseTimerRef.current !== null) {

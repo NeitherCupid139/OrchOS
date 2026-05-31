@@ -24,7 +24,10 @@ function normalizeCodeLanguage(lang: string) {
 }
 
 function useResolvedTheme() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof document === "undefined") return "light";
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  });
 
   useEffect(() => {
     const updateTheme = () => {

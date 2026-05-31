@@ -47,7 +47,7 @@ import {
   pricing_faq_answer4,
 } from "@/paraglide/messages";
 
-export const GITHUB_REPO = "https://github.com/NeitherCupid139/OrchOS";
+const GITHUB_REPO = "https://github.com/NeitherCupid139/OrchOS";
 
 export type Tier = {
   key: string;

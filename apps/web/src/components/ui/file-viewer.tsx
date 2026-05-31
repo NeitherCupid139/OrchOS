@@ -322,13 +322,15 @@ function MarkdownPreview({
       <div className="prose prose-sm max-w-none px-5 py-4 text-foreground dark:prose-invert prose-headings:text-foreground prose-headings:font-semibold prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:font-mono prose-code:text-[0.8125rem] prose-code:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-muted/60 prose-a:text-primary prose-a:no-underline hover:prose-a:underline">
         <ReactMarkdown
           components={{
-            a: ({ ...props }) => (
+            a: ({ children, ...props }) => (
               <a
                 {...props}
                 className="font-medium text-primary underline-offset-4 hover:underline"
                 rel="noopener noreferrer"
                 target="_blank"
-              />
+              >
+                {children}
+              </a>
             ),
           }}
         >

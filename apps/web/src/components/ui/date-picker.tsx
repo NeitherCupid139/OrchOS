@@ -33,6 +33,16 @@ interface DatePickerProps {
   id?: string;
 }
 
+const WEEKDAYS = [
+  date_picker_weekday_sun(),
+  date_picker_weekday_mon(),
+  date_picker_weekday_tue(),
+  date_picker_weekday_wed(),
+  date_picker_weekday_thu(),
+  date_picker_weekday_fri(),
+  date_picker_weekday_sat(),
+];
+
 function parseDateInput(raw: string): Date | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
@@ -117,15 +127,7 @@ export function DatePicker({
 
   const goToPrevious = () => setUserMonth(add(month, { months: -1 }));
   const goToNext = () => setUserMonth(add(month, { months: 1 }));
-  const weekdays = [
-    date_picker_weekday_sun(),
-    date_picker_weekday_mon(),
-    date_picker_weekday_tue(),
-    date_picker_weekday_wed(),
-    date_picker_weekday_thu(),
-    date_picker_weekday_fri(),
-    date_picker_weekday_sat(),
-  ];
+  const weekdays = WEEKDAYS;
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>

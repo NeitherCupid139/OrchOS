@@ -767,8 +767,8 @@ export function SettingsDialog({
   }
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
@@ -1740,6 +1740,6 @@ export function SettingsDialog({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

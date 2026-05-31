@@ -87,31 +87,31 @@ function getSidebarNotificationTargets(message: ConversationMessage) {
   return [...targets];
 }
 
+const creationFilterButtons = [
+  {
+    value: "all",
+    label: all(),
+    icon: Chat01Icon,
+    iconClassName: "text-muted-foreground/80",
+  },
+  {
+    value: "active",
+    label: creation_active(),
+    icon: Clock01Icon,
+    iconClassName: "text-sky-500",
+  },
+  {
+    value: "archived",
+    label: creation_archived(),
+    icon: Archive01Icon,
+    iconClassName: "text-amber-500",
+  },
+] as const;
+
 /* ── Component ── */
 
 export function CreationView(props?: CreationViewProps | null) {
   const { runtimes = [], settings = null } = props ?? {};
-  const creationFilterButtons = [
-    {
-      value: "all",
-      label: all(),
-      icon: Chat01Icon,
-      iconClassName: "text-muted-foreground/80",
-    },
-    {
-      value: "active",
-      label: creation_active(),
-      icon: Clock01Icon,
-      iconClassName: "text-sky-500",
-    },
-    {
-      value: "archived",
-      label: creation_archived(),
-      icon: Archive01Icon,
-      iconClassName: "text-amber-500",
-    },
-  ] as const;
-
   const creationArchiveFilter = useUIStore((s) => s.creationArchiveFilter);
   const setCreationArchiveFilter = useUIStore(
     (s) => s.setCreationArchiveFilter,

@@ -96,13 +96,15 @@ export const ChatMarkdown = memo(function ChatMarkdown({ content }: { content: s
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          a: ({ node: _node, ...props }) => (
+          a: ({ node: _node, children, ...props }) => (
             <a
               {...props}
               className="font-medium text-primary underline-offset-4 hover:underline"
               rel="noopener noreferrer"
               target="_blank"
-            />
+            >
+              {children}
+            </a>
           ),
           pre: ({ children }) => {
             const child = Array.isArray(children) ? children[0] : children;

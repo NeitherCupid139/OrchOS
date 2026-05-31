@@ -110,7 +110,7 @@ export function FullScreenCalendar({
       [...data]
         .map((group) => ({
           ...group,
-          events: [...group.events].sort((left, right) => {
+          events: group.events.toSorted((left, right) => {
             return new Date(left.datetime).getTime() - new Date(right.datetime).getTime();
           }),
         }))
@@ -358,9 +358,10 @@ function DayTimelineView({
               {events.map((event) => {
                 const style = getTimelineStyle(event);
                 return (
-                  <button
+                  <div
                     key={event.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       "absolute left-3 right-3 rounded-2xl border p-3 text-left shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.12)]",
                       event.source === "task"
@@ -369,6 +370,7 @@ function DayTimelineView({
                     )}
                     style={style}
                     onClick={() => onOpenEvent?.(event)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenEvent?.(event); } }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -429,7 +431,7 @@ function DayTimelineView({
                         </Button>
                       </div>
                     ) : null}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -533,9 +535,10 @@ function WeekTimelineView({
                 {events.map((event) => {
                   const style = getTimelineStyle(event);
                   return (
-                    <button
+                    <div
                       key={event.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       className={cn(
                         "absolute left-1.5 right-1.5 rounded-xl border p-2 text-left shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]",
                         event.source === "task"
@@ -544,6 +547,7 @@ function WeekTimelineView({
                       )}
                       style={style}
                       onClick={() => onOpenEvent?.(event)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenEvent?.(event); } }}
                     >
                       <div className="truncate text-xs font-medium text-foreground">
                         {event.name}
@@ -582,7 +586,7 @@ function WeekTimelineView({
                           ) : null}
                         </div>
                       ) : null}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

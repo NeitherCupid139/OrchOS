@@ -377,7 +377,8 @@ export function CalendarPage() {
       return;
     }
 
-    const nextAvailableDay = Array.from(eventsByDay.keys()).sort()[0];
+    const dayKeys = Array.from(eventsByDay.keys());
+    const nextAvailableDay = dayKeys.length > 0 ? dayKeys.reduce((a, b) => a < b ? a : b) : undefined;
     if (nextAvailableDay !== undefined) {
       setSelectedLocalDate(nextAvailableDay);
     }

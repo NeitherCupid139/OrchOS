@@ -274,13 +274,21 @@ function DashboardContentInner() {
         {/* Mobile sidebar drawer */}
         {isMobile && (
           <>
-            <div
+            <button
+              type="button"
+              aria-label="Close sidebar"
               className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out ${
                 mobileSidebarOpen
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               }`}
               onClick={handleMobileSidebarClose}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleMobileSidebarClose();
+                }
+              }}
             />
             <div
               className={`fixed left-0 top-0 z-50 h-full transition-transform duration-300 ease-out ${
@@ -309,7 +317,16 @@ function DashboardContentInner() {
           <>
             <div
               className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out opacity-100"
+              role="button"
+              tabIndex={0}
+              aria-label="Close activity panel"
               onClick={toggleActivityPanel}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleActivityPanel();
+                }
+              }}
             />
             <div className="fixed right-0 top-0 z-50 h-full w-full max-w-sm transition-transform duration-300 ease-out translate-x-0">
               <DashboardActivityPanel collapsed={false} />

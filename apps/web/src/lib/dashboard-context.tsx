@@ -200,8 +200,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const persistedSettings = useUIStore((s) => s.settings);
   const setSettings = useUIStore((s) => s.setSettings);
 
-  const initialCacheRef = useRef(useDashboardCache.getState());
-  const initialCache = initialCacheRef.current;
+  const initialCacheRef = useRef<ReturnType<typeof useDashboardCache.getState> | null>(null);
+  if (initialCacheRef.current === null) initialCacheRef.current = useDashboardCache.getState();
+  const initialCache = initialCacheRef.current!;
 
   // Server data (hydrated from cache, then refreshed from API) — batched via useReducer
   const [state, dispatch] = useReducer(
@@ -233,7 +234,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const refreshQueuedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initializedViewsRef = useRef<Set<DashboardView>>(new Set());
+  const initializedViewsRef = useRef<Set<DashboardView> | null>(null);
+  if (initializedViewsRef.current === null) initializedViewsRef.current = new Set();
   const defaultOrganizationInFlightRef = useRef<Promise<Organization> | null>(
     null,
   );
@@ -408,11 +410,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [executeRefreshAll]);
 
   const initializeViewData = useCallback(async () => {
-    if (initializedViewsRef.current.has(activeView)) {
+    if (initializedViewsRef.current!.has(activeView)) {
       return;
     }
 
-    initializedViewsRef.current.add(activeView);
+    initializedViewsRef.current!.add(activeView);
 
     // Skip re-fetching core data (runtimes, settings, organizations) if
     // we already have it from a previous view initialization.

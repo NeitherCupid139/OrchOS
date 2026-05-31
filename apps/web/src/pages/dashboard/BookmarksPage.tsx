@@ -1160,7 +1160,7 @@ export function BookmarksPage() {
       );
     }
 
-    return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    return list.toSorted((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [normalizedSearchQuery, selectedCategory]);
 
   const viewportRef = useRef<HTMLDivElement>(null);

@@ -58,7 +58,7 @@ function SubtaskList({ subtasks }: { subtasks: string[] }) {
     <div className="space-y-0.5">
       {visible.map((task) => (
         <div key={task} className="flex items-start gap-1.5 text-[11px] text-muted-foreground/60">
-          <div className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/30" />
+          <div className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/30" />
           <span className="line-clamp-1">{task}</span>
         </div>
       ))}
@@ -376,9 +376,11 @@ const boardColumns: Array<{
   },
 ];
 
+const EMPTY_REMINDERS: PlannerReminder[] = [];
+
 export function BoardView({
   boardFilter,
-  reminders = [],
+  reminders = EMPTY_REMINDERS,
   busyReminderId,
   onToggleReminderComplete,
   onDeleteReminder,
@@ -413,7 +415,7 @@ export function BoardView({
   );
 
   const boardCards = useMemo(
-    () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
+    () => tasks.toSorted((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
     [tasks],
   );
   const reminderCards = useMemo(

@@ -1190,7 +1190,8 @@ function ProfileEditDialog({
     [clerkUser?.id],
   );
 
-  // Reset the Zustand tab to "profile" on mount (dialog remounts on key change)
+  // Reset the Zustand tab to "profile" on mount (dialog remounts on key change).
+  // eslint-disable-next-line react-doctor/no-derived-state-effect -- Zustand setter safe here; component remounts per key.
   useEffect(() => {
     setActiveTab("profile");
   }, [setActiveTab]);

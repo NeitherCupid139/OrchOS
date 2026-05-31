@@ -47,7 +47,7 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
     icon: ({ className }) => (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={className ?? "size-4"}>
         <path
-          d="M4 1.5V7C4 9.20914 5.79086 11 8 11C10.2091 11 12 9.20914 12 7V1.5"
+          d="M4 1.5V7C4 9.21 5.79 11 8 11c2.21 0 4-1.79 4-4V1.5"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
@@ -235,6 +235,7 @@ export function RichTextEditor({
               onMouseDown={(e) => e.preventDefault()} // Prevent stealing focus
               disabled={disabled}
               title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
+              aria-label={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
               className={cn(
                 "inline-flex size-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                 isActive && "bg-accent text-foreground",
@@ -251,6 +252,7 @@ export function RichTextEditor({
               ref={linkInputRef}
               type="url"
               placeholder="https://..."
+              aria-label="Link URL"
               className="w-40 border-0 bg-transparent text-xs outline-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -284,6 +286,7 @@ export function RichTextEditor({
         ref={editorCallbackRef}
         contentEditable={!disabled}
         suppressContentEditableWarning
+        tabIndex={0}
         onInput={handleEditorChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}

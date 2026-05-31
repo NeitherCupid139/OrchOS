@@ -57,7 +57,7 @@ interface InfoCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 type InfoCardContentProps = CommonCardProps;
 type InfoCardFooterProps = CommonCardProps;
-type InfoCardDismissProps = React.HTMLAttributes<HTMLDivElement> & {
+type InfoCardDismissProps = React.HTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
   onDismiss?: () => void;
 };
@@ -256,7 +256,7 @@ const InfoCardDismiss = React.memo(
     }, [onDismiss, contextDismiss]);
 
     const startPress = useCallback(
-      (e: React.PointerEvent) => {
+      (e: React.PointerEvent<HTMLButtonElement>) => {
         e.preventDefault();
         e.stopPropagation();
         pressedRef.current = true;
@@ -295,9 +295,8 @@ const InfoCardDismiss = React.memo(
     }, []);
 
     return (
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className={cn(
           "relative cursor-pointer select-none rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground overflow-hidden",
           className,
@@ -321,7 +320,7 @@ const InfoCardDismiss = React.memo(
           style={{ opacity: pressProgress * 0.3 }}
         />
         <span className="relative z-10">{children}</span>
-      </div>
+      </button>
     );
   },
 );

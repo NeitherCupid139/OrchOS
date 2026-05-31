@@ -61,8 +61,8 @@ export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: B
     if (!bookmarkId || !categoryId || domain === null) return;
     void (async () => {
       try {
-        const result = await api.cacheBookmarkFavicon(bookmarkId, categoryId, url);
         if (!domain) return;
+        const result = await api.cacheBookmarkFavicon(bookmarkId, categoryId, url);
         const category = result.find((c: { id: string }) => c.id === categoryId);
         const updated = category?.bookmarks.find((b: { id: string }) => b.id === bookmarkId);
         if (updated?.icon) {
