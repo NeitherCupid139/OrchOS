@@ -219,6 +219,7 @@ export function Sidebar({
     pendingTimerRef.current = setTimeout(() => setPendingNav(null), 4000);
   }
 
+  // react-doctor-disable-next-line react-doctor/exhaustive-deps -- unmount cleanup must read the latest timer set by navigation handlers
   useEffect(() => {
     return () => clearTimeout(pendingTimerRef.current);
   }, []);
@@ -266,7 +267,7 @@ export function Sidebar({
   }, [effectiveCollapsed]);
 
   const sections: SidebarSection[] = useMemo(
-    () => [
+    () => (void _locale, [
       {
         label: "",
         items: [
@@ -324,7 +325,7 @@ export function Sidebar({
           },
         ],
       },
-    ],
+    ]),
     [_locale],
   );
 

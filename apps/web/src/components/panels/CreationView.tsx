@@ -316,6 +316,7 @@ export function CreationView(props?: CreationViewProps | null) {
     setShowBookmarks(false);
   }, [activeConversation, messages.length]);
 
+  // react-doctor-disable-next-line react-doctor/exhaustive-deps -- unmount cleanup must read the latest timer set by event handlers
   useEffect(() => {
     return () => {
       if (collapseTimerRef.current !== null) {

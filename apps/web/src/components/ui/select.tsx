@@ -198,8 +198,6 @@ export {
   SelectContent,
   SelectGroup,
   SelectItem,
-  selectContentClassName,
-  selectItemClassName,
   SelectLabel,
   SelectScrollDownButton,
   SelectScrollUpButton,

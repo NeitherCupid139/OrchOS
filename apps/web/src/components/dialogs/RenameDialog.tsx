@@ -10,7 +10,7 @@ export interface IconOption {
   icon: IconSvgElement;
 }
 
-export const PRESET_COLORS = [
+const PRESET_COLORS = [
   { value: "#6b7280", label: "Gray" },
   { value: "#ef4444", label: "Red" },
   { value: "#f97316", label: "Orange" },
@@ -22,8 +22,6 @@ export const PRESET_COLORS = [
   { value: "#8b5cf6", label: "Violet" },
   { value: "#ec4899", label: "Pink" },
 ] as const;
-
-export type PresetColor = (typeof PRESET_COLORS)[number]["value"];
 
 interface RenameDialogProps {
   open: boolean;

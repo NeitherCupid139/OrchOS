@@ -157,7 +157,7 @@ export function FullScreenCalendar({
 
   const weekdayLabels = React.useMemo(
     () => Array.from({ length: 7 }, (_, index) => weekdayFormatter.format(new Date(2024, 0, 7 + index))),
-    [weekdayFormatter],
+    [],
   );
   const headerTitle = React.useMemo(() => {
     if (viewMode === "day") {
@@ -180,7 +180,7 @@ export function FullScreenCalendar({
     }
 
     return `${format(startOfMonth(currentMonth), "MMM d, yyyy")} - ${format(endOfMonth(currentMonth), "MMM d, yyyy")}`;
-  }, [currentMonth, selectedDay, viewMode, weekdayFormatter]);
+  }, [currentMonth, selectedDay, viewMode]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col antialiased">

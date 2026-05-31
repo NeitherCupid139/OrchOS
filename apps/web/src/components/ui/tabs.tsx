@@ -100,4 +100,4 @@ function TabsContent({ className, children, ...props }: TabsPrimitive.Panel.Prop
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export { Tabs, TabsList, TabsTrigger, TabsContent };

@@ -53,8 +53,9 @@ export function TurnstileWidget({
         "error-callback": () => callbacksRef.current.onError?.(),
       });
     }
-  }, [siteKey, appearance, renderWidget]);
+  }, [siteKey, appearance]);
 
+  // react-doctor-disable-next-line react-doctor/exhaustive-deps -- widget id can be assigned asynchronously after script load
   useEffect(() => {
     if (!siteKey) return;
 
@@ -87,8 +88,10 @@ export function TurnstileWidget({
 
     return () => {
       cancelled = true;
-      if (containerRef.current && widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
+      const container = containerRef.current;
+      const widgetId = widgetIdRef.current;
+      if (container && widgetId && window.turnstile) {
+        window.turnstile.remove(widgetId);
         widgetIdRef.current = null;
       }
     };

@@ -1,5 +1,6 @@
 {
   "ignore": {
+    "files": ["src/paraglide/**"],
     "rules": [
       "react-doctor/no-giant-component",
       "react-doctor/prefer-useReducer",
@@ -12,6 +13,10 @@
       {
         "files": ["src/components/ui/header-1.tsx"],
         "rules": ["react-doctor/no-fetch-in-effect"]
+      },
+      {
+        "files": ["src/routes/**/*.tsx"],
+        "rules": ["react-doctor/only-export-components"]
       },
       {
         "files": ["src/components/ui/chart.tsx", "src/components/panels/ObservabilityView.tsx"],
