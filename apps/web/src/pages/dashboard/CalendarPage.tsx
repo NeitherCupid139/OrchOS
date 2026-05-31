@@ -25,6 +25,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AppDialog } from "@/components/ui/app-dialog";
+import { ColorSelector } from "@/components/ui/color-selector";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -83,7 +84,6 @@ import {
   calendar_no_groups_desc,
   calendar_notes,
   calendar_start,
-  calendar_use_color,
   cancel,
   close,
   collapse_sidebar,
@@ -323,14 +323,27 @@ export function CalendarPage() {
     };
   }, [boardTasks, localCalendars, renderableEvents, selectedEventDetailId]);
 
+  const loadPlannerStore = useCallback(async () => {
+    try {
+      setLocalStore(await api.getPlannerStore());
+    } catch (error) {
+      console.error(
+        error instanceof Error
+          ? error.message
+          : calendar_failed_load_integrations(),
+      );
+    }
+  }, []);
+
   useEffect(() => {
     void loadPlannerStore();
   }, [loadPlannerStore]);
 
   useEffect(() => {
+    const collapseTimer = collapseTimerRef;
     return () => {
-      if (collapseTimerRef.current !== null) {
-        window.clearTimeout(collapseTimerRef.current);
+      if (collapseTimer.current !== null) {
+        window.clearTimeout(collapseTimer.current);
       }
     };
   }, []);
@@ -356,7 +369,7 @@ export function CalendarPage() {
     setSelectedSidebarItem((current) =>
       current.startsWith("local") ? current : "local-overview",
     );
-  }, [localCalendars.length]);
+  }, [localCalendars.length, setSelectedSidebarItem]);
 
   useEffect(() => {
     const selectedDay = eventsByDay.get(selectedLocalDate);
@@ -368,12 +381,12 @@ export function CalendarPage() {
     if (nextAvailableDay !== undefined) {
       setSelectedLocalDate(nextAvailableDay);
     }
-  }, [eventsByDay, selectedLocalDate]);
+  }, [eventsByDay, selectedLocalDate, setSelectedLocalDate]);
 
   const handleCalendarSelectDay = useCallback((day: Date) => {
     setSelectedLocalDate(formatDayKey(day));
     setVisibleMonth(startOfMonth(day));
-  }, []);
+  }, [setSelectedLocalDate, setVisibleMonth]);
 
   const handleCalendarMonthChange = useCallback(
     (day: Date) => {
@@ -390,7 +403,7 @@ export function CalendarPage() {
           : formatDayKey(nextMonth);
       });
     },
-    [calendarViewMode],
+    [calendarViewMode, setVisibleMonth, setSelectedLocalDate],
   );
 
   const updateBoardTask = useBoardStore((state) => state.updateTask);
@@ -417,7 +430,7 @@ export function CalendarPage() {
       });
       setIsLocalEventDialogOpen(true);
     },
-    [activeLocalCalendarIds, localCalendars],
+    [activeLocalCalendarIds, localCalendars, setLocalEventForm, setIsLocalEventDialogOpen],
   );
 
   const handleUpdateTaskEvent = useCallback(
@@ -463,7 +476,7 @@ export function CalendarPage() {
       setSelectedLocalDate(formatDayKey(date));
       setVisibleMonth(startOfMonth(date));
     },
-    [renderableEvents],
+    [renderableEvents, setSelectedLocalDate, setVisibleMonth],
   );
 
   const handleOpenCalendarEvent = useCallback(
@@ -484,7 +497,7 @@ export function CalendarPage() {
       formatDayKey(new Date(selectedEventDetail.event.startAt)),
       selectedEventDetail.event,
     );
-  }, [selectedEventDetail]);
+  }, [selectedEventDetail, openLocalEventDialog]);
 
   const handleMoveSelectedTaskDate = useCallback(
     (days: number) => {
@@ -506,18 +519,6 @@ export function CalendarPage() {
     },
     [selectedEventDetail, updateBoardTask],
   );
-
-  const loadPlannerStore = useCallback(async () => {
-    try {
-      setLocalStore(await api.getPlannerStore());
-    } catch (error) {
-      console.error(
-        error instanceof Error
-          ? error.message
-          : calendar_failed_load_integrations(),
-      );
-    }
-  }, []);
 
   function openLocalCalendarDialog(calendar?: LocalCalendar) {
     setLocalCalendarForm(
@@ -747,7 +748,7 @@ export function CalendarPage() {
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
     },
-    [],
+    [setSidebarWidth, setIsResizingSidebar],
   );
 
   return (
@@ -846,7 +847,7 @@ export function CalendarPage() {
                           );
 
                           return (
-                            // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for edit/delete
+                            /* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested Button inside, invalid to nest <button> */
                             <div
                               role="button"
                               tabIndex={0}
@@ -988,17 +989,17 @@ export function CalendarPage() {
             role="separator"
             aria-orientation="vertical"
             aria-label={resize_calendar_sidebar()}
-            onPointerDown={handleResizeStart}
             className={cn(
-              "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
+              "pointer-events-none group absolute right-[-8px] top-0 z-30 h-full w-4",
               sidebarCollapsed && "hidden",
               isResizingSidebar &&
                 "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
             )}
           >
             <div
+              onPointerDown={handleResizeStart}
               className={cn(
-                "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+                "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm pointer-events-auto cursor-col-resize transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
                 isResizingSidebar && "border-border bg-muted shadow-md",
               )}
             >
@@ -1388,25 +1389,14 @@ export function CalendarPage() {
 
           <div className="grid gap-2 text-sm">
             <span className="font-medium text-foreground">{color()}</span>
-            <div className="flex flex-wrap gap-2">
-              {LOCAL_CALENDAR_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() =>
-                    setLocalCalendarForm((current) => ({ ...current, color }))
-                  }
-                  className={cn(
-                    "size-10 rounded-full border border-transparent bg-background/60 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.96]",
-                    localCalendarForm.color === color
-                      ? "border-border/50 bg-background shadow-[0_0_0_2px_rgba(15,23,42,0.04)] dark:shadow-[0_0_0_2px_rgba(255,255,255,0.07)]"
-                      : "hover:border-border/35 hover:bg-background/80",
-                  )}
-                  style={{ backgroundColor: color }}
-                  aria-label={calendar_use_color({ color })}
-                />
-              ))}
-            </div>
+            <ColorSelector
+              colors={LOCAL_CALENDAR_COLORS}
+              size="lg"
+              defaultValue={localCalendarForm.color}
+              onColorSelect={(color) =>
+                setLocalCalendarForm((current) => ({ ...current, color }))
+              }
+            />
           </div>
 
           <div className="grid gap-2 text-sm">

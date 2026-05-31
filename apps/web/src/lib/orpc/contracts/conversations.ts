@@ -21,7 +21,7 @@ const runtimeTraceEventSchema = z.union([
   }),
 ]);
 
-export const conversationSchema = z.object({
+const conversationSchema = z.object({
   id: z.string(),
   title: z.string().optional(),
   projectId: z.string().optional(),
@@ -33,7 +33,7 @@ export const conversationSchema = z.object({
   updatedAt: z.string(),
 });
 
-export const conversationMessageSchema = z.object({
+const conversationMessageSchema = z.object({
   id: z.string(),
   conversationId: z.string(),
   role: z.enum(["user", "assistant"]),

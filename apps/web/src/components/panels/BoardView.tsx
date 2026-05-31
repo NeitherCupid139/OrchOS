@@ -56,8 +56,8 @@ function SubtaskList({ subtasks }: { subtasks: string[] }) {
 
   return (
     <div className="space-y-0.5">
-      {visible.map((task, i) => (
-        <div key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground/60">
+      {visible.map((task) => (
+        <div key={task} className="flex items-start gap-1.5 text-[11px] text-muted-foreground/60">
           <div className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/30" />
           <span className="line-clamp-1">{task}</span>
         </div>
@@ -339,6 +339,43 @@ function priorityTone(priority: BoardTaskPriority) {
   return "text-rose-600 dark:text-rose-400";
 }
 
+const boardColumns: Array<{
+  id: BoardTaskColumnId;
+  label: string;
+  icon: typeof PlayCircleIcon;
+  tone: string;
+  bgAccent: string;
+}> = [
+  {
+    id: "review",
+    label: board_today(),
+    icon: InformationCircleIcon,
+    tone: "text-violet-600 dark:text-violet-400",
+    bgAccent: "bg-violet-500/5 dark:bg-violet-500/10",
+  },
+  {
+    id: "planning",
+    label: board_planning(),
+    icon: File02Icon,
+    tone: "text-amber-600 dark:text-amber-400",
+    bgAccent: "bg-amber-500/5 dark:bg-amber-500/10",
+  },
+  {
+    id: "in_progress",
+    label: board_in_progress(),
+    icon: PlayCircleIcon,
+    tone: "text-sky-600 dark:text-sky-400",
+    bgAccent: "bg-sky-500/5 dark:bg-sky-500/10",
+  },
+  {
+    id: "completed",
+    label: board_completed(),
+    icon: CheckmarkCircle02Icon,
+    tone: "text-emerald-600 dark:text-emerald-400",
+    bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
+  },
+];
+
 export function BoardView({
   boardFilter,
   reminders = [],
@@ -374,43 +411,6 @@ export function BoardView({
     },
     [boardDateFormatter],
   );
-
-  const boardColumns: Array<{
-    id: BoardTaskColumnId;
-    label: string;
-    icon: typeof PlayCircleIcon;
-    tone: string;
-    bgAccent: string;
-  }> = [
-    {
-      id: "review",
-      label: board_today(),
-      icon: InformationCircleIcon,
-      tone: "text-violet-600 dark:text-violet-400",
-      bgAccent: "bg-violet-500/5 dark:bg-violet-500/10",
-    },
-    {
-      id: "planning",
-      label: board_planning(),
-      icon: File02Icon,
-      tone: "text-amber-600 dark:text-amber-400",
-      bgAccent: "bg-amber-500/5 dark:bg-amber-500/10",
-    },
-    {
-      id: "in_progress",
-      label: board_in_progress(),
-      icon: PlayCircleIcon,
-      tone: "text-sky-600 dark:text-sky-400",
-      bgAccent: "bg-sky-500/5 dark:bg-sky-500/10",
-    },
-    {
-      id: "completed",
-      label: board_completed(),
-      icon: CheckmarkCircle02Icon,
-      tone: "text-emerald-600 dark:text-emerald-400",
-      bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
-    },
-  ];
 
   const boardCards = useMemo(
     () => [...tasks].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),

@@ -513,9 +513,9 @@ export function Sidebar({
               effectiveCollapsed && "flex flex-col items-center",
             )}
           >
-            {sections.map((section, si) => (
+            {sections.map((section) => (
               <div
-                key={si}
+                key={section.label || "main"}
                 className={cn(
                   "space-y-0.5",
                   effectiveCollapsed && "flex w-full flex-col items-center",

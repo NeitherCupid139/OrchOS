@@ -76,12 +76,6 @@ export interface RemoteExecutionAdapter {
   chatWithRuntime?(command: string, prompt: string, runtimeName: string): Promise<RuntimeChatResult>;
 }
 
-let remoteExecutionAdapter: RemoteExecutionAdapter | undefined;
-
-export function configureRemoteExecutionAdapter(adapter?: RemoteExecutionAdapter) {
-  remoteExecutionAdapter = adapter;
-}
-
 export function getRemoteExecutionAdapter() {
-  return remoteExecutionAdapter;
+  return undefined as RemoteExecutionAdapter | undefined;
 }

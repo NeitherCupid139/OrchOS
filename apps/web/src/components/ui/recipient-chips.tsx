@@ -66,7 +66,7 @@ export function RecipientChips({
     }
   }, [chips, inputValue, syncChips]);
 
-  const handleKeyDown = useCallback(
+  const handleChipInput = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" || e.key === "," || e.key === ";") {
         e.preventDefault();
@@ -99,7 +99,7 @@ export function RecipientChips({
     [chips, syncChips],
   );
 
-  const handleBlur = useCallback(() => {
+  const commitChipFromBlur = useCallback(() => {
     // Add any remaining input as a chip on blur
     if (inputValue.trim()) {
       addChip(inputValue);
@@ -116,6 +116,14 @@ export function RecipientChips({
         disabled && "cursor-not-allowed opacity-60",
         className,
       )}
+      role="button"
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }
+      }}
       onClick={() => inputRef.current?.focus()}
     >
       {chips.map((chip, index) => (
@@ -144,10 +152,11 @@ export function RecipientChips({
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleChipInput}
         onPaste={handlePaste}
         onFocus={() => setFocused(true)}
-        onBlur={handleBlur}
+        onBlur={commitChipFromBlur}
+        aria-label={placeholder}
         placeholder={chips.length === 0 ? placeholder : ""}
         disabled={disabled}
         className="min-w-[120px] flex-1 border-0 bg-transparent px-1 py-0.5 text-[13px] leading-5 text-foreground outline-none placeholder:text-muted-foreground/60"

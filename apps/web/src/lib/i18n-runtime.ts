@@ -77,7 +77,7 @@ function writeStoredLocale(locale: Locale) {
   } catch {}
 }
 
-export function initializeClientLocale() {
+function initializeClientLocale() {
   if (typeof document === "undefined" || clientLocaleInitialized) {
     return;
   }

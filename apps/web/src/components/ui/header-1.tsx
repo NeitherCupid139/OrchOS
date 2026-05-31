@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
@@ -19,24 +19,15 @@ export function Header() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
 
-  const links = [
-    {
-      label: nav_home(),
-      to: "/",
-    },
-    {
-      label: nav_pricing(),
-      to: "/pricing",
-    },
-    {
-      label: nav_changelog(),
-      to: "/changelog",
-    },
-    {
-      label: nav_about(),
-      to: "/about",
-    },
-  ];
+  const links = useMemo(
+    () => [
+      { label: nav_home(), to: "/" },
+      { label: nav_pricing(), to: "/pricing" },
+      { label: nav_changelog(), to: "/changelog" },
+      { label: nav_about(), to: "/about" },
+    ],
+    [],
+  );
 
   React.useEffect(() => {
     if (open) {

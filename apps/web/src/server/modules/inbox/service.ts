@@ -111,7 +111,7 @@ function problemToThread(row: Record<string, unknown>): InboxThread {
   };
 }
 
-export const INBOX_LIST_LIMIT = 500;
+const INBOX_LIST_LIMIT = 500;
 
 export const InboxService = {
   async list(db: AppDb, filters?: ListThreadsFilters): Promise<InboxThread[]> {

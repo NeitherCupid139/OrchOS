@@ -1,7 +1,7 @@
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 
-export const bookmarkItemSchema = z.object({
+const bookmarkItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   url: z.string(),
@@ -9,7 +9,7 @@ export const bookmarkItemSchema = z.object({
   icon: z.string().optional(),
 });
 
-export const bookmarkCategorySchema = z.object({
+const bookmarkCategorySchema = z.object({
   id: z.string(),
   name: z.string(),
   icon: z.string(),

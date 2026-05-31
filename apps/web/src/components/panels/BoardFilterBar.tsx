@@ -22,13 +22,16 @@ export function BoardFilterBar({
   onBoardFilterChange,
   boardCardsCount,
 }: BoardFilterBarProps) {
-  const conversationBoardColumns: Array<{
-    id: BoardTaskFilter;
-    label: string;
-    icon: typeof File02Icon;
-    tone: string;
-    bgAccent?: string;
-  }> = [
+  const conversationBoardColumns = React.useMemo<
+    Array<{
+      id: BoardTaskFilter;
+      label: string;
+      icon: typeof File02Icon;
+      tone: string;
+      bgAccent?: string;
+    }>
+  >(
+    () => [
     {
       id: "all",
       label: board_filter_all(),
@@ -63,7 +66,7 @@ export function BoardFilterBar({
       tone: "text-emerald-600 dark:text-emerald-400",
       bgAccent: "bg-emerald-500/5 dark:bg-emerald-500/10",
     },
-  ];
+  ], []);
 
   return (
     <div className="flex items-center gap-1.5 px-1">

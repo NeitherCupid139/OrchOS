@@ -280,6 +280,28 @@ const SOUND_LABELS: Record<SoundId, () => string> = {
   ring2: sound_ring_2,
 };
 
+/** Try to match current SMTP/IMAP settings to a known provider */
+function detectProvider(
+  host: string,
+  port: number,
+  imapHost: string,
+): string {
+  const match = EMAIL_PROVIDERS.find(
+    (p) =>
+      p.smtp.host === host &&
+      p.smtp.port === port &&
+      p.imap.host === imapHost,
+  );
+  return match?.id ?? CUSTOM_PROVIDER_ID;
+}
+
+function playSound(soundId: SoundId) {
+  const sound = AVAILABLE_SOUNDS.find((s) => s.id === soundId);
+  if (sound) {
+    void playUiSound(sound.id, sound.file || undefined);
+  }
+}
+
 function ShortcutKeycaps({ value }: { value: "enter" | "cmd-enter" }) {
   const keys =
     value === "cmd-enter"
@@ -345,9 +367,9 @@ export function SettingsDialog({
     { mailIntegrations: [], loadingMail: false },
   );
 
-  // oxlint-disable-next-line react-doctor/no-event-handler -- dialog-open with deep-link tab requires initialization
   useEffect(() => {
-    if (open && defaultTab) {
+    if (!open) return;
+    if (defaultTab) {
       setActiveTab(defaultTab);
       if (defaultTab === "mail" && !mailState.loadingMail) {
         dispatchMail({ type: "SET_LOADING" });
@@ -366,7 +388,7 @@ export function SettingsDialog({
           });
       }
     }
-  }, [open, defaultTab]);
+  }, [open]);
 
   const [editingMailAccount, setEditingMailAccount] = useState<{
     integrationId: string;
@@ -412,21 +434,6 @@ export function SettingsDialog({
     | "import_error"
   >("idle");
   const { locale: currentLocale, setLocaleWithSync } = useLocale();
-
-  /** Try to match current SMTP/IMAP settings to a known provider */
-  function detectProvider(
-    host: string,
-    port: number,
-    imapHost: string,
-  ): string {
-    const match = EMAIL_PROVIDERS.find(
-      (p) =>
-        p.smtp.host === host &&
-        p.smtp.port === port &&
-        p.imap.host === imapHost,
-    );
-    return match?.id ?? CUSTOM_PROVIDER_ID;
-  }
 
   /** Apply a provider's settings to the edit form */
   function applyProviderToEditForm(providerId: string | null) {
@@ -573,13 +580,6 @@ export function SettingsDialog({
     }
   };
 
-  const playSound = (soundId: SoundId) => {
-    const sound = AVAILABLE_SOUNDS.find((s) => s.id === soundId);
-    if (sound) {
-      void playUiSound(sound.id, sound.file || undefined);
-    }
-  };
-
   const handleEditMailAccount = useCallback(
     (integrationId: string, account: MailIntegrationAccount) => {
       const smtpHost = account.smtpImap?.smtp.host || "smtp.gmail.com";
@@ -659,7 +659,7 @@ export function SettingsDialog({
     } catch (err) {
       console.error("Failed to save mail account:", err);
     }
-  }, [editingMailAccount, editMailForm, mailState.mailIntegrations, selectedEditProviderId]);
+  }, [editingMailAccount, editMailForm, mailState.mailIntegrations]);
 
   const handleDeleteMailAccount = useCallback(
     async (integrationId: string, accountId: string) => {
@@ -768,6 +768,7 @@ export function SettingsDialog({
 
   return (
     <div
+      role="button"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();

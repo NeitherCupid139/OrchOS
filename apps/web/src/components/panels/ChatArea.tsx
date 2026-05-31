@@ -478,10 +478,8 @@ export function ChatArea({
   }, []);
 
   useEffect(() => {
-    if (showBookmarks) {
-      void loadBookmarks();
-    }
-  }, [showBookmarks, loadBookmarks]);
+    void loadBookmarks();
+  }, [loadBookmarks]);
 
   const effectiveRuntimeId = isDraftConversation
     ? (draftRuntimeId ?? conversation.runtimeId)
@@ -652,7 +650,7 @@ export function ChatArea({
     if (uiPreviewTarget === "send-shortcut" && mode !== "chat") {
       setMode("chat");
     }
-  }, [mode, uiPreviewTarget]);
+  }, [mode, setMode, uiPreviewTarget]);
 
   useEffect(() => {
     if (!isSendShortcutPreviewing) {
@@ -745,7 +743,6 @@ export function ChatArea({
     isDraftConversation,
     mode,
     onCreateConversation,
-    onUpdateConversation,
     onSendMessage,
     onShowBookmarksChange,
     searchEngineId,
@@ -1086,7 +1083,10 @@ export function ChatArea({
                       render={
                         <button
                           type="button"
-                          onClick={() => onShowBookmarksChange(true)}
+                          onClick={() => {
+                            void loadBookmarks();
+                            onShowBookmarksChange(true);
+                          }}
                           className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           <HugeiconsIcon

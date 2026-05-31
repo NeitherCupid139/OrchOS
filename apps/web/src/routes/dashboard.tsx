@@ -5,7 +5,6 @@ import {
   useCallback,
   lazy,
   Suspense,
-  memo,
   type ComponentType,
 } from "react";
 import {
@@ -16,12 +15,11 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { createClientOnlyFn } from "@tanstack/react-start";
-import { useAuth } from "@clerk/clerk-react";
-import { isClerkConfigured } from "@/lib/auth";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { ActivityPanel } from "@/components/panels/ActivityPanel";
 import { AuthProvider } from "@/components/providers/AuthProvider";
-import { AsciiLoading } from "@/components/ui/ascii-loading";
+import { RequireAuth } from "@/components/providers/ClerkAuthGate";
+import { isAuthTransition } from "@/components/providers/ClerkAuthGate";
+import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
+import { DashboardActivityPanel } from "@/components/panels/DashboardActivityPanel";
 import { Toolbar } from "@/components/layout/Toolbar";
 import { useUIStore } from "@/lib/store";
 import { DashboardProvider, useDashboard } from "@/lib/dashboard-context";
@@ -29,13 +27,13 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useBoardStore } from "@/lib/stores/board";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import type { SidebarView, Organization } from "@/lib/types";
+import { getViewFromPath } from "@/lib/dashboard-routing";
 import {
   getCapabilityModeFromPath,
   getCapabilityPath,
   isCapabilityView,
 } from "@/lib/capability-routing";
-import { checking_auth, search_bookmarks } from "@/paraglide/messages";
+import { search_bookmarks } from "@/paraglide/messages";
 
 // Lazy-loaded dialogs — only loaded when first opened, ~115KB deferred from initial bundle
 const SettingsDialog = lazy(() =>
@@ -67,95 +65,6 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardWrapper,
 });
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  if (!isClerkConfigured()) return <>{children}</>;
-  return <ClerkAuthGate>{children}</ClerkAuthGate>;
-}
-
-function isAuthTransition(): boolean {
-  try {
-    return sessionStorage.getItem("orch_auth_transition") === "true";
-  } catch {
-    return false;
-  }
-}
-
-function ClerkAuthGate({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
-  const navigate = useNavigate();
-  const hasRedirectedRef = useRef(false);
-  const fromAuth = isAuthTransition();
-
-  useEffect(() => {
-    if (!isLoaded || isSignedIn || hasRedirectedRef.current) {
-      return;
-    }
-
-    hasRedirectedRef.current = true;
-    void navigate({ to: "/sign-in", replace: true });
-  }, [isLoaded, isSignedIn, navigate]);
-
-  if (!isLoaded) {
-    if (fromAuth) {
-      return (
-        <div className="relative h-screen overflow-hidden bg-background">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-100 blur-xl scale-105"
-            style={{ backgroundImage: "url('/hero/background.png')" }}
-          />
-          <div className="absolute inset-0 bg-background/72 backdrop-blur-[2px]" />
-          <div className="relative flex h-full items-center justify-center">
-            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/20 px-4 py-2 text-white/85 shadow-lg backdrop-blur-md">
-              <AsciiLoading
-                label={checking_auth()}
-                className="text-white/85"
-                chipClassName="bg-white/10 text-white/85"
-                textClassName="text-sm"
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <AsciiLoading label="Loading..." />
-      </div>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <AsciiLoading label="Loading..." />
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-
-function getViewFromPath(pathname: string): SidebarView {
-  const segment =
-    pathname
-      .replace("/dashboard/", "")
-      .replace("/dashboard", "")
-      .split("/")[0] ?? "";
-  const validViews: SidebarView[] = [
-    "inbox",
-    "creation",
-    "bookmarks",
-    "board",
-    "calendar",
-    "mail",
-    "observability",
-    "agents",
-  ];
-  return validViews.includes(segment as SidebarView)
-    ? (segment as SidebarView)
-    : "inbox";
-}
-
 function DashboardWrapper() {
   return (
     <AuthProvider>
@@ -167,61 +76,6 @@ function DashboardWrapper() {
     </AuthProvider>
   );
 }
-
-// ── Memoized subsection components ──────────────────────────────
-
-const DashboardSidebar = memo(function DashboardSidebar({
-  isMobile: _isMobile,
-  organizations,
-  activeOrganizationId,
-  activeView,
-  collapsed,
-  loading,
-  onOpenSettings,
-  onOrganizationChange,
-  onOrganizationCreate,
-  onOrganizationRename,
-  onOrganizationDelete,
-  onToggleCollapse,
-}: {
-  isMobile?: boolean;
-  organizations: Organization[];
-  activeOrganizationId: string | null;
-  activeView: SidebarView;
-  collapsed: boolean;
-  loading: boolean;
-  onOpenSettings: () => void;
-  onOrganizationChange: (id: string) => void;
-  onOrganizationCreate: (name: string) => Promise<void>;
-  onOrganizationRename: (orgId: string, name: string) => Promise<void>;
-  onOrganizationDelete: (orgId: string) => Promise<void>;
-  onToggleCollapse: () => void;
-}) {
-  return (
-    <Sidebar
-      isMobile={_isMobile}
-      organizations={organizations}
-      activeOrganizationId={activeOrganizationId}
-      activeView={activeView}
-      collapsed={collapsed}
-      loading={loading}
-      onOpenSettings={onOpenSettings}
-      onOrganizationChange={onOrganizationChange}
-      onOrganizationCreate={onOrganizationCreate}
-      onOrganizationRename={onOrganizationRename}
-      onOrganizationDelete={onOrganizationDelete}
-      onToggleCollapse={onToggleCollapse}
-    />
-  );
-});
-
-const DashboardActivityPanel = memo(function DashboardActivityPanel({
-  collapsed,
-}: {
-  collapsed: boolean;
-}) {
-  return <ActivityPanel collapsed={collapsed} />;
-});
 
 function DashboardContentInner() {
   const location = useLocation();
@@ -244,7 +98,14 @@ function DashboardContentInner() {
       active: boolean;
       reveal: boolean;
       onComplete?: () => void;
-    }> | null>(null);
+    }> | null>(() => {
+      if (typeof window === "undefined") return null;
+      void loadAuthTransitionOverlay().then((loaded) =>
+        setAuthTransitionOverlay(() => loaded),
+      );
+      return null;
+    });
+
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<
     "general" | "notifications" | "mail" | "about"
@@ -318,20 +179,6 @@ function DashboardContentInner() {
     : `auto minmax(0,1fr) ${activityPanelOpen ? "300px" : "0px"}`;
   const dashboardColumns = isMobile ? "1fr" : dashboardColumnsDesktop;
 
-  useEffect(() => {
-    let mounted = true;
-
-    void loadAuthTransitionOverlay().then((loaded) => {
-      if (mounted) {
-        setAuthTransitionOverlay(() => loaded);
-      }
-    });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   // Handle OAuth callback redirects with URL params
   // oxlint-disable-next-line react-doctor/no-initialize-state -- store action + URL side effect, not state init
   useEffect(() => {
@@ -349,7 +196,7 @@ function DashboardContentInner() {
       url.searchParams.delete("tab");
       window.history.replaceState({}, "", url.toString());
     }
-  }, []);
+  }, [setShowSettingsDialog]);
 
   useEffect(() => {
     if (revealTriggeredRef.current || loading) {
@@ -587,6 +434,7 @@ function DashboardContentInner() {
         </div>
         <Suspense fallback={null}>
           <SettingsDialog
+            key={`settings-dialog-${String(showSettingsDialog)}-${settingsDefaultTab}`}
             open={showSettingsDialog}
             onClose={() => {
               setShowSettingsDialog(false);

@@ -609,7 +609,7 @@ export function CreationView(props?: CreationViewProps | null) {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                  // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for archive/delete
+                  {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for archive/delete */}
                   <div
                     role="button"
                     tabIndex={0}
@@ -762,17 +762,17 @@ export function CreationView(props?: CreationViewProps | null) {
           role="separator"
           aria-orientation="vertical"
           aria-label={resize_creation_sidebar()}
-          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
+            "pointer-events-none group absolute right-[-8px] top-0 z-30 h-full w-4",
             creationSidebarCollapsed && "hidden",
             isResizingSidebar &&
               "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
+            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm pointer-events-auto cursor-col-resize transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >

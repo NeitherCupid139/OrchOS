@@ -67,10 +67,6 @@ export function setCache<T>(key: string, data: T, ttl?: number): void {
   });
 }
 
-export function invalidateCache(key: string): void {
-  store.delete(key);
-}
-
 /**
  * Given called mutation method name, invalidate all dependent cache entries.
  */
@@ -80,27 +76,4 @@ export function invalidateDependentCaches(methodName: string): void {
       store.delete(cacheKey);
     }
   }
-}
-
-export function clearAllCaches(): void {
-  store.clear();
-}
-
-/**
- * Wrap an async API method with cache-read + cache-write logic.
- * Only GET/list methods should be wrapped.
- */
-export function withCache<TArgs extends unknown[], TResult>(
-  fn: (...args: TArgs) => Promise<TResult>,
-  cacheKey: string,
-  ttl?: number,
-): (...args: TArgs) => Promise<TResult> {
-  return async (...args: TArgs): Promise<TResult> => {
-    const cached = getCached<TResult>(cacheKey);
-    if (cached !== undefined) return cached;
-
-    const result = await fn(...args);
-    setCache(cacheKey, result, ttl);
-    return result;
-  };
 }

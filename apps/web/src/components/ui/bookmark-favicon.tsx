@@ -35,7 +35,7 @@ interface BookmarkFaviconProps {
 
 export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: BookmarkFaviconProps) {
   const failedRef = useRef(false);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => false);
   const [_cacheVersion, setCacheVersion] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;

@@ -38,20 +38,4 @@ export async function getAIGatewayConfig(): Promise<AIGatewayConfig | null> {
   }
 }
 
-/**
- * Build gateway-wrapped config for a specific agent's API call.
- */
-export async function getGatewayConfigForAgent(
-  agentUrl: string,
-): Promise<{ gatewayConfig: AIGatewayConfig | null; gatewayUrl: string }> {
-  const gatewayConfig = await getAIGatewayConfig();
 
-  if (!gatewayConfig) {
-    return { gatewayConfig: null, gatewayUrl: agentUrl };
-  }
-
-  const { buildGatewayUrl } = await import("@orchos/pro/ai-gateway");
-  const gatewayUrl = buildGatewayUrl(gatewayConfig, agentUrl);
-
-  return { gatewayConfig, gatewayUrl };
-}

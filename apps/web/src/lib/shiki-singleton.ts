@@ -37,7 +37,6 @@ const LAZY_LANGS = new Set([
 const MAX_EXTRA_LANGS = 6;
 
 let highlighterPromise: Promise<Highlighter> | null = null;
-let highlighterInstance: Highlighter | null = null;
 
 /** Tracks loaded languages outside core set, with access timestamps for LRU eviction. */
 const loadedExtraLangs = new Map<string, number>();
@@ -48,9 +47,6 @@ export function getSharedHighlighter(): Promise<Highlighter> {
     highlighterPromise = createHighlighter({
       langs: [...CORE_LANGS],
       themes: ["github-dark", "github-light"],
-    });
-    highlighterPromise.then((h) => {
-      highlighterInstance = h;
     });
   }
   return highlighterPromise;
@@ -95,30 +91,5 @@ export async function ensureLanguage(lang: string): Promise<void> {
     LAZY_LANGS.delete(lang);
   } catch {
     // Language not available — fall back to plain text
-  }
-}
-
-/**
- * Release the highlighter instance to free WASM/grammar memory.
- * Call when the user navigates away from a view that uses code highlighting.
- */
-export function disposeHighlighter(): void {
-  if (highlighterInstance) {
-    try {
-      highlighterInstance.dispose?.();
-    } catch {
-      // best-effort
-    }
-  }
-  highlighterInstance = null;
-  highlighterPromise = null;
-  loadedExtraLangs.clear();
-
-  // Restore lazy language set so they can be loaded again if needed
-  for (const lang of [
-    "tsx", "jsx", "css", "scss", "html", "xml", "diff",
-    "yaml", "python", "rust", "go", "sql", "shell", "md",
-  ]) {
-    LAZY_LANGS.add(lang);
   }
 }

@@ -232,12 +232,13 @@ export function AgentsPage() {
     }
     const agent = customAgents.find((item) => item.id === selectedItem.id);
     return agent ? { kind: "custom" as const, agent } : null;
-  }, [customAgents, selectedItem]);
+  }, [customAgents, selectedItem, builtInAgent]);
 
   useEffect(() => {
+    const timer = collapseTimerRef;
     return () => {
-      if (collapseTimerRef.current !== null) {
-        window.clearTimeout(collapseTimerRef.current);
+      if (timer.current !== null) {
+        window.clearTimeout(timer.current);
       }
     };
   }, []);
@@ -579,7 +580,7 @@ export function AgentsPage() {
               </button>
 
               {customAgents.map((agent) => (
-                // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for edit/delete
+                /* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested Button inside, invalid to nest <button> */
                 <div
                   role="button"
                   tabIndex={0}
@@ -708,17 +709,17 @@ export function AgentsPage() {
           role="separator"
           aria-orientation="vertical"
           aria-label={resize_agents_sidebar()}
-          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
+            "pointer-events-none group absolute right-[-8px] top-0 z-30 h-full w-4",
             !showExpandedContent && "hidden",
             isResizingSidebar &&
               "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
+            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm pointer-events-auto cursor-col-resize transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >

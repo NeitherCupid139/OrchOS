@@ -39,6 +39,3 @@ export function getBuiltInAgent(): BuiltInAgent {
   };
 }
 
-export function isBuiltInAgent(id: string): boolean {
-  return id === BUILTIN_AGENT_ID;
-}

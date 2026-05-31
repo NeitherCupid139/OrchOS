@@ -288,14 +288,16 @@ const InfoCardDismiss = React.memo(
     }, []);
 
     useEffect(() => {
+      const timer = pressTimerRef;
       return () => {
-        if (pressTimerRef.current) clearInterval(pressTimerRef.current);
+        if (timer.current) clearInterval(timer.current);
       };
     }, []);
 
     return (
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className={cn(
           "relative cursor-pointer select-none rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground overflow-hidden",
           className,
@@ -319,7 +321,7 @@ const InfoCardDismiss = React.memo(
           style={{ opacity: pressProgress * 0.3 }}
         />
         <span className="relative z-10">{children}</span>
-      </button>
+      </div>
     );
   },
 );
@@ -410,10 +412,10 @@ const InfoCardMedia = ({
 
   return (
     <InfoCardImageContext.Provider
-      value={{
-        handleMediaLoad,
-        setAllImagesLoaded,
-      }}
+      value={useMemo(
+        () => ({ handleMediaLoad, setAllImagesLoaded }),
+        [handleMediaLoad, setAllImagesLoaded],
+      )}
     >
       <motion.div
         className={cn("relative mt-2 rounded-md", className)}
@@ -506,3 +508,4 @@ export {
   InfoCardDismiss,
   InfoCardAction,
 };
+

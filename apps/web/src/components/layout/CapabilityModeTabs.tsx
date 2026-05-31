@@ -11,16 +11,17 @@ interface CapabilityModeTabsProps {
   onModeChange?: (mode: CapabilityViewMode) => void;
 }
 
+const capabilityModeItems: Array<{
+  key: CapabilityViewMode;
+  label: string;
+  icon: typeof FolderLibraryIcon;
+  iconClassName: string;
+}> = [
+  { key: "mine", label: mine(), icon: FolderLibraryIcon, iconClassName: "text-emerald-500" },
+  { key: "market", label: market(), icon: Store04Icon, iconClassName: "text-sky-500" },
+];
+
 export function CapabilityModeTabs({ view, mode, onModeChange }: CapabilityModeTabsProps) {
-  const capabilityModeItems: Array<{
-    key: CapabilityViewMode;
-    label: string;
-    icon: typeof FolderLibraryIcon;
-    iconClassName: string;
-  }> = [
-    { key: "mine", label: mine(), icon: FolderLibraryIcon, iconClassName: "text-emerald-500" },
-    { key: "market", label: market(), icon: Store04Icon, iconClassName: "text-sky-500" },
-  ];
 
   return (
     <div className="flex items-center gap-1.5">

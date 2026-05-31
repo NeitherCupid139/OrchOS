@@ -44,41 +44,41 @@ function FooterSection({
   );
 }
 
-export default function Footer() {
-  const sections = [
-    {
-      title: footer_product(),
-      links: [
-        { label: nav_home(), to: "/" },
-        { label: nav_pricing(), to: "/pricing" },
-        { label: open_dashboard(), to: "/dashboard" },
-        { label: nav_changelog(), to: "/changelog" },
-      ],
-    },
-    {
-      title: footer_company(),
-      links: [
-        { label: nav_about(), to: "/about" },
-        { label: integration_github(), to: "https://github.com/NeitherCupid139/OrchOS" },
-      ],
-    },
-    {
-      title: footer_resources(),
-      links: [
-        { label: terms_of_service(), to: "/terms" },
-        { label: privacy_policy(), to: "/privacy" },
-        { label: footer_help_center(), to: "#" },
-      ],
-    },
-  ];
+const footerSections = [
+  {
+    title: footer_product(),
+    links: [
+      { label: nav_home(), to: "/" },
+      { label: nav_pricing(), to: "/pricing" },
+      { label: open_dashboard(), to: "/dashboard" },
+      { label: nav_changelog(), to: "/changelog" },
+    ],
+  },
+  {
+    title: footer_company(),
+    links: [
+      { label: nav_about(), to: "/about" },
+      { label: integration_github(), to: "https://github.com/NeitherCupid139/OrchOS" },
+    ],
+  },
+  {
+    title: footer_resources(),
+    links: [
+      { label: terms_of_service(), to: "/terms" },
+      { label: privacy_policy(), to: "/privacy" },
+      { label: footer_help_center(), to: "#" },
+    ],
+  },
+];
 
+export default function Footer() {
   const copyright = `©${COPYRIGHT_YEAR} ${about_orchos()}. ${footer_rights()}`;
 
   return (
     <footer className="bg-card py-10 md:py-16 px-4 md:px-12">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12 lg:gap-20">
-          {sections.map((section) => (
+          {footerSections.map((section) => (
             <FooterSection key={section.title} links={section.links} />
           ))}
         </div>

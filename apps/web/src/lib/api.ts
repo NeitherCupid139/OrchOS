@@ -3,7 +3,6 @@ import {
   getCached,
   setCache,
   invalidateDependentCaches,
-  clearAllCaches,
 } from "./api-cache";
 
 type ClientApi = (typeof import("./api.client"))["api"];
@@ -135,10 +134,5 @@ export {
   normalizeInboxThread,
   normalizeTrace,
 } from "./api.normalizers";
-export { isRecord, readString, resolveApiUrl } from "./api.shared";
+export { isRecord, readString } from "./api.shared";
 export type * from "./api.types";
-
-/** Clear all cached API responses (e.g. on sign-out) */
-export function clearApiCache() {
-  clearAllCaches();
-}

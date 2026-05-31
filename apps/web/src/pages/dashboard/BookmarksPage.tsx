@@ -643,7 +643,7 @@ const BookmarkCard = memo(
               </h2>
               <div
                 className={cn(
-                  "hidden shrink-0 items-center gap-0.5 rounded-lg bg-card/95 p-0.5 shadow-sm",
+                  "hidden shrink-0 items-center gap-0.5 rounded-lg border border-border bg-card/95 p-0.5",
                   "group-hover:inline-flex",
                 )}
               >
@@ -807,14 +807,33 @@ export function BookmarksPage() {
   const { searchQuery } = useDashboard();
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  useEffect(() => {
-    void loadBookmarks();
-  }, []);
+  const loadBookmarks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const nextCategories = await api.listBookmarks();
+      setCategories(nextCategories);
+      setSelectedCategoryId(
+        (current) =>
+          nextCategories.some((category) => category.id === current)
+            ? current
+            : (nextCategories[0]?.id ?? null),
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api, setSelectedCategoryId]);
 
   useEffect(() => {
+    void loadBookmarks();
+  }, [loadBookmarks]);
+
+  useEffect(() => {
+    const timer = collapseTimerRef;
     return () => {
-      if (collapseTimerRef.current !== null) {
-        window.clearTimeout(collapseTimerRef.current);
+      if (timer.current !== null) {
+        window.clearTimeout(timer.current);
       }
     };
   }, []);
@@ -887,24 +906,6 @@ export function BookmarksPage() {
 
   function handleImportBookmarksClick() {
     fileInputRef.current?.click();
-  }
-
-  async function loadBookmarks() {
-    setLoading(true);
-    try {
-      const nextCategories = await api.listBookmarks();
-      setCategories(nextCategories);
-      setSelectedCategoryId(
-        (current) =>
-          nextCategories.some((category) => category.id === current)
-            ? current
-            : (nextCategories[0]?.id ?? null),
-      );
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function persistCategories(
@@ -1221,7 +1222,7 @@ export function BookmarksPage() {
       );
       setDraggedBookmark(null);
     },
-    [draggedBookmark, selectedCategory],
+    [draggedBookmark, selectedCategory, reorderBookmarkWithinCategory],
   );
 
   return (
@@ -1459,17 +1460,17 @@ export function BookmarksPage() {
           role="separator"
           aria-orientation="vertical"
           aria-label={resize_bookmarks_sidebar()}
-          onPointerDown={handleResizeStart}
           className={cn(
-            "group absolute right-[-8px] top-0 z-20 h-full w-4 cursor-col-resize",
+            "pointer-events-none group absolute right-[-8px] top-0 z-30 h-full w-4",
             sidebarCollapsed && "hidden",
             isResizingSidebar &&
               "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-[repeating-linear-gradient(to_bottom,theme(colors.sky.500)_0_6px,transparent_6px_12px)]",
           )}
         >
           <div
+            onPointerDown={handleResizeStart}
             className={cn(
-              "pointer-events-none absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
+              "absolute top-1/2 left-1/2 flex h-12 w-2 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow-sm pointer-events-auto cursor-col-resize transition-[background-color,border-color,box-shadow] duration-150 ease-out group-hover:bg-muted group-hover:shadow-md",
               isResizingSidebar && "border-border bg-muted shadow-md",
             )}
           >

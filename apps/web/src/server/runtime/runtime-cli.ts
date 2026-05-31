@@ -57,7 +57,7 @@ function getRuntimeRegistryEntry(runtimeId: string) {
   return AGENT_CLI_REGISTRY.find((entry) => entry.id === runtimeId);
 }
 
-export async function runRuntimeCommand(command: string, config: RuntimeExecutorConfig = {}): Promise<RuntimeExecutionResult> {
+async function runRuntimeCommand(command: string, config: RuntimeExecutorConfig = {}): Promise<RuntimeExecutionResult> {
   const remoteAdapter = getRemoteExecutionAdapter();
   if (remoteAdapter) {
     const result = await remoteAdapter.run(command, config);

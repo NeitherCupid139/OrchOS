@@ -11,10 +11,4 @@ export function timestamp(): string {
   return new Date().toISOString();
 }
 
-export function timeLabel(): string {
-  return new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
+

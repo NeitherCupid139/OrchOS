@@ -102,7 +102,7 @@ export function Action({
   const [clicked, setClicked] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const handleClick = useCallback(() => {
+  const triggerAction = useCallback(() => {
     if (clicked) return;
     onClick?.();
     if (!animation) return;
@@ -133,7 +133,7 @@ export function Action({
               )}
               size="icon-xs"
               variant="ghost"
-              onClick={handleClick}
+              onClick={triggerAction}
             >
               {icon}
               <span className="sr-only">{label || tooltip}</span>
@@ -153,7 +153,7 @@ export function Action({
       )}
       size="icon-xs"
       variant="ghost"
-      onClick={handleClick}
+      onClick={triggerAction}
     >
       {icon}
       <span className="sr-only">{label || tooltip}</span>

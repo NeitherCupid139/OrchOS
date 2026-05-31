@@ -75,7 +75,7 @@ export function normalizeReminderInput(
   };
 }
 
-export function getReminderSchedule(reminder: PlannerReminderLike): PlannerReminderSchedule | undefined {
+function getReminderSchedule(reminder: PlannerReminderLike): PlannerReminderSchedule | undefined {
   return reminder.schedule ?? (reminder.remindAt ? parseReminderSchedule(reminder.remindAt) : undefined);
 }
 

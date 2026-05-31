@@ -1,8 +1,5 @@
-import { getLocale, setLocale } from "@/paraglide/runtime";
 import type { Locale } from "@/paraglide/runtime";
-import { m } from "@/paraglide/messages";
 
-export { getLocale, setLocale, m };
 export { syncActiveLocale, syncRuntimeLocale } from "@/lib/i18n-runtime";
 export type { Locale };
 
@@ -13,7 +10,3 @@ export const AVAILABLE_LOCALES = [
   { value: "ko", label: "한국어" },
   { value: "ja", label: "日本語" },
 ] as const;
-
-export function changeLocale(locale: Locale) {
-  setLocale(locale, { reload: false });
-}

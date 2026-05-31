@@ -230,8 +230,8 @@ export function InboxList({
       </ScrollAreaPrimitive.Root>
 
       {accounts && accounts.length > 0 && onAccountChange ? (
-        <div className="flex h-10 items-center border-t border-border p-2">
-          <div className="flex flex-wrap items-center gap-1 rounded-md px-1">
+        <div className="border-t border-border p-2">
+          <div className="flex h-10 items-center gap-1 rounded-md px-1">
             {[
               { id: null, label: all(), icon: InboxIcon },
               ...accounts.map((a) => ({

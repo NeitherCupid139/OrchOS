@@ -32,7 +32,7 @@ export function getNotificationPermissionState():
  * MUST be called from a user gesture (click handler).
  * Returns true if permission was granted, false otherwise.
  */
-export async function requestNotificationPermission(): Promise<boolean> {
+async function requestNotificationPermission(): Promise<boolean> {
   if (!canUseNotifications()) {
     console.warn(
       "[OrchOS Notifications] Notification API not available in this environment.",
@@ -141,25 +141,6 @@ export async function ensureSystemNotificationAccess(): Promise<{
   return { granted: true, testSent: result.sent };
 }
 
-/**
- * Check if the document is currently hidden (user is on a different tab/window).
- * Use this to avoid spamming notifications when the user is actively looking at the app.
- */
-export function isDocumentHidden(): boolean {
-  return typeof document !== "undefined" && document.hidden;
-}
 
-/**
- * Send an event notification — only if the user is away from the tab
- * and system notifications are enabled.
- */
-export function sendEventNotification(
-  title: string,
-  options?: NotificationOptions,
-): SendNotificationResult {
-  // Don't bother if the user is actively looking at the app
-  if (!isDocumentHidden()) {
-    return { sent: false, reason: "denied" };
-  }
-  return sendNotification(title, options);
-}
+
+

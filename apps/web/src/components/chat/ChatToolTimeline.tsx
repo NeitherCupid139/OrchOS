@@ -329,7 +329,7 @@ function WebSearchToolCard({ output }: { output: unknown }) {
             const snippet = readString(r.snippet) || readString(r.description);
             const url = readString(r.url) || readString(r.link);
             return (
-              <div key={i} className="rounded border border-border/30 px-2 py-1.5">
+              <div key={url || title} className="rounded border border-border/30 px-2 py-1.5">
                 <div className="text-[11px] font-medium text-foreground/70">{title}</div>
                 {snippet && <div className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{snippet}</div>}
                 {url && <div className="mt-0.5 text-[10px] text-blue-500 truncate">{url}</div>}
@@ -361,7 +361,7 @@ function BookmarkToolCard({ toolType, output }: { toolType: string; output: unkn
     return (
       <div className="space-y-1.5 px-2.5 py-2">
         {categories.map((cat, i) => (
-          <div key={i} className="rounded border border-border/30 px-2 py-1.5">
+          <div key={readString(cat.name) || `cat-${i}`} className="rounded border border-border/30 px-2 py-1.5">
             <div className="flex items-center gap-1.5">
               <FolderIcon className="size-3.5 text-muted-foreground shrink-0" />
               <span className="text-[11px] font-medium text-foreground/70">{readString(cat.name) || `分类 ${i + 1}`}</span>

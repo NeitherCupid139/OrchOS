@@ -124,7 +124,7 @@ export function RichTextEditor({
     [value, initialized],
   );
 
-  const handleInput = useCallback(() => {
+  const handleEditorChange = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
     isInternalChange.current = true;
@@ -284,7 +284,7 @@ export function RichTextEditor({
         ref={editorCallbackRef}
         contentEditable={!disabled}
         suppressContentEditableWarning
-        onInput={handleInput}
+        onInput={handleEditorChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         onFocus={() => {
@@ -300,6 +300,7 @@ export function RichTextEditor({
           "empty:before:pointer-events-none empty:before:text-muted-foreground/60 empty:before:content-[attr(data-placeholder)]",
         )}
         style={{ minHeight }}
+        // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- contentEditable div, <input> cannot support rich text
         role="textbox"
         aria-multiline="true"
         aria-label={placeholder}

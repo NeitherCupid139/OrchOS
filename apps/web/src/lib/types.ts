@@ -13,27 +13,6 @@ export type SystemProblemSource =
   | "lint_warning"
   | "review_rejected";
 
-export const INBOX_SOURCES: InboxSource[] = [
-  "github_pr",
-  "github_issue",
-  "mention",
-  "agent_request",
-];
-export const SYSTEM_SOURCES: SystemProblemSource[] = [
-  "test_failed",
-  "build_error",
-  "lint_error",
-  "lint_warning",
-  "review_rejected",
-];
-
-export const inboxSourceLabels: Record<InboxSource, string> = {
-  github_pr: "Pull Request",
-  github_issue: "Issue",
-  mention: "Mention",
-  agent_request: "Agent Request",
-};
-
 export interface Project {
   id: string;
   name: string;
@@ -193,16 +172,6 @@ export interface BoardTask {
   column: BoardTaskColumnId;
   createdAt: string;
   updatedAt: string;
-}
-
-export function isInboxItem(problem: Problem): problem is Problem & { source: InboxSource } {
-  return INBOX_SOURCES.includes(problem.source as InboxSource);
-}
-
-export function isSystemProblem(
-  problem: Problem,
-): problem is Problem & { source: SystemProblemSource } {
-  return SYSTEM_SOURCES.includes(problem.source as SystemProblemSource);
 }
 
 export type SidebarView =

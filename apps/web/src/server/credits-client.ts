@@ -15,11 +15,6 @@ interface CreditsCheckResult {
   reason?: string;
 }
 
-interface CreditsMiddlewareConfig {
-  apiEndpoint: string;
-  apiKey: string;
-}
-
 /**
  * Check if a user has enough credits before an AI call.
  * In OSS mode, always returns allowed.
@@ -42,22 +37,4 @@ export async function checkCredits(
   }
 }
 
-/**
- * Deduct tokens from a user's credit balance after an AI call.
- * In OSS mode, no-op.
- */
-export async function deductCredits(
-  config: CreditsMiddlewareConfig,
-  userId: string,
-  tokens: number,
-  action: string,
-): Promise<void> {
-  if (!isProEnabled() || tokens <= 0) return;
 
-  try {
-    const mod = await import("@orchos/pro/credits/middleware");
-    await mod.deductCredits(config, userId, tokens, action);
-  } catch {
-    // Fail silently in OSS builds
-  }
-}

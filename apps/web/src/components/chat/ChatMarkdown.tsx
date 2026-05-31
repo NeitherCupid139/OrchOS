@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { memo, type ComponentPropsWithoutRef, type ComponentType, type ReactElement, type ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createClientOnlyFn } from "@tanstack/react-start";
 import remarkGfm from "remark-gfm";
 import { Folder01Icon } from "@hugeicons/core-free-icons";
@@ -71,21 +71,11 @@ const loadChatCodeBlock = createClientOnlyFn(async () => {
 });
 
 function ChatCodeBlockClient({ code, language }: { code: string; language?: string }) {
-  const [Component, setComponent] = useState<ComponentType<{ code: string; language?: string }> | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    void loadChatCodeBlock().then((loaded) => {
-      if (mounted) {
-        setComponent(() => loaded);
-      }
-    });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const [Component, setComponent] = useState<ComponentType<{ code: string; language?: string }> | null>(() => {
+    if (typeof window === "undefined") return null;
+    void loadChatCodeBlock().then((loaded) => setComponent(() => loaded));
+    return null;
+  });
 
   if (!Component) {
     return (

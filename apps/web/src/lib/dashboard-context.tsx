@@ -618,9 +618,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [initializeViewData]);
 
   useEffect(() => {
+    const timer = refreshTimerRef;
     return () => {
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
+      if (timer.current) {
+        clearTimeout(timer.current);
       }
     };
   }, []);

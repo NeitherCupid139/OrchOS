@@ -96,15 +96,18 @@ function isMarkdownFile(filePath: string) {
 }
 
 function useResolvedTheme() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light",
+  );
 
   useEffect(() => {
     const updateTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
       setTheme(isDark ? "dark" : "light");
     };
-
-    updateTheme();
 
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, {
@@ -125,12 +128,15 @@ function useResolvedTheme() {
 }
 
 function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false,
+  );
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
     const update = () => setIsDesktop(media.matches);
-    update();
     media.addEventListener("change", update);
 
     return () => media.removeEventListener("change", update);
@@ -333,6 +339,17 @@ function MarkdownPreview({
   );
 }
 
+function getFileType(filePath: string) {
+  if (filePath.endsWith(".tsx")) return "TSX";
+  if (filePath.endsWith(".ts")) return "TS";
+  if (filePath.endsWith(".js")) return "JS";
+  if (filePath.endsWith(".jsx")) return "JSX";
+  if (filePath.endsWith(".md")) return "MD";
+  if (filePath.endsWith(".css")) return "CSS";
+  if (filePath.endsWith(".json")) return "JSON";
+  return "TXT";
+}
+
 function FileHeader({
   file,
   onCopy,
@@ -348,16 +365,6 @@ function FileHeader({
   isPreview: boolean;
   onTogglePreview: () => void;
 }) {
-  const getFileType = (filePath: string) => {
-    if (filePath.endsWith(".tsx")) return "TSX";
-    if (filePath.endsWith(".ts")) return "TS";
-    if (filePath.endsWith(".js")) return "JS";
-    if (filePath.endsWith(".jsx")) return "JSX";
-    if (filePath.endsWith(".md")) return "MD";
-    if (filePath.endsWith(".css")) return "CSS";
-    if (filePath.endsWith(".json")) return "JSON";
-    return "TXT";
-  };
 
   return (
     <div className="flex h-14 items-center justify-between border-b border-border px-4">

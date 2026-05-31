@@ -112,7 +112,7 @@ export function DatePicker({
         start: startOfWeek(startOfMonth(month)),
         end: endOfWeek(endOfMonth(month)),
       }),
-    [month],
+      [month.getTime()],
   );
 
   const goToPrevious = () => setUserMonth(add(month, { months: -1 }));

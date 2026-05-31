@@ -171,9 +171,4 @@ export function getEmailProvider(id: string): EmailProvider | undefined {
   return EMAIL_PROVIDERS.find((p) => p.id === id);
 }
 
-/**
- * Get the default provider (Gmail).
- */
-export function getDefaultProvider(): EmailProvider {
-  return EMAIL_PROVIDERS[0];
-}
+

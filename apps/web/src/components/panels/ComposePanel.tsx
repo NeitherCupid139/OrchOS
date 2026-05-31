@@ -178,7 +178,7 @@ export function ComposePanel({
                 <button
                   type="button"
                   onClick={handleMinimize}
-                  title="Minimize"
+                  aria-label="Minimize"
                   className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

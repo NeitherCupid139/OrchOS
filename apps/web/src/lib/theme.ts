@@ -1,7 +1,7 @@
 export type ThemeMode = "light" | "dark" | "auto";
 export type ResolvedTheme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "orchos-ui";
+const THEME_STORAGE_KEY = "orchos-ui";
 
 type PersistedThemeSnapshot = {
   state?: {

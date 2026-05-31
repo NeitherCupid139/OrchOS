@@ -1,45 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { api } from "./api";
+import { useEffect, useRef } from "react";
 import { sendNotification } from "@/lib/notifications";
-
-function useAsyncData<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Keep latest fetcher in ref so refresh always calls the current function,
-  // while deps control refresh identity for re-fetch triggers.
-  const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetcherRef.current();
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-    // oxlint-disable-next-line react-doctor/exhaustive-deps -- fetcherRef is stable; deps control refresh triggers
-  }, deps);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { data, loading, error, refresh };
-}
-
-export function useSettings() {
-  return useAsyncData(() => api.getSettings());
-}
-
-export function useProjects() {
-  return useAsyncData(() => api.listProjects());
-}
 
 /**
  * Watch for new assistant messages and dispatch browser notifications
