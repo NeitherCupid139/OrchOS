@@ -64,7 +64,7 @@ const loadAuthTransitionOverlay = createClientOnlyFn(async () => {
 });
 
 export const Route = createFileRoute("/dashboard")({
-  component: DashboardContent,
+  component: DashboardWrapper,
 });
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -166,10 +166,6 @@ function DashboardWrapper() {
       </RequireAuth>
     </AuthProvider>
   );
-}
-
-function DashboardContent() {
-  return <DashboardWrapper />;
 }
 
 // ── Memoized subsection components ──────────────────────────────
@@ -576,6 +572,7 @@ function DashboardContentInner() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={search_bookmarks()}
+                      aria-label={search_bookmarks()}
                       className="w-full rounded-md border border-border bg-background py-1 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
                     />
                   </div>
@@ -603,6 +600,7 @@ function DashboardContentInner() {
         </Suspense>
         <Suspense fallback={null}>
           <CreateBoardConversationDialog
+            key={createBoardDialogOpen ? "create" : "closed"}
             open={createBoardDialogOpen}
             onClose={() => setCreateBoardDialogOpen(false)}
             onSubmit={async (values) => {
@@ -620,6 +618,7 @@ function DashboardContentInner() {
         </Suspense>
         <Suspense fallback={null}>
           <OnboardingChangelogDialog
+            key={String(firstTimeOnboardingOpen)}
             open={firstTimeOnboardingOpen}
             onClose={() => {
               setFirstTimeOnboardingOpen(false);

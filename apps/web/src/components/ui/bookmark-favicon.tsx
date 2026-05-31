@@ -63,24 +63,6 @@ export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: B
     }
   }, [icon, domain]);
 
-  // If we have a cached or DB icon, render it directly
-  if (src) {
-    return (
-      <div className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-accent">
-        <img
-          src={src}
-          alt=""
-          className="size-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-        />
-        {pinned && (
-          <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-            <HugeiconsIcon icon={PinIcon} className="size-2.5" />
-          </span>
-        )}
-      </div>
-    );
-  }
-
   const handleImageLoad = useCallback(() => {
     if (!bookmarkId || !categoryId || domain === null) return;
     void (async () => {
@@ -114,6 +96,24 @@ export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: B
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // If we have a cached or DB icon, render it directly
+  if (src) {
+    return (
+      <div className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-accent">
+        <img
+          src={src}
+          alt=""
+          className="size-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+        />
+        {pinned && (
+          <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <HugeiconsIcon icon={PinIcon} className="size-2.5" />
+          </span>
+        )}
+      </div>
+    );
+  }
 
   if (failedRef.current || !domain) {
     return (

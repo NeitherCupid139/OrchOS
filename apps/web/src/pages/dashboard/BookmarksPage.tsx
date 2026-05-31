@@ -553,6 +553,7 @@ function BookmarkIconField({
           type="file"
           accept="image/*"
           className="hidden"
+          aria-label="Upload bookmark icon"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (!file) {
@@ -1230,6 +1231,7 @@ export function BookmarksPage() {
         type="file"
         accept=".html,.json,.csv"
         className="hidden"
+        aria-label="Import bookmarks file"
         onChange={handleFileChange}
       />
 

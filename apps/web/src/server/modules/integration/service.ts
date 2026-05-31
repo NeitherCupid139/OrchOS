@@ -1,4 +1,6 @@
 import { createTransport } from "nodemailer";
+import Imap from "node-imap";
+import { simpleParser, type ParsedMail } from "mailparser";
 import { eq } from "drizzle-orm";
 import type { AppDb } from "@/server/db/types";
 import { settings } from "@/server/db/schema";
@@ -51,6 +53,23 @@ interface IntegrationConfig {
 interface GoogleTokenResult {
   accessToken: string;
   scopes: string[];
+}
+
+export interface EmailSummary {
+  id: string;
+  threadId?: string;
+  from: string;
+  to: string;
+  subject: string;
+  date: string;
+  snippet: string;
+  provider: "gmail" | "smtp";
+  accountId: string;
+}
+
+export interface EmailDetail extends EmailSummary {
+  cc: string;
+  body: string;
 }
 
 const INTEGRATION_KEY = "integrations";
@@ -618,6 +637,378 @@ export class IntegrationService {
       accepted: info.accepted,
       rejected: info.rejected,
     };
+  }
+
+  /**
+   * Fetch recent emails from a Gmail account via the Gmail API.
+   */
+  async fetchGmailMessages(input: {
+    accountId?: string;
+    maxResults?: number;
+    query?: string;
+  }): Promise<EmailSummary[]> {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "gmail");
+    const account = this.requireAccount(integration, input.accountId);
+    const { accessToken } = await this.getGoogleAccessToken(account);
+
+    const maxResults = Math.min(input.maxResults ?? 10, 50);
+    const q = input.query ?? "in:inbox";
+    const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}&q=${encodeURIComponent(q)}`;
+
+    const listResponse = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!listResponse.ok) {
+      const errorText = await listResponse.text().catch(() => "Unknown error");
+      throw new Error(`Failed to list Gmail messages: ${errorText}`);
+    }
+
+    const listData = (await listResponse.json()) as {
+      messages?: { id: string; threadId: string }[];
+      resultSizeEstimate?: number;
+    };
+
+    if (!listData.messages || listData.messages.length === 0) {
+      return [];
+    }
+
+    // Fetch details for each message
+    const summaries: EmailSummary[] = [];
+    for (const msg of listData.messages) {
+      try {
+        const detailResponse = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date`,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        );
+
+        if (!detailResponse.ok) continue;
+
+        const detail = (await detailResponse.json()) as {
+          id: string;
+          threadId: string;
+          snippet?: string;
+          internalDate?: string;
+          payload?: {
+            headers?: { name: string; value: string }[];
+          };
+        };
+
+        const headers = detail.payload?.headers ?? [];
+        const getHeader = (name: string) =>
+          headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+
+        summaries.push({
+          id: msg.id,
+          threadId: msg.threadId,
+          from: getHeader("From"),
+          to: getHeader("To"),
+          subject: getHeader("Subject"),
+          date: getHeader("Date") || (detail.internalDate ? new Date(Number(detail.internalDate)).toISOString() : ""),
+          snippet: detail.snippet ?? "",
+          provider: "gmail",
+          accountId: account.id,
+        });
+      } catch {
+        // Skip individual message fetch errors
+      }
+    }
+
+    return summaries;
+  }
+
+  /**
+   * Get the full content of a specific Gmail message.
+   */
+  async getGmailMessage(input: {
+    accountId?: string;
+    messageId: string;
+  }): Promise<EmailDetail | null> {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "gmail");
+    const account = this.requireAccount(integration, input.accountId);
+    const { accessToken } = await this.getGoogleAccessToken(account);
+
+    const response = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${input.messageId}?format=full`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to get Gmail message: ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as {
+      id: string;
+      threadId: string;
+      snippet?: string;
+      internalDate?: string;
+      payload?: {
+        headers?: { name: string; value: string }[];
+        body?: { data?: string };
+        parts?: {
+          mimeType: string;
+          body?: { data?: string };
+          parts?: { mimeType: string; body?: { data?: string } }[];
+        }[];
+      };
+    };
+
+    const headers = data.payload?.headers ?? [];
+    const getHeader = (name: string) =>
+      headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+
+    // Decode body from base64
+    let body = "";
+    const parts = data.payload?.parts;
+    if (parts) {
+      for (const part of parts) {
+        if (part.mimeType === "text/plain" || part.mimeType === "text/html") {
+          const data = part.body?.data;
+          if (data) {
+            const decoded = atob(data.replace(/-/g, "+").replace(/_/g, "/"));
+            if (part.mimeType === "text/plain") {
+              body = decoded;
+              break;
+            } else if (!body) {
+              // Fallback to HTML, strip tags for plain text
+              body = decoded.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+            }
+          }
+        }
+      }
+    } else if (data.payload?.body?.data) {
+      body = atob(data.payload.body.data.replace(/-/g, "+").replace(/_/g, "/"));
+    }
+
+    return {
+      id: data.id,
+      threadId: data.threadId,
+      from: getHeader("From"),
+      to: getHeader("To"),
+      cc: getHeader("Cc"),
+      subject: getHeader("Subject"),
+      date: getHeader("Date") || (data.internalDate ? new Date(Number(data.internalDate)).toISOString() : ""),
+      snippet: data.snippet ?? "",
+      body,
+      provider: "gmail",
+      accountId: account.id,
+    };
+  }
+
+  /**
+   * Fetch recent emails from an IMAP inbox.
+   */
+  async fetchImapMessages(input: {
+    accountId?: string;
+    maxResults?: number;
+  }): Promise<EmailSummary[]> {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "smtp-imap");
+    const account = this.requireAccount(integration, input.accountId);
+    const config = account.smtpImap;
+
+    if (!config) {
+      throw new Error("IMAP account is missing configuration");
+    }
+
+    const maxResults = Math.min(input.maxResults ?? 10, 50);
+
+    return new Promise((resolve, reject) => {
+      const imap = new Imap({
+        user: config.username,
+        password: config.password,
+        host: config.imap.host,
+        port: config.imap.port,
+        tls: config.imap.secure,
+        tlsOptions: { rejectUnauthorized: false },
+      });
+
+      const summaries: EmailSummary[] = [];
+
+      imap.once("ready", () => {
+        imap.openBox("INBOX", false, (err) => {
+          if (err) {
+            imap.end();
+            reject(new Error(`Failed to open inbox: ${err.message}`));
+            return;
+          }
+
+          imap.search(["ALL"], (searchErr, uids) => {
+            if (searchErr) {
+              imap.end();
+              reject(new Error(`Failed to search inbox: ${searchErr.message}`));
+              return;
+            }
+
+            if (!uids || uids.length === 0) {
+              imap.end();
+              resolve([]);
+              return;
+            }
+
+            const recentUids = uids.slice(-maxResults);
+            const fetch = imap.fetch(recentUids, {
+              bodies: ["HEADER.FIELDS (FROM TO SUBJECT DATE)", "TEXT"],
+              struct: true,
+            });
+
+            fetch.on("message", (msg) => {
+              let from = "";
+              let to = "";
+              let subject = "";
+              let date = "";
+              let snippet = "";
+
+              msg.on("body", (stream, info) => {
+                let buffer = "";
+                stream.on("data", (chunk: Buffer) => {
+                  buffer += chunk.toString("utf-8");
+                });
+                stream.once("end", () => {
+                  if (info.which.startsWith("HEADER")) {
+                    from = buffer.match(/^From:\s*(.+)$/im)?.[1] ?? "";
+                    to = buffer.match(/^To:\s*(.+)$/im)?.[1] ?? "";
+                    subject = buffer.match(/^Subject:\s*(.+)$/im)?.[1] ?? "";
+                    date = buffer.match(/^Date:\s*(.+)$/im)?.[1] ?? "";
+                  } else {
+                    snippet = buffer.replace(/\r?\n/g, " ").slice(0, 200);
+                  }
+                });
+              });
+
+              msg.once("attributes", (attrs) => {
+                summaries.push({
+                  id: String(attrs.uid),
+                  threadId: undefined,
+                  from,
+                  to,
+                  subject,
+                  date,
+                  snippet,
+                  provider: "smtp",
+                  accountId: account.id,
+                });
+              });
+            });
+
+            fetch.once("error", (fetchErr) => {
+              imap.end();
+              reject(new Error(`Fetch error: ${fetchErr.message}`));
+            });
+
+            fetch.once("end", () => {
+              imap.end();
+              // Sort by most recent first (reverse order)
+              summaries.reverse();
+              resolve(summaries);
+            });
+          });
+        });
+      });
+
+      imap.once("error", (imapErr: Error) => {
+        reject(new Error(`IMAP connection error: ${imapErr.message}`));
+      });
+
+      imap.connect();
+    });
+  }
+
+  /**
+   * Get the full content of a specific IMAP message.
+   */
+  async getImapMessage(input: {
+    accountId?: string;
+    messageId: string;
+  }): Promise<EmailDetail | null> {
+    const integrations = await this.getIntegrations();
+    const integration = this.requireIntegration(integrations, "smtp-imap");
+    const account = this.requireAccount(integration, input.accountId);
+    const config = account.smtpImap;
+
+    if (!config) {
+      throw new Error("IMAP account is missing configuration");
+    }
+
+    return new Promise((resolve, reject) => {
+      const imap = new Imap({
+        user: config.username,
+        password: config.password,
+        host: config.imap.host,
+        port: config.imap.port,
+        tls: config.imap.secure,
+        tlsOptions: { rejectUnauthorized: false },
+      });
+
+      imap.once("ready", () => {
+        imap.openBox("INBOX", false, (err) => {
+          if (err) {
+            imap.end();
+            reject(new Error(`Failed to open inbox: ${err.message}`));
+            return;
+          }
+
+          const uid = Number(input.messageId);
+          if (Number.isNaN(uid)) {
+            imap.end();
+            reject(new Error(`Invalid message ID: ${input.messageId}`));
+            return;
+          }
+
+          const fetch = imap.fetch([uid], { bodies: [""] });
+
+          fetch.on("message", (msg) => {
+            const chunks: Buffer[] = [];
+            msg.on("body", (stream) => {
+              stream.on("data", (chunk: Buffer) => {
+                chunks.push(chunk);
+              });
+              stream.once("end", () => {
+                const full = Buffer.concat(chunks);
+                simpleParser(full, (parseErr, parsed: ParsedMail) => {
+                  imap.end();
+                  if (parseErr) {
+                    reject(new Error(`Failed to parse email: ${parseErr.message}`));
+                    return;
+                  }
+
+                  resolve({
+                    id: input.messageId,
+                    threadId: undefined,
+                    from: parsed.from?.text ?? "",
+                    to: Array.isArray(parsed.to)
+                      ? parsed.to.map((a) => a.text).join(", ")
+                      : parsed.to?.text ?? "",
+                    cc: Array.isArray(parsed.cc)
+                      ? parsed.cc.map((a) => a.text).join(", ")
+                      : parsed.cc?.text ?? "",
+                    subject: parsed.subject ?? "",
+                    date: parsed.date?.toISOString() ?? "",
+                    snippet: parsed.text?.slice(0, 200) ?? "",
+                    body: parsed.text ?? "",
+                    provider: "smtp",
+                    accountId: account.id,
+                  });
+                });
+              });
+            });
+          });
+
+          fetch.once("error", (fetchErr) => {
+            imap.end();
+            reject(new Error(`Fetch error: ${fetchErr.message}`));
+          });
+        });
+      });
+
+      imap.once("error", (imapErr: Error) => {
+        reject(new Error(`IMAP connection error: ${imapErr.message}`));
+      });
+
+      imap.connect();
+    });
   }
 
 }

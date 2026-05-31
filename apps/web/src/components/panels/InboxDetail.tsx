@@ -275,6 +275,7 @@ export function InboxDetail({ thread, messages, projects, onOpenGoal, onReply }:
                 value={replyBody}
                 onChange={(e) => setReplyBody(e.target.value)}
                 placeholder="Add clarification, ask a question, or redirect the work..."
+                aria-label="Reply message"
                 className="mt-4 min-h-32 w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2"
               />
 

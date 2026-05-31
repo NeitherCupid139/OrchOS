@@ -92,49 +92,29 @@ export function CreateBoardConversationDialog({
 }: CreateBoardConversationDialogProps) {
   const isEditMode = task != null;
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState<string | undefined>(undefined);
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [priority, setPriority] = useState<BoardTaskPriority>("medium");
-  const [tags, setTags] = useState<string[]>([]);
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, _setDescription] = useState(task?.description ?? "");
+  const [projectId, _setProjectId] = useState<string | undefined>(task?.projectId);
+  const [dueDate, setDueDate] = useState<Date | undefined>(
+    task?.dueDate ? new Date(task.dueDate) : undefined,
+  );
+  const [priority, setPriority] = useState<BoardTaskPriority>(task?.priority ?? "medium");
+  const [tags, setTags] = useState<string[]>(task?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
-  const [todoRows, setTodoRows] = useState<TodoRow[]>([makeEmptyRow()]);
+  const [todoRows, setTodoRows] = useState<TodoRow[]>(
+    task?.subtasks ? subtasksToRows(task.subtasks) : [makeEmptyRow()],
+  );
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Focus the title input on mount
   useEffect(() => {
-    if (!open) {
-      setTitle("");
-      setDescription("");
-      setProjectId(undefined);
-      setDueDate(undefined);
-      setPriority("medium");
-      setTags([]);
-      setTagInput("");
-      setTodoRows([makeEmptyRow()]);
-      setDraggedRowId(null);
-      setSubmitting(false);
-      return;
-    }
-
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description ?? "");
-      setProjectId(task.projectId);
-      setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
-      setPriority(task.priority);
-      setTags(task.tags);
-      setTodoRows(subtasksToRows(task.subtasks));
-    }
-
     const timeoutId = window.setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
-
     return () => window.clearTimeout(timeoutId);
-  }, [open, task]);
+  }, []);
 
   if (!open) {
     return null;
@@ -351,6 +331,7 @@ export function CreateBoardConversationDialog({
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               placeholder={tags.length === 0 ? tags_placeholder() : ""}
+              aria-label={tags_placeholder()}
               className="min-w-[80px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>

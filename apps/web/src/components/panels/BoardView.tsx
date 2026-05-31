@@ -472,6 +472,7 @@ export function BoardView({
       </div>
 
       <CreateBoardConversationDialog
+        key={editingTask?.id ?? "new"}
         open={editingTask !== null}
         task={editingTask ?? undefined}
         onClose={() => setEditingTask(null)}

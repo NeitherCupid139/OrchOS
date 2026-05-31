@@ -792,6 +792,7 @@ export function SettingsDialog({
               const Icon = tab.icon;
               return (
                 <button
+                  type="button"
                   key={tab.id}
                   onClick={() => {
                     setActiveTab(tab.id);
@@ -1604,6 +1605,7 @@ export function SettingsDialog({
                       type="file"
                       accept="application/json,.json"
                       className="hidden"
+                      aria-label="Import platform data"
                       onChange={(event) => void handleImportPlatformDataFile(event)}
                     />
                     <Button

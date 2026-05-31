@@ -206,13 +206,10 @@ export function Sidebar({
     undefined,
   );
 
-  useEffect(() => {
-    if (!pendingNav || activeView !== pendingNav || loading) {
-      return;
-    }
-
+  // Clear pendingNav during render when navigation completes
+  if (pendingNav && activeView === pendingNav && !loading) {
     setPendingNav(null);
-  }, [activeView, loading, pendingNav]);
+  }
 
   function handleNavClick(id: SidebarView) {
     setPendingNav(id);
@@ -476,6 +473,7 @@ export function Sidebar({
               <TooltipTrigger
                 render={(props) => (
                   <button
+                    type="button"
                     {...props}
                     onClick={onToggleCollapse}
                     aria-label={
@@ -771,6 +769,7 @@ export function Sidebar({
           variant="destructive"
         />
         <OnboardingChangelogDialog
+          key={String(onboardingOpen)}
           open={onboardingOpen}
           onClose={() => setOnboardingOpen(false)}
         />
@@ -1104,6 +1103,7 @@ function ClerkAuthenticatedProfile({
         </DropdownMenuContent>
       </DropdownMenu>
       <ProfileEditDialog
+        key={`profile-${profileOpen ? "open" : "closed"}-${clerkUser?.id ?? "no-user"}`}
         open={profileOpen}
         onOpenChange={setProfileOpen}
         clerkUser={clerkUser}
@@ -1141,9 +1141,9 @@ function ProfileEditDialog({
   fallbackName,
   fallbackEmail,
 }: ProfileEditDialogProps) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState(clerkUser?.firstName ?? "");
+  const [lastName, setLastName] = useState(clerkUser?.lastName ?? "");
+  const [username, setUsername] = useState(clerkUser?.username ?? "");
   const activeTab = useUIStore((s) => s.profileDialogTab) as ProfileDialogTab;
   const setActiveTab = useUIStore((s) => s.setProfileDialogTab);
   const [saving, setSaving] = useState(false);
@@ -1164,7 +1164,6 @@ function ProfileEditDialog({
   const [securityError, setSecurityError] = useState<string | null>(null);
 
   // Membership / Subscription state
-  const [subLoading, setSubLoading] = useState(false);
   const [subscription, setSubscription] = useState<{
     userId: string;
     plan: "free" | "pro";
@@ -1175,6 +1174,8 @@ function ProfileEditDialog({
     periodEnd: string | null;
     status: string;
   } | null>(null);
+  // Derived: loading while subscription hasn't been fetched yet
+  const subLoading = open && activeTab === "membership" && subscription === null;
   const getFallbackSubscription = useCallback(
     () => ({
       userId: clerkUser?.id ?? "local",
@@ -1189,31 +1190,16 @@ function ProfileEditDialog({
     [clerkUser?.id],
   );
 
+  // Reset the Zustand tab to "profile" on mount (dialog remounts on key change)
   useEffect(() => {
-    if (!open) return;
-    setFirstName(clerkUser?.firstName || "");
-    setLastName(clerkUser?.lastName || "");
-    setUsername(clerkUser?.username || "");
     setActiveTab("profile");
-    setSaving(false);
-    setError(null);
-    setVerifyingEmail(false);
-    setVerificationCode("");
-    setVerificationCodeSent(false);
-    setAddingPassword(false);
-    setNewPassword("");
-    setEnablingTwoFactor(false);
-    setTwoFactorStep("idle");
-    setTwoFactorSecret("");
-    setTotpCode("");
-    setSecurityError(null);
-  }, [clerkUser, open]);
+  }, [setActiveTab]);
 
-  // Fetch subscription data when membership tab is active
+  // Fetch subscription data when membership tab is active.
+  // open is guaranteed true when this component mounts (key-based remounting).
   useEffect(() => {
-    if (!open || activeTab !== "membership") return;
+    if (activeTab !== "membership") return;
     let cancelled = false;
-    setSubLoading(true);
     async function load() {
       try {
         const sub = (await api.getSubscription()) as typeof subscription;
@@ -1221,13 +1207,12 @@ function ProfileEditDialog({
       } catch {
         if (!cancelled) setSubscription(getFallbackSubscription());
       }
-      if (!cancelled) setSubLoading(false);
     }
     void load();
     return () => {
       cancelled = true;
     };
-  }, [open, activeTab, getFallbackSubscription]);
+  }, [activeTab, getFallbackSubscription]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -1480,6 +1465,7 @@ function ProfileEditDialog({
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             disabled={!canEdit || saving}
+                            aria-label={profile_first_name()}
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
@@ -1491,6 +1477,7 @@ function ProfileEditDialog({
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             disabled={!canEdit || saving}
+                            aria-label={profile_last_name()}
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
@@ -1501,9 +1488,11 @@ function ProfileEditDialog({
                           {profile_username()}
                         </label>
                         <input
+                          id="profile-username"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           disabled={!canEdit || saving}
+                          aria-label={profile_username()}
                           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-dashed focus:outline-[0.5px] focus:outline-blue-500 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
@@ -1521,6 +1510,7 @@ function ProfileEditDialog({
                       <input
                         value={displayEmail}
                         readOnly
+                        aria-label={profile_login_email()}
                         className="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground focus:outline-none"
                       />
                     </div>
@@ -1573,6 +1563,7 @@ function ProfileEditDialog({
                                 }
                                 placeholder="000000"
                                 maxLength={6}
+                                aria-label="Verification code"
                                 className="w-20 rounded-md border border-border bg-background px-2 py-1 text-center text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
                               />
                               <button
@@ -1618,6 +1609,7 @@ function ProfileEditDialog({
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="••••••••"
+                                aria-label="New password"
                                 className="w-28 rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
                               />
                               <button
@@ -1676,6 +1668,7 @@ function ProfileEditDialog({
                                   onChange={(e) => setTotpCode(e.target.value)}
                                   placeholder="000000"
                                   maxLength={6}
+                                  aria-label="Two-factor authentication code"
                                   className="w-20 rounded-md border border-border bg-background px-2 py-1 text-center text-sm outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2"
                                 />
                                 <button

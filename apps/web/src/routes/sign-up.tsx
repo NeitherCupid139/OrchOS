@@ -13,14 +13,6 @@ export const Route = createFileRoute("/sign-up")({
 });
 
 function SignUpPage() {
-  return (
-    <AuthProvider>
-      <SignUpPageInner />
-    </AuthProvider>
-  );
-}
-
-function SignUpPageInner() {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const hasRedirectedRef = useRef(false);
@@ -37,9 +29,16 @@ function SignUpPageInner() {
 
   if (!isClerkConfigured()) {
     return (
-      <AuthPage mode="signUp">
-        <MissingClerkConfig />
-      </AuthPage>
+      <AuthProvider>
+        <AuthPage mode="signUp">
+          <div className="rounded-[calc(var(--radius-xl)*1.2)] border border-dashed border-border bg-muted/40 p-6">
+            <p className="text-sm font-semibold text-foreground">{not_configured_title()}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {not_configured_sign_up()}
+            </p>
+          </div>
+        </AuthPage>
+      </AuthProvider>
     );
   }
 
@@ -52,7 +51,7 @@ function SignUpPageInner() {
   }
 
   return (
-    <>
+    <AuthProvider>
       <AuthPage mode="signUp">
         <SignUpForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">
@@ -62,17 +61,6 @@ function SignUpPageInner() {
           </Link>
         </p>
       </AuthPage>
-    </>
-  );
-}
-
-function MissingClerkConfig() {
-  return (
-    <div className="rounded-[calc(var(--radius-xl)*1.2)] border border-dashed border-border bg-muted/40 p-6">
-      <p className="text-sm font-semibold text-foreground">{not_configured_title()}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        {not_configured_sign_up()}
-      </p>
-    </div>
+    </AuthProvider>
   );
 }

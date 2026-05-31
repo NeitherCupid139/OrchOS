@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { FramerCarousel, type CarouselItem } from "@/components/ui/framer-carousel";
@@ -133,11 +133,6 @@ export function OnboardingChangelogDialog({ open, onClose }: OnboardingChangelog
   const [index, setIndex] = useState(0);
   const isFirstSlide = index === 0;
   const isLastSlide = index === ONBOARDING_SECTIONS.length - 1;
-  useEffect(() => {
-    if (open) {
-      setIndex(0);
-    }
-  }, [open]);
 
   return (
     <AppDialog

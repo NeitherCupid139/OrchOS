@@ -107,7 +107,7 @@ export class AgentToolService {
         type: "function",
         function: {
           name: "send_email",
-          description: "Send an email using Gmail integration.",
+          description: "Send an email using Gmail or SMTP/IMAP integration.",
           parameters: {
             type: "object",
             properties: {
@@ -125,6 +125,24 @@ export class AgentToolService {
               body: { type: "string" },
             },
             required: ["to", "subject", "body"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "read_inbox",
+          description: "Read recent emails from a connected email account (Gmail or IMAP/SMTP). Use this to check the user's inbox for new messages.",
+          parameters: {
+            type: "object",
+            properties: {
+              provider: { type: "string", enum: ["gmail", "smtp"], description: "Email provider: 'gmail' for Google accounts, 'smtp' for IMAP/SMTP accounts" },
+              accountId: { type: "string", description: "Specific account ID (optional, uses first available if not specified)" },
+              maxResults: { type: "integer", description: "Number of recent emails to fetch (1-20, default 10)" },
+              query: { type: "string", description: "Gmail search query (only for Gmail, e.g. 'from:example.com', 'is:unread', 'newer_than:2d')" },
+              messageId: { type: "string", description: "Specific message ID to get full details for (optional, if provided reads that single message)" },
+            },
+            required: [],
           },
         },
       },
@@ -434,6 +452,43 @@ export class AgentToolService {
         subject,
         body,
         accountId: typeof args.accountId === "string" ? args.accountId : undefined,
+      });
+    }
+
+    if (name === "read_inbox") {
+      const provider = args.provider === "smtp" ? "smtp" : "gmail";
+      const accountId = typeof args.accountId === "string" ? args.accountId : undefined;
+
+      // If a specific messageId is provided, get full details
+      if (typeof args.messageId === "string" && args.messageId.trim()) {
+        if (provider === "smtp") {
+          return this.integrationService.getImapMessage({
+            accountId,
+            messageId: args.messageId.trim(),
+          });
+        }
+        return this.integrationService.getGmailMessage({
+          accountId,
+          messageId: args.messageId.trim(),
+        });
+      }
+
+      // Otherwise fetch recent messages
+      const maxResults = typeof args.maxResults === "number"
+        ? Math.min(Math.max(1, Math.floor(args.maxResults)), 20)
+        : 10;
+
+      if (provider === "smtp") {
+        return this.integrationService.fetchImapMessages({
+          accountId,
+          maxResults,
+        });
+      }
+
+      return this.integrationService.fetchGmailMessages({
+        accountId,
+        maxResults,
+        query: typeof args.query === "string" ? args.query : undefined,
       });
     }
 

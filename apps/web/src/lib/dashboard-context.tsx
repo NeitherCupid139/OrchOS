@@ -146,6 +146,8 @@ interface AgentModelCounts {
   cloud: number;
 }
 
+const EMPTY_AGENT_MODEL_COUNTS: AgentModelCounts = { all: 0, local: 0, cloud: 0 };
+
 interface DashboardContextType {
   runtimes: RuntimeProfile[];
   localAgents: LocalAgentProfile[];
@@ -270,8 +272,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const shouldLoadLocalAgents = activeView === "agents";
   const shouldLoadProblems =
     activeView === "inbox" || activeView === "observability";
-  const agentModelCounts: AgentModelCounts = { all: 0, local: 0, cloud: 0 };
-
   const workspaceName = workspaceMsg();
 
   const ensureDefaultOrganization = useCallback(async () => {
@@ -705,7 +705,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       loading,
       inboxCounts,
       systemProblemCounts,
-      agentModelCounts,
+      agentModelCounts: EMPTY_AGENT_MODEL_COUNTS,
       refreshAll,
       refreshLocalAgents,
       handleDismiss,
@@ -732,7 +732,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       loading,
       inboxCounts,
       systemProblemCounts,
-      agentModelCounts,
       refreshAll,
       refreshLocalAgents,
       handleDismiss,

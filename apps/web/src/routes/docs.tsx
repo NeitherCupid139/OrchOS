@@ -101,7 +101,7 @@ function DocsPage() {
             </div>
 
             <section id="quickstart" className="space-y-6 scroll-mt-20">
-              <SectionHeading title={docs_audio_quickstart_heading()} />
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">{docs_audio_quickstart_heading()}</h2>
               <p className="text-muted-foreground">
                 {docs_audio_quickstart_intro()}
               </p>
@@ -121,7 +121,7 @@ function DocsPage() {
                     value={command.label}
                     className="mt-4"
                   >
-                    <CodePanel code={command.value} />
+                    <pre className="overflow-x-auto rounded-2xl border border-border bg-muted/60 p-4 text-sm leading-6 text-foreground"><code className="language-bash">{command.value}</code></pre>
                   </TabsContent>
                 ))}
               </Tabs>
@@ -130,7 +130,7 @@ function DocsPage() {
                 <p className="text-muted-foreground">
                   {docs_audio_quickstart_define()}
                 </p>
-                <CodePanel code={quickstartCode} language="ts" />
+                <pre className="overflow-x-auto rounded-2xl border border-border bg-muted/60 p-4 text-sm leading-6 text-foreground"><code className="language-ts">{quickstartCode}</code></pre>
               </div>
             </section>
 
@@ -159,28 +159,6 @@ function DocsPage() {
   );
 }
 
-function SectionHeading({ title }: { title: string }) {
-  return (
-    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-      {title}
-    </h2>
-  );
-}
-
-function CodePanel({
-  code,
-  language = "bash",
-}: {
-  code: string;
-  language?: string;
-}) {
-  return (
-    <pre className="overflow-x-auto rounded-2xl border border-border bg-muted/60 p-4 text-sm leading-6 text-foreground">
-      <code className={`language-${language}`}>{code}</code>
-    </pre>
-  );
-}
-
 function PlaygroundPreview() {
   const [active, setActive] = React.useState(false);
 
@@ -191,10 +169,7 @@ function PlaygroundPreview() {
       </div>
       <div className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
-          <CodePanel
-            language="ts"
-            code={`defineSound({\n  source: { type: "sine", frequency: { start: 400, end: 150 } },\n  envelope: { decay: 0.05 },\n  gain: 0.35,\n})`}
-          />
+          <pre className="overflow-x-auto rounded-2xl border border-border bg-muted/60 p-4 text-sm leading-6 text-foreground"><code className="language-ts">{`defineSound({\n  source: { type: "sine", frequency: { start: 400, end: 150 } },\n  envelope: { decay: 0.05 },\n  gain: 0.35,\n})`}</code></pre>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" onClick={() => setActive((value) => !value)}>
               {active
@@ -250,7 +225,7 @@ function DocsSection({
 }) {
   return (
     <section className="space-y-6">
-      <SectionHeading title={title} />
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
       <div className={`grid gap-4 ${columns}`}>
         {cards.map((card) => (
           <Card

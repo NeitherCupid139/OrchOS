@@ -149,6 +149,7 @@ export function InboxList({
                     }}
                   >
                     <button
+                      type="button"
                       onClick={() => onSelectItem(thread.id)}
                       className={cn(
                         "flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",

@@ -350,6 +350,7 @@ export function FeaturesBento() {
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    aria-label="Chat message"
                     placeholder={
                       selectedRuntime
                         ? home_bento_chat_placeholder({ name: selectedRuntime.name })

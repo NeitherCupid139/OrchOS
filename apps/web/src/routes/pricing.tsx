@@ -214,41 +214,6 @@ function useFaqs() {
   ];
 }
 
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="none"
-      className={cn("size-4 shrink-0", className)}
-    >
-      <path
-        d="M4 8l2.5 2.5L12 5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function MinusIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="none"
-      className={cn("size-4 shrink-0", className)}
-    >
-      <path
-        d="M4 8h8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function PricingRoute() {
   if (!isClerkConfigured()) {
     return <Pricing isSignedIn={false} />;
@@ -263,7 +228,6 @@ function PricingRoute() {
 
 function PricingWithAuth() {
   const { isSignedIn } = useUser();
-
   return <Pricing isSignedIn={Boolean(isSignedIn)} />;
 }
 
@@ -398,7 +362,7 @@ function Pricing({ isSignedIn }: { isSignedIn: boolean }) {
                         key={i}
                         className="flex items-start gap-2 text-sm text-muted-foreground"
                       >
-                        <CheckIcon className="mt-0.5 text-primary" />
+                        <svg viewBox="0 0 16 16" fill="none" className="size-4 shrink-0 mt-0.5 text-primary"><path d="M4 8l2.5 2.5L12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -483,9 +447,9 @@ function Pricing({ isSignedIn }: { isSignedIn: boolean }) {
                         <td key={tier} className="py-3 px-4 text-center">
                           {typeof feat[tier] === "boolean" ? (
                             feat[tier] ? (
-                              <CheckIcon className="mx-auto text-primary" />
+                              <svg viewBox="0 0 16 16" fill="none" className="size-4 shrink-0 mx-auto text-primary"><path d="M4 8l2.5 2.5L12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             ) : (
-                              <MinusIcon className="mx-auto text-muted-foreground/30" />
+                              <svg viewBox="0 0 16 16" fill="none" className="size-4 shrink-0 mx-auto text-muted-foreground/30"><path d="M4 8h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                             )
                           ) : (
                             <span className="text-muted-foreground text-xs">

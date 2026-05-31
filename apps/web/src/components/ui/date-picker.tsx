@@ -59,19 +59,24 @@ export function DatePicker({
   placeholder = date_picker_placeholder(),
   id,
 }: DatePickerProps) {
-  const [month, setMonth] = React.useState(() => value ?? new Date());
-  const [inputText, setInputText] = React.useState("");
+  // Store user's explicit calendar navigation; derives from value when stale
+  const [userMonth, setUserMonth] = React.useState<Date | null>(null);
+  const month = userMonth ?? value ?? new Date();
+
+  // Store user's text input with a discriminator so it resets when value changes
+  const [inputOverride, setInputOverride] = React.useState<{
+    for: Date | undefined;
+    text: string;
+  } | null>(null);
+  const inputText =
+    inputOverride && inputOverride.for === value
+      ? inputOverride.text
+      : value
+        ? format(value, "yyyy-MM-dd")
+        : "";
+
   const [open, setOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (value) {
-      setMonth(value);
-      setInputText(format(value, "yyyy-MM-dd"));
-    } else {
-      setInputText("");
-    }
-  }, [value]);
 
   const handleDateSelect = (date: Date) => {
     onChange?.(date);
@@ -80,7 +85,7 @@ export function DatePicker({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    setInputText(raw);
+    setInputOverride({ for: value, text: raw });
     const parsed = parseDateInput(raw);
     if (parsed) {
       onChange?.(parsed);
@@ -88,11 +93,7 @@ export function DatePicker({
   };
 
   const handleInputBlur = () => {
-    if (value) {
-      setInputText(format(value, "yyyy-MM-dd"));
-    } else {
-      setInputText("");
-    }
+    setInputOverride(null);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -114,8 +115,8 @@ export function DatePicker({
     [month],
   );
 
-  const goToPrevious = () => setMonth((m) => add(m, { months: -1 }));
-  const goToNext = () => setMonth((m) => add(m, { months: 1 }));
+  const goToPrevious = () => setUserMonth(add(month, { months: -1 }));
+  const goToNext = () => setUserMonth(add(month, { months: 1 }));
   const weekdays = [
     date_picker_weekday_sun(),
     date_picker_weekday_mon(),
@@ -148,6 +149,7 @@ export function DatePicker({
               onChange={handleInputChange}
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
+              aria-label={placeholder}
               placeholder={placeholder}
               className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
             />

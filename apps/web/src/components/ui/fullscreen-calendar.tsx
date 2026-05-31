@@ -345,6 +345,7 @@ function DayTimelineView({
                         type="button"
                         className="absolute inset-x-0 z-0 cursor-copy hover:bg-primary/5"
                         style={{ top: `${hour * 80 + (minute === 30 ? 40 : 0)}px`, height: "40px" }}
+                        aria-label={`Create event at ${format(slotStart, "h:mm a")}`}
                         onClick={() => onCreateSlot(slotStart, slotEnd)}
                       />
                     );
@@ -520,6 +521,7 @@ function WeekTimelineView({
                           type="button"
                           className="absolute inset-x-0 z-0 cursor-copy hover:bg-primary/5"
                           style={{ top: `${hour * 80 + (minute === 30 ? 40 : 0)}px`, height: "40px" }}
+                          aria-label={`Create event at ${format(slotStart, "h:mm a")}`}
                           onClick={() => onCreateSlot(slotStart, slotEnd)}
                         />
                       );

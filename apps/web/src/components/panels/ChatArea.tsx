@@ -840,6 +840,7 @@ export function ChatArea({
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              aria-label="Chat message"
               placeholder={
                 mode === "search"
                   ? search_web_placeholder()

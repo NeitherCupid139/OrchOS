@@ -196,6 +196,7 @@ export function DirectoryPickerDialog({
                 <div className="space-y-0.5">
                   {directories.map((dir) => (
                     <button
+                      type="button"
                       key={dir.path}
                       className={cn(
                         "flex items-center gap-2 w-full rounded-md px-2.5 py-1.5 text-sm text-left transition-colors",
