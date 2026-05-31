@@ -35,7 +35,6 @@ import {
 import { EmptyState } from "@/components/ui/interactive-empty-state";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipTrigger,
@@ -194,7 +193,6 @@ export function CalendarPage() {
   );
   const calendarViewMode = useUIStore((s) => s.calendarViewMode);
   const calendarSourceFilter = useUIStore((s) => s.calendarSourceFilter);
-  const setCalendarSourceFilter = useUIStore((s) => s.setCalendarSourceFilter);
   const boardTasks = useBoardStore((state) => state.tasks);
   const [selectedEventDetailId, setSelectedEventDetailId] = useState<
     string | null
@@ -1039,22 +1037,6 @@ export function CalendarPage() {
               {localCalendars.length > 0 ? (
                 <section className="space-y-6">
                   <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
-                    <div className="border-b border-border/60 px-4 py-3">
-                      <Tabs
-                        value={calendarSourceFilter}
-                        onValueChange={(value) =>
-                          setCalendarSourceFilter(
-                            value as "all" | "events" | "tasks",
-                          )
-                        }
-                      >
-                        <TabsList>
-                          <TabsTrigger value="all">All</TabsTrigger>
-                          <TabsTrigger value="events">Events</TabsTrigger>
-                          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
                     <FullScreenCalendar
                       data={fullScreenCalendarData}
                       currentMonth={visibleMonth}

@@ -13,6 +13,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import {
   agent_request,
   all,
@@ -243,26 +249,35 @@ export function InboxList({
               const isActive = activeAccountId === item.id;
               const isAll = item.id === null;
               return (
-                <button
-                  key={item.id ?? "__all__"}
-                  type="button"
-                  onClick={() => onAccountChange(item.id)}
-                  title={item.label}
-                  className={cn(
-                    "inline-flex size-8 items-center justify-center rounded-md transition-colors",
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                  )}
-                >
-                  {isAll ? (
-                    <HugeiconsIcon icon={item.icon} className="size-4" />
-                  ) : (
-                    <span className="text-xs font-semibold">
-                      {item.label.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </button>
+                <Tooltip key={item.id ?? "__all__"}>
+                  <TooltipTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => onAccountChange(item.id)}
+                        className={cn(
+                          isActive
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {isAll ? (
+                          <HugeiconsIcon icon={item.icon} className="size-4" />
+                        ) : (
+                          <span className="text-xs font-semibold">
+                            {item.label.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </Button>
+                    )}
+                  />
+                  <TooltipContent>
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>

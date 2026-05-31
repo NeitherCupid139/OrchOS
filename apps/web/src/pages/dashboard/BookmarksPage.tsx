@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
+import { Popover } from "@base-ui/react/popover";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -74,6 +75,9 @@ import {
   bookmark_ai_organize,
   bookmark_ai_organizing,
   bookmark_ai_undo,
+  bookmark_ai_progress_fetching,
+  bookmark_ai_progress_analyzing,
+  bookmark_ai_progress_done,
   bookmark_count,
   bookmarks,
   bookmarks_workspace,
@@ -796,6 +800,20 @@ export function BookmarksPage() {
     selectedCategoryId: string | null;
   } | null>(null);
   const [aiOrganizeError, setAiOrganizeError] = useState(false);
+  const [aiPopoverOpen, setAiPopoverOpen] = useState(false);
+  const [aiProgressStage, setAiProgressStage] = useState<
+    "fetching" | "analyzing" | "done" | "error"
+  >("fetching");
+  const [aiProgressItems, setAiProgressItems] = useState<
+    Array<{
+      id: string;
+      title: string;
+      url: string;
+      status: "pending" | "processing" | "done";
+    }>
+  >([]);
+  const aiProgressTimerRef = useRef<number | null>(null);
+  const aiStageTimerRef = useRef<number | null>(null);
   const [isCreateBookmarkDialogOpen, setIsCreateBookmarkDialogOpen] =
     useState(false);
   const [isCreateOrImportDialogOpen, setIsCreateOrImportDialogOpen] =
@@ -834,6 +852,17 @@ export function BookmarksPage() {
     return () => {
       if (timer.current !== null) {
         window.clearTimeout(timer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (aiProgressTimerRef.current !== null) {
+        window.clearInterval(aiProgressTimerRef.current);
+      }
+      if (aiStageTimerRef.current !== null) {
+        window.clearTimeout(aiStageTimerRef.current);
       }
     };
   }, []);
@@ -1093,19 +1122,96 @@ export function BookmarksPage() {
       selectedCategoryId,
     };
 
+    // Collect all bookmarks for progress display
+    const allItems = categories.flatMap((cat) =>
+      cat.bookmarks.map((b) => ({
+        id: b.id,
+        title: b.title,
+        url: b.url,
+        status: "pending" as const,
+      })),
+    );
+
+    // Initialize progress state
+    setAiProgressItems(allItems);
+    setAiProgressStage("fetching");
+    setAiPopoverOpen(true);
     setAiOrganizing(true);
     setAiOrganizeError(false);
+
+    // Start progress animation
+    let currentIndex = 0;
+    const intervalMs = Math.max(150, Math.min(400, 6000 / allItems.length));
+
+    if (aiProgressTimerRef.current !== null) {
+      window.clearInterval(aiProgressTimerRef.current);
+    }
+    aiProgressTimerRef.current = window.setInterval(() => {
+      currentIndex++;
+      setAiProgressItems((prev) =>
+        prev.map((item, i) => ({
+          ...item,
+          status:
+            i < currentIndex
+              ? ("done" as const)
+              : i === currentIndex
+                ? ("processing" as const)
+                : ("pending" as const),
+        })),
+      );
+    }, intervalMs);
+
+    // Stage transition: fetching → analyzing after 1.5s
+    if (aiStageTimerRef.current !== null) {
+      window.clearTimeout(aiStageTimerRef.current);
+    }
+    aiStageTimerRef.current = window.setTimeout(() => {
+      setAiProgressStage("analyzing");
+    }, 1500);
 
     try {
       const organized = await api.organizeBookmarksWithAi(
         bookmarkOrganizeAgentId,
       );
+
+      // Cleanup timers
+      if (aiProgressTimerRef.current !== null) {
+        window.clearInterval(aiProgressTimerRef.current);
+        aiProgressTimerRef.current = null;
+      }
+      if (aiStageTimerRef.current !== null) {
+        window.clearTimeout(aiStageTimerRef.current);
+        aiStageTimerRef.current = null;
+      }
+
+      // Mark all items as done
+      setAiProgressItems((prev) =>
+        prev.map((item) => ({ ...item, status: "done" as const })),
+      );
+      setAiProgressStage("done");
+
       setAiOrganizeUndo(snapshot);
       setCategories(organized);
       setSelectedCategoryId(organized[0]?.id ?? null);
+
+      // Auto-close popover after 1.2s
+      window.setTimeout(() => {
+        setAiPopoverOpen(false);
+      }, 1200);
     } catch (error) {
-      console.error("Failed to organize bookmarks with AI:", error);
+      // Cleanup timers
+      if (aiProgressTimerRef.current !== null) {
+        window.clearInterval(aiProgressTimerRef.current);
+        aiProgressTimerRef.current = null;
+      }
+      if (aiStageTimerRef.current !== null) {
+        window.clearTimeout(aiStageTimerRef.current);
+        aiStageTimerRef.current = null;
+      }
+
+      setAiProgressStage("error");
       setAiOrganizeError(true);
+      console.error("Failed to organize bookmarks with AI:", error);
     } finally {
       setAiOrganizing(false);
     }
@@ -1546,24 +1652,145 @@ export function BookmarksPage() {
                           {bookmark_ai_undo()}
                         </Button>
                       ) : null}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={aiOrganizing || totalBookmarkCount === 0}
-                        onClick={() => void handleAiOrganizeBookmarks()}
+                      <Popover.Root
+                        open={aiPopoverOpen}
+                        onOpenChange={(open) => {
+                          if (open && !aiOrganizing && totalBookmarkCount > 0) {
+                            void handleAiOrganizeBookmarks();
+                          } else if (!open && !aiOrganizing) {
+                            setAiPopoverOpen(false);
+                          }
+                        }}
                       >
-                        {aiOrganizing ? (
-                          <Spinner size="sm" />
-                        ) : (
-                          <HugeiconsIcon
-                            icon={AiMagicIcon}
-                            className="size-4"
-                          />
-                        )}
-                        {aiOrganizing
-                          ? bookmark_ai_organizing()
-                          : bookmark_ai_organize()}
-                      </Button>
+                        <Popover.Trigger
+                          render={(props) => (
+                            <Button
+                              {...props}
+                              type="button"
+                              variant="outline"
+                              disabled={aiOrganizing || totalBookmarkCount === 0}
+                            >
+                              {aiOrganizing ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <HugeiconsIcon
+                                  icon={AiMagicIcon}
+                                  className="size-4"
+                                />
+                              )}
+                              {aiOrganizing
+                                ? bookmark_ai_organizing()
+                                : bookmark_ai_organize()}
+                            </Button>
+                          )}
+                        />
+                        <Popover.Portal>
+                          <Popover.Positioner sideOffset={8} className="z-[70]">
+                            <Popover.Popup className="w-[340px] rounded-2xl border border-border/70 bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-black/5 duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+                              {(() => {
+                                const completedCount = aiProgressItems.filter(
+                                  (item) => item.status === "done",
+                                ).length;
+                                const totalCount = aiProgressItems.length;
+                                const progressPercent =
+                                  totalCount > 0
+                                    ? (completedCount / totalCount) * 100
+                                    : 0;
+                                const stageText =
+                                  aiProgressStage === "fetching"
+                                    ? bookmark_ai_progress_fetching()
+                                    : aiProgressStage === "analyzing"
+                                      ? bookmark_ai_progress_analyzing()
+                                      : aiProgressStage === "done"
+                                        ? bookmark_ai_progress_done()
+                                        : bookmark_ai_failed();
+
+                                return (
+                                  <div className="space-y-3">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-2">
+                                      {aiProgressStage === "done" ? (
+                                        <div className="flex size-5 items-center justify-center rounded-full bg-emerald-500/15">
+                                          <span className="text-[10px] font-bold text-emerald-500">
+                                            ✓
+                                          </span>
+                                        </div>
+                                      ) : aiProgressStage === "error" ? (
+                                        <div className="flex size-5 items-center justify-center rounded-full bg-destructive/15">
+                                          <span className="text-[10px] font-bold text-destructive">
+                                            ✕
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <HugeiconsIcon
+                                          icon={AiMagicIcon}
+                                          className="size-4 animate-pulse text-primary"
+                                        />
+                                      )}
+                                      <span className="text-sm font-medium text-foreground">
+                                        {stageText}
+                                      </span>
+                                    </div>
+
+                                    {/* Progress bar */}
+                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                      <div
+                                        className="h-full rounded-full bg-primary/80 transition-all duration-300 ease-out"
+                                        style={{ width: `${progressPercent}%` }}
+                                      />
+                                    </div>
+
+                                    {/* Count */}
+                                    <div className="text-right text-[11px] tabular-nums text-muted-foreground">
+                                      {completedCount} / {totalCount}
+                                    </div>
+
+                                    {/* Item list */}
+                                    <div className="max-h-48 space-y-0.5 overflow-y-auto">
+                                      {aiProgressItems.map((item) => (
+                                        <div
+                                          key={item.id}
+                                          className={cn(
+                                            "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors duration-200",
+                                            item.status === "processing" &&
+                                              "bg-primary/5",
+                                          )}
+                                        >
+                                          <div className="shrink-0">
+                                            {item.status === "done" ? (
+                                              <div className="flex size-4 items-center justify-center rounded-full bg-emerald-500/15">
+                                                <div className="size-1.5 rounded-full bg-emerald-500" />
+                                              </div>
+                                            ) : item.status === "processing" ? (
+                                              <div className="flex size-4 items-center justify-center rounded-full bg-primary/15">
+                                                <div className="size-1.5 animate-pulse rounded-full bg-primary" />
+                                              </div>
+                                            ) : (
+                                              <div className="size-4 rounded-full border border-muted-foreground/20" />
+                                            )}
+                                          </div>
+                                          <span
+                                            className={cn(
+                                              "flex-1 truncate text-xs transition-colors duration-200",
+                                              item.status === "done"
+                                                ? "text-foreground/60"
+                                                : item.status === "processing"
+                                                  ? "font-medium text-foreground"
+                                                  : "text-muted-foreground/50",
+                                            )}
+                                          >
+                                            {item.title}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </Popover.Popup>
+                          </Popover.Positioner>
+                        </Popover.Portal>
+                      </Popover.Root>
                       <Button
                         type="button"
                         onClick={() => {

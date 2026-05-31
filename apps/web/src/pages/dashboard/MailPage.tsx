@@ -106,9 +106,7 @@ export function MailPage() {
   const setActiveInboxId = useUIStore((s) => s.setActiveInboxId);
   const mailFolderFilter = useUIStore((s) => s.mailFolderFilter);
   const activeAccountId = useUIStore((s) => s.mailActiveAccountId);
-  const setActiveAccountIdFilter = useUIStore(
-    (s) => s.setMailActiveAccountId,
-  );
+  const setActiveAccountIdFilter = useUIStore((s) => s.setMailActiveAccountId);
   const projects = dashboardProjects ?? [];
 
   const [threads, setThreads] = useState<InboxThread[]>([]);
@@ -127,6 +125,7 @@ export function MailPage() {
   const [sendingMail, setSendingMail] = useState(false);
   const [sendMailError, setSendMailError] = useState<string | null>(null);
   const [sendMailSent, setSendMailSent] = useState(false);
+  const [isComposeMaximized, setIsComposeMaximized] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>(
     EMAIL_PROVIDERS[0].id,
   );
@@ -446,12 +445,14 @@ export function MailPage() {
     bodyHtml: string;
     accountId: string;
   }) {
-    const toList = data.to
-      .split(",")
-      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
-    const ccList = data.cc
-      .split(",")
-      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
+    const toList = data.to.split(",").flatMap((e) => {
+      const v = e.trim();
+      return v ? [v] : [];
+    });
+    const ccList = data.cc.split(",").flatMap((e) => {
+      const v = e.trim();
+      return v ? [v] : [];
+    });
 
     if (toList.length === 0 || !data.subject.trim()) return;
 
@@ -487,6 +488,10 @@ export function MailPage() {
       setSendingMail(false);
     }
   }
+
+  const handleComposeMaximizeChange = useCallback((maximized: boolean) => {
+    setIsComposeMaximized(maximized);
+  }, []);
 
   const handleCollapseSidebar = useCallback(() => {
     if (collapseTimerRef.current !== null) {
@@ -688,7 +693,26 @@ export function MailPage() {
         </div>
 
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {isMobile && mobileView === "list" ? (
+          {isComposeDialogOpen && isComposeMaximized ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+              <ComposePanel
+                open={isComposeDialogOpen}
+                onClose={() => {
+                  setSendMailError(null);
+                  setSendMailSent(false);
+                  setIsComposeDialogOpen(false);
+                  setIsComposeMaximized(false);
+                }}
+                accounts={mailAccounts}
+                onSend={handleSendMail}
+                sendingMail={sendingMail}
+                sendMailError={sendMailError}
+                sendMailSent={sendMailSent}
+                maximized={isComposeMaximized}
+                onMaximizeChange={handleComposeMaximizeChange}
+              />
+            </div>
+          ) : isMobile && mobileView === "list" ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filteredThreads.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center px-6">
@@ -905,19 +929,24 @@ export function MailPage() {
         </div>
       </AppDialog>
 
-      <ComposePanel
-        open={isComposeDialogOpen}
-        onClose={() => {
-          setSendMailError(null);
-          setSendMailSent(false);
-          setIsComposeDialogOpen(false);
-        }}
-        accounts={mailAccounts}
-        onSend={handleSendMail}
-        sendingMail={sendingMail}
-        sendMailError={sendMailError}
-        sendMailSent={sendMailSent}
-      />
+      {/* Non-maximized ComposePanel renders as fixed overlay */}
+      {isComposeDialogOpen && !isComposeMaximized && (
+        <ComposePanel
+          open={isComposeDialogOpen}
+          onClose={() => {
+            setSendMailError(null);
+            setSendMailSent(false);
+            setIsComposeDialogOpen(false);
+          }}
+          accounts={mailAccounts}
+          onSend={handleSendMail}
+          sendingMail={sendingMail}
+          sendMailError={sendMailError}
+          sendMailSent={sendMailSent}
+          maximized={false}
+          onMaximizeChange={handleComposeMaximizeChange}
+        />
+      )}
 
       <AppDialog
         open={isConnectDialogOpen}
@@ -973,7 +1002,10 @@ export function MailPage() {
               onValueChange={handleProviderChange}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={email_provider()} />
+                <SelectValue>
+                  {EMAIL_PROVIDERS.find((p) => p.id === selectedProviderId)
+                    ?.name || email_provider()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

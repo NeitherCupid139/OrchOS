@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
-import { calendar_add_event, calendar_n_more, next, previous, today as today_label } from "@/paraglide/messages";
+import { calendar_add_event, calendar_n_more, calendar_task, calendar_event, next, previous, today as today_label } from "@/paraglide/messages";
 
 export type FullScreenCalendarViewMode = "day" | "week" | "month";
 export type FullScreenCalendarSource = "calendar" | "task";
@@ -300,15 +300,9 @@ function DayTimelineView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-border/70 px-4 py-3">
-        <div />
-        <div className="text-sm font-semibold text-foreground">
-          {format(day, "EEEE, MMM d")}
-        </div>
-      </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[72px_minmax(0,1fr)] px-4">
-          <div className="border-r border-border/60 pr-3">
+          <div className="border-r border-border/60 pr-3 pt-2">
             {HOURS.map((hour) => (
               <div key={hour} className="relative h-20 text-right text-[11px] text-muted-foreground tabular-nums">
                 <span className="-translate-y-2 inline-block bg-background pr-1">
@@ -395,7 +389,7 @@ function DayTimelineView({
                           </button>
                         ) : null}
                         <span className="rounded-full px-2 py-1 text-[10px] font-medium tabular-nums text-muted-foreground">
-                          {event.source === "task" ? "Task" : "Event"}
+                          {event.source === "task" ? calendar_task() : calendar_event()}
                         </span>
                       </div>
                     </div>
@@ -486,7 +480,7 @@ function WeekTimelineView({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] px-0">
-          <div className="border-r border-border/60 px-3">
+          <div className="border-r border-border/60 px-3 pt-2">
             {HOURS.map((hour) => (
               <div key={hour} className="relative h-20 text-right text-[11px] text-muted-foreground tabular-nums">
                 <span className="-translate-y-2 inline-block bg-background pr-1">
@@ -741,9 +735,8 @@ function getTimelineStyle(event: FullScreenCalendarEvent) {
 }
 
 function formatHour(hour: number) {
-  const suffix = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return `${displayHour} ${suffix}`;
+  const date = new Date(2024, 0, 1, hour);
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', hour12: true });
 }
 
 function getCurrentTimeOffset(date: Date) {

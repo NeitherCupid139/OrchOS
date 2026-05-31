@@ -1,4 +1,10 @@
-import { useRef, useCallback, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import {
+  useRef,
+  useCallback,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+} from "react";
 import {
   TextBoldIcon,
   TextItalicIcon,
@@ -8,6 +14,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 type FormatCommand =
   | "bold"
@@ -31,13 +43,17 @@ interface ToolbarButton {
 const TOOLBAR_BUTTONS: ToolbarButton[] = [
   {
     command: "bold",
-    icon: ({ className }) => <HugeiconsIcon icon={TextBoldIcon} className={className ?? "size-4"} />,
+    icon: ({ className }) => (
+      <HugeiconsIcon icon={TextBoldIcon} className={className ?? "size-4"} />
+    ),
     label: "Bold",
     shortcut: "Ctrl+B",
   },
   {
     command: "italic",
-    icon: ({ className }) => <HugeiconsIcon icon={TextItalicIcon} className={className ?? "size-4"} />,
+    icon: ({ className }) => (
+      <HugeiconsIcon icon={TextItalicIcon} className={className ?? "size-4"} />
+    ),
     label: "Italic",
     shortcut: "Ctrl+I",
   },
@@ -45,14 +61,25 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
   {
     command: "underline",
     icon: ({ className }) => (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={className ?? "size-4"}>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        className={className ?? "size-4"}
+      >
         <path
           d="M4 1.5V7C4 9.21 5.79 11 8 11c2.21 0 4-1.79 4-4V1.5"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
         />
-        <path d="M3 13.5H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path
+          d="M3 13.5H13"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
       </svg>
     ),
     label: "Underline",
@@ -61,20 +88,28 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
   {
     command: "insertUnorderedList",
     icon: ({ className }) => (
-      <HugeiconsIcon icon={LeftToRightListBulletIcon} className={className ?? "size-4"} />
+      <HugeiconsIcon
+        icon={LeftToRightListBulletIcon}
+        className={className ?? "size-4"}
+      />
     ),
     label: "Bullet list",
   },
   {
     command: "insertOrderedList",
     icon: ({ className }) => (
-      <HugeiconsIcon icon={LeftToRightListNumberIcon} className={className ?? "size-4"} />
+      <HugeiconsIcon
+        icon={LeftToRightListNumberIcon}
+        className={className ?? "size-4"}
+      />
     ),
     label: "Numbered list",
   },
   {
     command: "createLink",
-    icon: ({ className }) => <HugeiconsIcon icon={Link01Icon} className={className ?? "size-4"} />,
+    icon: ({ className }) => (
+      <HugeiconsIcon icon={Link01Icon} className={className ?? "size-4"} />
+    ),
     label: "Link",
     shortcut: "Ctrl+K",
   },
@@ -87,6 +122,7 @@ interface RichTextEditorProps {
   className?: string;
   disabled?: boolean;
   minHeight?: string;
+  maxHeight?: string;
 }
 
 /**
@@ -100,6 +136,7 @@ export function RichTextEditor({
   className,
   disabled = false,
   minHeight = "160px",
+  maxHeight = "400px",
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -119,7 +156,8 @@ export function RichTextEditor({
         }
         setInitialized(true);
       }
-      (editorRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      (editorRef as React.MutableRefObject<HTMLDivElement | null>).current =
+        node;
     },
     [value, initialized],
   );
@@ -199,8 +237,10 @@ export function RichTextEditor({
     if (document.queryCommandState("bold")) formats.add("bold");
     if (document.queryCommandState("italic")) formats.add("italic");
     if (document.queryCommandState("underline")) formats.add("underline");
-    if (document.queryCommandState("insertUnorderedList")) formats.add("insertUnorderedList");
-    if (document.queryCommandState("insertOrderedList")) formats.add("insertOrderedList");
+    if (document.queryCommandState("insertUnorderedList"))
+      formats.add("insertUnorderedList");
+    if (document.queryCommandState("insertOrderedList"))
+      formats.add("insertOrderedList");
     return formats;
   }, []);
 
@@ -213,7 +253,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md border transition-colors",
+        "flex flex-1 flex-col rounded-md border transition-colors",
         isFocused ? "border-blue-400 ring-1 ring-blue-400/20" : "border-border",
         disabled && "cursor-not-allowed opacity-60",
         className,
@@ -224,25 +264,44 @@ export function RichTextEditor({
         {TOOLBAR_BUTTONS.map((btn) => {
           const isActive = activeFormats.has(btn.command);
           return (
-            <button
-              key={btn.command}
-              type="button"
-              onClick={() => {
-                exec(btn.command);
-                // Update active states after command
-                setTimeout(updateFormats, 10);
-              }}
-              onMouseDown={(e) => e.preventDefault()} // Prevent stealing focus
-              disabled={disabled}
-              title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
-              aria-label={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
-              className={cn(
-                "inline-flex size-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isActive && "bg-accent text-foreground",
-              )}
-            >
-              <btn.icon />
-            </button>
+            <Tooltip key={btn.command}>
+              <TooltipTrigger
+                render={(props) => (
+                  <Button
+                    {...props}
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => {
+                      exec(btn.command);
+                      // Update active states after command
+                      setTimeout(updateFormats, 10);
+                    }}
+                    onMouseDown={(e) => e.preventDefault()} // Prevent stealing focus
+                    disabled={disabled}
+                    aria-label={
+                      btn.shortcut
+                        ? `${btn.label} (${btn.shortcut})`
+                        : btn.label
+                    }
+                    className={cn(
+                      "active:translate-y-0",
+                      isActive && "bg-accent text-foreground",
+                    )}
+                  >
+                    <btn.icon />
+                  </Button>
+                )}
+              />
+              <TooltipContent side="bottom">
+                {btn.label}
+                {btn.shortcut && (
+                  <kbd data-slot="kbd" className="ml-1.5 text-[10px]">
+                    {btn.shortcut}
+                  </kbd>
+                )}
+              </TooltipContent>
+            </Tooltip>
           );
         })}
 
@@ -299,10 +358,10 @@ export function RichTextEditor({
         onMouseUp={updateFormats}
         data-placeholder={placeholder}
         className={cn(
-          "prose prose-sm max-w-none flex-1 px-4 py-3 text-[14px] leading-7 text-foreground outline-none",
+          "prose prose-sm max-w-none flex-1 overflow-y-auto px-4 py-3 text-[14px] leading-7 text-foreground outline-none",
           "empty:before:pointer-events-none empty:before:text-muted-foreground/60 empty:before:content-[attr(data-placeholder)]",
         )}
-        style={{ minHeight }}
+        style={{ minHeight, maxHeight }}
         // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- contentEditable div, <input> cannot support rich text
         role="textbox"
         aria-multiline="true"

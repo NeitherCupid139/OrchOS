@@ -28,11 +28,12 @@ type SourceFilter =
 type InboxStatusFilter = "all" | "open" | "assigned" | "fixed" | "ignored";
 type ScopeFilter = "all" | "global" | "project";
 type CreationArchiveFilter = "all" | "active" | "archived";
-type MailFolderFilter =
-  | "all"
-  | "unread"
-  | "waiting_reply"
-  | "completed"
+export type MailFolderFilter =
+  | "inbox"
+  | "drafts"
+  | "sent"
+  | "spam"
+  | "trash"
   | "archived";
 type CalendarViewMode = "day" | "week" | "month";
 type CalendarSourceFilter = "all" | "events" | "tasks";
@@ -186,7 +187,7 @@ export const useUIStore = create<UIState & UIActions>()(
       inboxStatusFilter: "all" as InboxStatusFilter,
       scopeFilter: "all" as ScopeFilter,
       creationArchiveFilter: "all" as CreationArchiveFilter,
-      mailFolderFilter: "all" as MailFolderFilter,
+      mailFolderFilter: "inbox" as MailFolderFilter,
       calendarViewMode: "week" as CalendarViewMode,
       calendarSourceFilter: "all" as CalendarSourceFilter,
       capabilityViewMode: "mine" as CapabilityViewMode,

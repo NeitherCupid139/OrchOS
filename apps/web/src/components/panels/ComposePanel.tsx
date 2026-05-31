@@ -4,13 +4,24 @@ import {
   ArrowExpand01Icon,
   ArrowShrink01Icon,
   MailEdit02Icon,
-  Delete02Icon,
+  Bookmark01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { RecipientChips } from "@/components/ui/recipient-chips";
-import { RichTextEditor, htmlToPlainText } from "@/components/ui/rich-text-editor";
+import {
+  RichTextEditor,
+  htmlToPlainText,
+} from "@/components/ui/rich-text-editor";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   compose_mail,
@@ -26,7 +37,8 @@ import {
   recipient_placeholder,
   subject_placeholder,
   body_placeholder,
-  cancel,
+  select_mail_account,
+  save_draft,
 } from "@/paraglide/messages";
 
 type PanelState = "closed" | "normal" | "minimized" | "maximized";
@@ -55,6 +67,8 @@ interface ComposePanelProps {
   sendingMail: boolean;
   sendMailError: string | null;
   sendMailSent: boolean;
+  maximized?: boolean;
+  onMaximizeChange?: (maximized: boolean) => void;
 }
 
 export function ComposePanel({
@@ -65,12 +79,26 @@ export function ComposePanel({
   sendingMail,
   sendMailError,
   sendMailSent,
+  maximized = false,
+  onMaximizeChange,
 }: ComposePanelProps) {
   // Store the user's desired panel state; derives from open prop
-  const [userPanelState, setUserPanelState] = useState<PanelState>("normal");
+  const [userPanelState, setUserPanelState] = useState<PanelState>(
+    maximized ? "maximized" : "normal",
+  );
   const panelState: PanelState = !open ? "closed" : userPanelState;
 
-  const [showBcc, setShowBcc] = useState(false);
+  // Sync internal state when maximized prop changes externally
+  useEffect(() => {
+    if (maximized) {
+      setUserPanelState("maximized");
+    } else if (userPanelState === "maximized") {
+      setUserPanelState("normal");
+    }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- only sync on maximized change
+  }, [maximized]);
+
+  const [showBcc, setShowBcc] = useState(true);
   const [form, setForm] = useState({
     to: "",
     cc: "",
@@ -84,7 +112,14 @@ export function ComposePanel({
   useEffect(() => {
     if (sendMailSent) {
       const timer = setTimeout(() => {
-        setForm({ to: "", cc: "", bcc: "", subject: "", bodyHtml: "", accountId: "" });
+        setForm({
+          to: "",
+          cc: "",
+          bcc: "",
+          subject: "",
+          bodyHtml: "",
+          accountId: "",
+        });
         setShowBcc(false);
         onClose();
       }, 1500);
@@ -103,13 +138,16 @@ export function ComposePanel({
   }, []);
 
   const handleMaximizeToggle = useCallback(() => {
-    setUserPanelState((prev) => (prev === "maximized" ? "normal" : "maximized"));
-  }, []);
+    const nextState = userPanelState === "maximized" ? "normal" : "maximized";
+    setUserPanelState(nextState);
+    onMaximizeChange?.(nextState === "maximized");
+  }, [userPanelState, onMaximizeChange]);
 
   const handleSend = useCallback(async () => {
-    const toList = form.to
-      .split(",")
-      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
+    const toList = form.to.split(",").flatMap((e) => {
+      const v = e.trim();
+      return v ? [v] : [];
+    });
     if (toList.length === 0 || !form.subject.trim()) return;
 
     const accountId = form.accountId || accounts[0]?.id;
@@ -139,7 +177,10 @@ export function ComposePanel({
               className="fixed right-4 bottom-0 z-30 flex w-72 items-center gap-2 rounded-t-xl border border-border/60 border-b-0 bg-card px-4 py-2.5 shadow-lg cursor-pointer"
               onClick={() => setUserPanelState("normal")}
             >
-              <HugeiconsIcon icon={MailEdit02Icon} className="size-4 text-muted-foreground" />
+              <HugeiconsIcon
+                icon={MailEdit02Icon}
+                className="size-4 text-muted-foreground"
+              />
               <span className="flex-1 truncate text-[13px] font-medium text-foreground">
                 {form.subject || compose_mail()}
               </span>
@@ -164,39 +205,69 @@ export function ComposePanel({
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
               className={cn(
-                "fixed right-4 bottom-4 z-30 flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl",
-                panelState === "maximized"
-                  ? "left-4 top-4"
-                  : "w-[560px] max-h-[min(85vh,720px)]",
+                "flex flex-col overflow-hidden bg-card",
+                maximized
+                  ? "min-h-0 flex-1 w-full"
+                  : "fixed right-4 bottom-4 z-30 rounded-xl border border-border shadow-2xl w-[560px] max-h-[min(85vh,720px)]",
               )}
             >
-              {/* Header */}
-              <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-4 py-2.5">
+              {/* Header — matches InboxList footer height when maximized */}
+              <div
+                className={cn(
+                  "flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 p-2",
+                )}
+              >
+                <div className="flex h-10 w-full items-center gap-2 px-2">
                 <span className="flex-1 text-[13px] font-semibold text-foreground">
                   {compose_mail()}
                 </span>
-                <button
-                  type="button"
-                  onClick={handleMinimize}
-                  aria-label="Minimize"
-                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 10.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleMaximizeToggle}
-                  title={panelState === "maximized" ? "Restore" : "Maximize"}
-                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {panelState === "maximized" ? (
-                    <HugeiconsIcon icon={ArrowShrink01Icon} className="size-3.5" />
-                  ) : (
-                    <HugeiconsIcon icon={ArrowExpand01Icon} className="size-3.5" />
-                  )}
-                </button>
+                {maximized ? (
+                  <button
+                    type="button"
+                    onClick={handleMaximizeToggle}
+                    title="Restore"
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <HugeiconsIcon
+                      icon={ArrowShrink01Icon}
+                      className="size-3.5"
+                    />
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleMinimize}
+                      aria-label="Minimize"
+                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                      >
+                        <path
+                          d="M3 10.5H11"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMaximizeToggle}
+                      title="Maximize"
+                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <HugeiconsIcon
+                        icon={ArrowExpand01Icon}
+                        className="size-3.5"
+                      />
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={handleClose}
@@ -205,32 +276,55 @@ export function ComposePanel({
                 >
                   <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
                 </button>
+                </div>
               </div>
 
               {/* Form body */}
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 {/* From selector */}
                 <div className="flex items-center gap-3 border-b border-border/40 px-4 py-2">
                   <span className="w-10 shrink-0 text-right text-[13px] text-muted-foreground">
                     {mail_from()}
                   </span>
-                  <select
-                    value={form.accountId || accounts[0]?.id || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, accountId: e.target.value }))
-                    }
-                    className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
-                  >
-                    {accounts.length === 0 ? (
-                      <option value="">{no_mail_account_for_send()}</option>
-                    ) : (
-                      accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.label} ({account.email || account.username})
-                        </option>
-                      ))
-                    )}
-                  </select>
+                  {accounts.length === 0 ? (
+                    <span className="flex-1 text-[13px] text-muted-foreground">
+                      {no_mail_account_for_send()}
+                    </span>
+                  ) : (
+                    <Select
+                      value={form.accountId || accounts[0]?.id || ""}
+                      onValueChange={(value) =>
+                        setForm((f) => ({ ...f, accountId: value as string }))
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue>
+                          {(() => {
+                            const selected = accounts.find(
+                              (a) =>
+                                a.id === (form.accountId || accounts[0]?.id),
+                            );
+                            if (!selected) return select_mail_account();
+                            return (
+                              selected.email ||
+                              selected.username ||
+                              selected.label
+                            );
+                          })()}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.label} (
+                              {account.email || account.username})
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {/* To */}
@@ -308,7 +402,7 @@ export function ComposePanel({
                 </div>
 
                 {/* Body - Rich text editor */}
-                <div className="p-3">
+                <div className="flex flex-1 flex-col p-3">
                   <RichTextEditor
                     value={form.bodyHtml}
                     onChange={(html) =>
@@ -333,7 +427,8 @@ export function ComposePanel({
               </div>
 
               {/* Footer */}
-              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-muted/20 px-4 py-2.5">
+              <div className="flex shrink-0 items-center border-t border-border bg-muted/20 p-2">
+                <div className="flex h-10 w-full items-center justify-between gap-2 px-2">
                 <Button
                   type="button"
                   variant="ghost"
@@ -341,8 +436,8 @@ export function ComposePanel({
                   onClick={handleClose}
                   className="text-muted-foreground"
                 >
-                  <HugeiconsIcon icon={Delete02Icon} className="size-4" />
-                  <span className="ml-1">{cancel()}</span>
+                  <HugeiconsIcon icon={Bookmark01Icon} className="size-4" />
+                  <span className="ml-1">{save_draft()}</span>
                 </Button>
                 <Button
                   type="button"
@@ -357,6 +452,7 @@ export function ComposePanel({
                 >
                   {sendingMail ? sending() : send()}
                 </Button>
+                </div>
               </div>
             </motion.div>
           )}
