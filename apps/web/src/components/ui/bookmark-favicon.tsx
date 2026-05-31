@@ -36,17 +36,7 @@ interface BookmarkFaviconProps {
 export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: BookmarkFaviconProps) {
   const failedRef = useRef(false);
   const [visible, setVisible] = useState(false);
-  const [src, setSrc] = useState<string | null>(() => {
-    // Initialize: prop icon > localStorage cache > null
-    if (icon) return icon;
-    let domain: string | null = null;
-    try {
-      domain = new URL(url).hostname;
-    } catch {
-      // invalid URL
-    }
-    return domain ? getLocalFavicon(domain) : null;
-  });
+  const [_cacheVersion, setCacheVersion] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   let domain: string | null = null;
   try {
@@ -55,11 +45,15 @@ export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: B
     // invalid URL
   }
 
-  // Sync DB icon to state when the prop changes
+  // Derive src: prop icon > localStorage cache > null
+  // cacheVersion state triggers re-render when cache updates so derivation picks up new value
+  const src = icon ?? (domain ? getLocalFavicon(domain) : null) ?? null;
+
+  // Cache DB icon to localStorage when prop provides one
+  // oxlint-disable-next-line react-doctor/no-event-handler -- localStorage caching side effect, not event-triggered state
   useEffect(() => {
-    if (icon) {
-      setSrc(icon);
-      if (domain) setLocalFavicon(domain, icon);
+    if (icon && domain) {
+      setLocalFavicon(domain, icon);
     }
   }, [icon, domain]);
 
@@ -73,7 +67,7 @@ export function BookmarkFavicon({ url, pinned, icon, bookmarkId, categoryId }: B
         const updated = category?.bookmarks.find((b: { id: string }) => b.id === bookmarkId);
         if (updated?.icon) {
           setLocalFavicon(domain, updated.icon);
-          setSrc(updated.icon); // triggers re-render with cached icon
+          setCacheVersion((v) => v + 1); // trigger re-render so derivation picks up cached icon
         }
       } catch {
         // Silently fail — DuckDuckGo icon still works

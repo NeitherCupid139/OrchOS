@@ -53,7 +53,7 @@ export function TurnstileWidget({
         "error-callback": () => callbacksRef.current.onError?.(),
       });
     }
-  }, [siteKey, appearance]);
+  }, [siteKey, appearance, renderWidget]);
 
   useEffect(() => {
     if (!siteKey) return;

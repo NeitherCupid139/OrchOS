@@ -57,11 +57,13 @@ export class DataPortabilityService {
   constructor(private db: AppDb) {}
 
   async exportAll(): Promise<PlatformDataExport> {
-    const tables: Record<string, DataRow[]> = {};
-
-    for (const { name, table } of PORTABLE_TABLES) {
-      tables[name] = (await this.db.select().from(table).all()) as DataRow[];
-    }
+    const entries = await Promise.all(
+      PORTABLE_TABLES.map(async ({ name, table }) => {
+        const rows = await this.db.select().from(table).all();
+        return [name, rows] as const;
+      }),
+    );
+    const tables = Object.fromEntries(entries) as Record<string, DataRow[]>;
 
     return {
       schemaVersion: 1,

@@ -608,6 +608,7 @@ export function CreationView(props?: CreationViewProps | null) {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
+                  // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for archive/delete
                   <div
                     role="button"
                     tabIndex={0}
@@ -755,6 +756,7 @@ export function CreationView(props?: CreationViewProps | null) {
         </div>
 
         {/* Resize Handle */}
+        {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- resize handle needs child elements, hr is void */}
         <div
           role="separator"
           aria-orientation="vertical"

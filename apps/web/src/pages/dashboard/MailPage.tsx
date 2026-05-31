@@ -233,6 +233,7 @@ export function MailPage() {
       );
   }, []);
 
+  // oxlint-disable-next-line react-doctor/no-event-handler -- reacting to external data change (filter/search), not a user event
   useEffect(() => {
     if (filteredThreads.length === 0) {
       if (activeInboxId !== null) {
@@ -446,12 +447,10 @@ export function MailPage() {
   }) {
     const toList = data.to
       .split(",")
-      .map((e) => e.trim())
-      .filter(Boolean);
+      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
     const ccList = data.cc
       .split(",")
-      .map((e) => e.trim())
-      .filter(Boolean);
+      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
 
     if (toList.length === 0 || !data.subject.trim()) return;
 
@@ -658,6 +657,7 @@ export function MailPage() {
             </div>
           </div>
 
+          {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- resize handle needs child elements, hr is void */}
           <div
             role="separator"
             aria-orientation="vertical"

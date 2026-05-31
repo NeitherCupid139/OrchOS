@@ -1454,6 +1454,7 @@ export function BookmarksPage() {
           </ScrollArea>
         </div>
 
+        {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- resize handle needs child elements, hr is void */}
         <div
           role="separator"
           aria-orientation="vertical"

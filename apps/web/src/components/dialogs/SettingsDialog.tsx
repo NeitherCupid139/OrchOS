@@ -345,6 +345,7 @@ export function SettingsDialog({
     { mailIntegrations: [], loadingMail: false },
   );
 
+  // oxlint-disable-next-line react-doctor/no-event-handler -- dialog-open with deep-link tab requires initialization
   useEffect(() => {
     if (open && defaultTab) {
       setActiveTab(defaultTab);
@@ -658,7 +659,7 @@ export function SettingsDialog({
     } catch (err) {
       console.error("Failed to save mail account:", err);
     }
-  }, [editingMailAccount, editMailForm]);
+  }, [editingMailAccount, editMailForm, mailState.mailIntegrations, selectedEditProviderId]);
 
   const handleDeleteMailAccount = useCallback(
     async (integrationId: string, accountId: string) => {
@@ -677,7 +678,7 @@ export function SettingsDialog({
         console.error("Failed to delete mail account:", err);
       }
     },
-    [],
+    [mailState.mailIntegrations],
   );
 
   /** Open the edit dialog in "create" mode for a new SMTP/IMAP account. */
@@ -1059,7 +1060,10 @@ export function SettingsDialog({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="w-[140px] p-1">
                                 {AVAILABLE_SOUNDS.map((sound) => (
+                                  /* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- contains nested play button, invalid to nest <button> */
                                   <div
+                                    role="button"
+                                    tabIndex={0}
                                     key={sound.id}
                                     className={cn(
                                       "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none focus-visible:outline-dashed focus-visible:outline-[0.5px] focus-visible:outline-blue-500 focus-visible:outline-offset-2",
@@ -1067,8 +1071,6 @@ export function SettingsDialog({
                                         ? "bg-accent text-accent-foreground"
                                         : "hover:bg-accent/50 cursor-pointer",
                                     )}
-                                    role="button"
-                                    tabIndex={0}
                                     onClick={(e) => {
                                       if (
                                         (e.target as HTMLElement).closest(

@@ -109,8 +109,7 @@ export function ComposePanel({
   const handleSend = useCallback(async () => {
     const toList = form.to
       .split(",")
-      .map((e) => e.trim())
-      .filter(Boolean);
+      .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
     if (toList.length === 0 || !form.subject.trim()) return;
 
     const accountId = form.accountId || accounts[0]?.id;

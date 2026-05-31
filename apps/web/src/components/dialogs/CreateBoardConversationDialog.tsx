@@ -128,8 +128,7 @@ export function CreateBoardConversationDialog({
     }
 
     const subtasks = todoRows
-      .map((row) => row.text.trim())
-      .filter(Boolean);
+      .flatMap((row) => { const v = row.text.trim(); return v ? [v] : []; });
 
     const values = {
       title: nextTitle,

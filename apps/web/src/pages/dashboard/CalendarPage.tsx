@@ -325,7 +325,7 @@ export function CalendarPage() {
 
   useEffect(() => {
     void loadPlannerStore();
-  }, []);
+  }, [loadPlannerStore]);
 
   useEffect(() => {
     return () => {
@@ -507,7 +507,7 @@ export function CalendarPage() {
     [selectedEventDetail, updateBoardTask],
   );
 
-  async function loadPlannerStore() {
+  const loadPlannerStore = useCallback(async () => {
     try {
       setLocalStore(await api.getPlannerStore());
     } catch (error) {
@@ -517,7 +517,7 @@ export function CalendarPage() {
           : calendar_failed_load_integrations(),
       );
     }
-  }
+  }, []);
 
   function openLocalCalendarDialog(calendar?: LocalCalendar) {
     setLocalCalendarForm(
@@ -846,10 +846,11 @@ export function CalendarPage() {
                           );
 
                           return (
+                            // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for edit/delete
                             <div
-                              key={calendar.id}
                               role="button"
                               tabIndex={0}
+                              key={calendar.id}
                               onClick={() =>
                                 setSelectedSidebarItem(
                                   `local-calendar:${calendar.id}`,
@@ -982,6 +983,7 @@ export function CalendarPage() {
             )}
           </div>
 
+          {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- resize handle needs child elements, hr is void */}
           <div
             role="separator"
             aria-orientation="vertical"

@@ -7,17 +7,23 @@ function useAsyncData<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Keep latest fetcher in ref so refresh always calls the current function,
+  // while deps control refresh identity for re-fetch triggers.
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetcher();
+      const result = await fetcherRef.current();
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
+    // oxlint-disable-next-line react-doctor/exhaustive-deps -- fetcherRef is stable; deps control refresh triggers
   }, deps);
 
   useEffect(() => {

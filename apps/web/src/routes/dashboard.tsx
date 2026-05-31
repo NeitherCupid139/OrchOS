@@ -248,7 +248,11 @@ function DashboardContentInner() {
   const [createBoardDialogOpen, setCreateBoardDialogOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<
     "general" | "notifications" | "mail" | "about"
-  >("general");
+  >(() => {
+    if (typeof window === "undefined") return "general";
+    const params = new URLSearchParams(window.location.search);
+    return (params.get("tab") as "general" | "notifications" | "mail" | "about") ?? "general";
+  });
   const [firstTimeOnboardingOpen, setFirstTimeOnboardingOpen] = useState(false);
   const onboardingCheckedRef = useRef(false);
   const revealTriggeredRef = useRef(false);
@@ -329,21 +333,17 @@ function DashboardContentInner() {
   }, []);
 
   // Handle OAuth callback redirects with URL params
+  // oxlint-disable-next-line react-doctor/no-initialize-state -- store action + URL side effect, not state init
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("oauth_error");
     const tab = params.get("tab");
-
-    if (tab) {
-      setSettingsDefaultTab(tab as "general" | "notifications" | "mail" | "about");
-    }
 
     if (tab === "mail" || error) {
       setShowSettingsDialog(true);
     }
 
     if (error || tab) {
-      // Clean up the URL
       const url = new URL(window.location.href);
       url.searchParams.delete("oauth_error");
       url.searchParams.delete("tab");

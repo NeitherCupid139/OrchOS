@@ -205,7 +205,7 @@ export function ScriptPreferenceProvider({ children }: { children: React.ReactNo
     });
 
     return () => observer.disconnect();
-  }, [locale, settings?.preferKanji, settings?.useMixedScript]);
+  }, [locale, settings]);
 
   return <>{children}</>;
 }

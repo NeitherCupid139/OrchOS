@@ -29,8 +29,7 @@ export function RecipientChips({
 
   const chips = value
     .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
+    .flatMap((e) => { const v = e.trim(); return v ? [v] : []; });
 
   const syncChips = useCallback(
     (nextChips: string[]) => {
@@ -87,8 +86,7 @@ export function RecipientChips({
         e.preventDefault();
         const emails = pasted
           .split(/[,;\n]+/)
-          .map((s) => s.trim())
-          .filter(Boolean);
+          .flatMap((s) => { const v = s.trim(); return v ? [v] : []; });
         if (emails.length > 0) {
           const existing = new Set(chips);
           const newEmails = emails.filter((e) => !existing.has(e));

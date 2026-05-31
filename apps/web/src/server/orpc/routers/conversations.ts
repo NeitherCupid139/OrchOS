@@ -313,6 +313,7 @@ async function runCustomAgentConversation(input: {
       tool_calls: toolCalls,
     });
 
+    // Push "started" trace entries for all tool calls
     for (const toolCall of toolCalls) {
       trace.push({
         kind: "tool",
@@ -321,29 +322,38 @@ async function runCustomAgentConversation(input: {
         state: "started",
         input: toolCall.function.arguments,
       });
+    }
 
-      try {
-        const output = await toolService.executeTool(
-          toolCall.function.name,
-          toolCall.function.arguments,
-        );
+    // Execute all tools concurrently — each tool call is independent
+    const toolResults = await Promise.allSettled(
+      toolCalls.map((tc) =>
+        toolService.executeTool(tc.function.name, tc.function.arguments),
+      ),
+    );
+
+    // Process results in original order to preserve trace + message ordering
+    for (let i = 0; i < toolCalls.length; i++) {
+      const toolCall = toolCalls[i];
+      const result = toolResults[i];
+
+      if (result.status === "fulfilled") {
         trace.push({
           kind: "tool",
           toolName: toolCall.function.name,
           toolCallId: toolCall.id,
           state: "completed",
-          output,
+          output: result.value,
         });
         chatMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
           tool_name: toolCall.function.name,
-          content: JSON.stringify(output),
+          content: JSON.stringify(result.value),
         });
-      } catch (error) {
+      } else {
         const errorText =
-          error instanceof Error
-            ? error.message
+          result.reason instanceof Error
+            ? result.reason.message
             : `Tool ${toolCall.function.name} failed`;
         trace.push({
           kind: "tool",
@@ -490,6 +500,7 @@ async function runBuiltinAgentConversation(input: {
       tool_calls: toolCalls,
     });
 
+    // Push "started" trace entries for all tool calls
     for (const toolCall of toolCalls) {
       trace.push({
         kind: "tool",
@@ -498,29 +509,38 @@ async function runBuiltinAgentConversation(input: {
         state: "started",
         input: toolCall.function.arguments,
       });
+    }
 
-      try {
-        const output = await toolService.executeTool(
-          toolCall.function.name,
-          toolCall.function.arguments,
-        );
+    // Execute all tools concurrently — each tool call is independent
+    const toolResults = await Promise.allSettled(
+      toolCalls.map((tc) =>
+        toolService.executeTool(tc.function.name, tc.function.arguments),
+      ),
+    );
+
+    // Process results in original order to preserve trace + message ordering
+    for (let i = 0; i < toolCalls.length; i++) {
+      const toolCall = toolCalls[i];
+      const result = toolResults[i];
+
+      if (result.status === "fulfilled") {
         trace.push({
           kind: "tool",
           toolName: toolCall.function.name,
           toolCallId: toolCall.id,
           state: "completed",
-          output,
+          output: result.value,
         });
         chatMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
           tool_name: toolCall.function.name,
-          content: JSON.stringify(output),
+          content: JSON.stringify(result.value),
         });
-      } catch (error) {
+      } else {
         const errorText =
-          error instanceof Error
-            ? error.message
+          result.reason instanceof Error
+            ? result.reason.message
             : `Tool ${toolCall.function.name} failed`;
         trace.push({
           kind: "tool",

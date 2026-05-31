@@ -686,9 +686,8 @@ export function Sidebar({
             />
             <InfoCardFooter>
               <InfoCardDismiss>{dismiss()}</InfoCardDismiss>
-              <span
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 onClick={() => setOnboardingOpen(true)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -699,7 +698,7 @@ export function Sidebar({
                 className="cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground"
               >
                 {view()}
-              </span>
+              </button>
             </InfoCardFooter>
           </InfoCard>
         </div>

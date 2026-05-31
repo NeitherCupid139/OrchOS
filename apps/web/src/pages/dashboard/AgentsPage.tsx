@@ -543,7 +543,8 @@ export function AgentsPage() {
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-0.5 p-1.5">
               {/* Built-in agent — always shown first */}
-              <div
+              <button
+                type="button"
                 onClick={() => setSelectedItem({ kind: "builtin" })}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -551,8 +552,6 @@ export function AgentsPage() {
                     setSelectedItem({ kind: "builtin" });
                   }
                 }}
-                role="button"
-                tabIndex={0}
                 className={cn(
                   "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
                   selectedItem?.kind === "builtin"
@@ -577,10 +576,13 @@ export function AgentsPage() {
                     ? default_agent()
                     : builtInAgent.badge}
                 </span>
-              </div>
+              </button>
 
               {customAgents.map((agent) => (
+                // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- nested buttons for edit/delete
                 <div
+                  role="button"
+                  tabIndex={0}
                   key={agent.id}
                   onClick={() =>
                     setSelectedItem({ kind: "custom", id: agent.id })
@@ -591,8 +593,6 @@ export function AgentsPage() {
                       setSelectedItem({ kind: "custom", id: agent.id });
                     }
                   }}
-                  role="button"
-                  tabIndex={0}
                   className={cn(
                     "group flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
                     selectedItem?.kind === "custom" &&
@@ -703,6 +703,7 @@ export function AgentsPage() {
           </ScrollArea>
         </div>
 
+        {/* oxlint-disable-next-line react-doctor/prefer-tag-over-role -- resize handle needs child elements, hr is void */}
         <div
           role="separator"
           aria-orientation="vertical"

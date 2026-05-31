@@ -294,13 +294,12 @@ const InfoCardDismiss = React.memo(
     }, []);
 
     return (
-      <div
+      <button
+        type="button"
         className={cn(
           "relative cursor-pointer select-none rounded-md px-1.5 py-1 transition-colors hover:bg-accent/50 hover:text-foreground overflow-hidden",
           className,
         )}
-        role="button"
-        tabIndex={0}
         onPointerDown={startPress}
         onPointerUp={cancelPress}
         onPointerLeave={cancelPress}
@@ -320,7 +319,7 @@ const InfoCardDismiss = React.memo(
           style={{ opacity: pressProgress * 0.3 }}
         />
         <span className="relative z-10">{children}</span>
-      </div>
+      </button>
     );
   },
 );

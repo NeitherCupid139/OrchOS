@@ -34,6 +34,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   // Apply any persisted client locale after hydration.
+  // oxlint-disable-next-line react-doctor/no-initialize-state -- SSR hydration reconciliation, localStorage unavailable on server
   useEffect(() => {
     const hydratedLocale = getHydratedClientLocale();
     if (hydratedLocale && hydratedLocale !== locale) {
@@ -41,7 +42,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // If settings change (e.g. from server fetch), sync to locale state
+  // If settings change (e.g. from server fetch), sync to locale state.
+  // oxlint-disable-next-line react-doctor/no-event-handler -- store-to-state sync for external settings source, not an event handler
   useEffect(() => {
     if (settings?.locale && settings.locale !== locale) {
       setLocaleState(settings.locale);

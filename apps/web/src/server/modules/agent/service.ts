@@ -428,8 +428,8 @@ export class AgentToolService {
 
     if (name === "send_email") {
       const provider = args.provider === "smtp" ? "smtp" : "gmail";
-      const to = Array.isArray(args.to) ? args.to.map(String).map((item) => item.trim()).filter(Boolean) : [];
-      const cc = Array.isArray(args.cc) ? args.cc.map(String).map((item) => item.trim()).filter(Boolean) : [];
+      const to = Array.isArray(args.to) ? args.to.map(String).flatMap((item) => { const v = item.trim(); return v ? [v] : []; }) : [];
+      const cc = Array.isArray(args.cc) ? args.cc.map(String).flatMap((item) => { const v = item.trim(); return v ? [v] : []; }) : [];
       const subject = String(args.subject ?? "").trim();
       const body = String(args.body ?? "");
       if (to.length === 0 || !subject || !body.trim()) {

@@ -156,7 +156,7 @@ export async function searchWebWithDuckDuckGo(
     let filtered = allResults;
     if (Array.isArray(input.excludeDomains) && input.excludeDomains.length > 0) {
       const excludeSet = new Set(
-        input.excludeDomains.map((d) => d.trim().toLowerCase()).filter(Boolean),
+        input.excludeDomains.flatMap((d) => { const v = d.trim().toLowerCase(); return v ? [v] : []; }),
       );
       filtered = allResults.filter((r) => {
         try {

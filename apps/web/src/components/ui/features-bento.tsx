@@ -255,17 +255,16 @@ export function FeaturesBento() {
       </section>
 
       {open ? (
+        // oxlint-disable-next-line react-doctor/prefer-tag-over-role -- contains <form> which is invalid inside <button>
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[12vh] backdrop-blur-sm"
           role="button"
           tabIndex={0}
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[12vh] backdrop-blur-sm"
           onClick={() => setOpen(false)}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(false); } }}
         >
           <div
             className="w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
-            role="button"
-            tabIndex={0}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}
           >
