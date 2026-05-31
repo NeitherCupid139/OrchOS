@@ -735,8 +735,9 @@ function getTimelineStyle(event: FullScreenCalendarEvent) {
 }
 
 function formatHour(hour: number) {
-  const date = new Date(2024, 0, 1, hour);
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', hour12: true });
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12;
+  return `${displayHour} ${suffix}`;
 }
 
 function getCurrentTimeOffset(date: Date) {

@@ -1692,10 +1692,6 @@ export function BookmarksPage() {
                                   (item) => item.status === "done",
                                 ).length;
                                 const totalCount = aiProgressItems.length;
-                                const progressPercent =
-                                  totalCount > 0
-                                    ? (completedCount / totalCount) * 100
-                                    : 0;
                                 const stageText =
                                   aiProgressStage === "fetching"
                                     ? bookmark_ai_progress_fetching()
@@ -1732,58 +1728,53 @@ export function BookmarksPage() {
                                       </span>
                                     </div>
 
-                                    {/* Progress bar */}
-                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                                      <div
-                                        className="h-full rounded-full bg-primary/80 transition-all duration-300 ease-out"
-                                        style={{ width: `${progressPercent}%` }}
-                                      />
-                                    </div>
-
                                     {/* Count */}
                                     <div className="text-right text-[11px] tabular-nums text-muted-foreground">
                                       {completedCount} / {totalCount}
                                     </div>
 
                                     {/* Item list */}
-                                    <div className="max-h-48 space-y-0.5 overflow-y-auto">
-                                      {aiProgressItems.map((item) => (
-                                        <div
-                                          key={item.id}
-                                          className={cn(
-                                            "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors duration-200",
-                                            item.status === "processing" &&
-                                              "bg-primary/5",
-                                          )}
-                                        >
-                                          <div className="shrink-0">
-                                            {item.status === "done" ? (
-                                              <div className="flex size-4 items-center justify-center rounded-full bg-emerald-500/15">
-                                                <div className="size-1.5 rounded-full bg-emerald-500" />
-                                              </div>
-                                            ) : item.status === "processing" ? (
-                                              <div className="flex size-4 items-center justify-center rounded-full bg-primary/15">
-                                                <div className="size-1.5 animate-pulse rounded-full bg-primary" />
-                                              </div>
-                                            ) : (
-                                              <div className="size-4 rounded-full border border-muted-foreground/20" />
-                                            )}
-                                          </div>
-                                          <span
+                                    <ScrollArea className="max-h-48">
+                                      <div className="space-y-0.5 p-0.5">
+                                        {aiProgressItems.map((item) => (
+                                          <div
+                                            key={item.id}
                                             className={cn(
-                                              "flex-1 truncate text-xs transition-colors duration-200",
-                                              item.status === "done"
-                                                ? "text-foreground/60"
-                                                : item.status === "processing"
-                                                  ? "font-medium text-foreground"
-                                                  : "text-muted-foreground/50",
+                                              "flex items-center gap-2 rounded-md px-2 py-1 transition-colors duration-200",
+                                              "hover:bg-muted/50",
+                                              item.status === "processing" &&
+                                                "bg-primary/5",
                                             )}
                                           >
-                                            {item.title}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
+                                            <div className="shrink-0">
+                                              {item.status === "done" ? (
+                                                <div className="flex size-4 items-center justify-center rounded-full bg-emerald-500/15">
+                                                  <div className="size-1.5 rounded-full bg-emerald-500" />
+                                                </div>
+                                              ) : item.status === "processing" ? (
+                                                <div className="flex size-4 items-center justify-center rounded-full bg-primary/15">
+                                                  <div className="size-1.5 animate-pulse rounded-full bg-primary" />
+                                                </div>
+                                              ) : (
+                                                <div className="size-4 rounded-full border border-muted-foreground/20" />
+                                              )}
+                                            </div>
+                                            <span
+                                              className={cn(
+                                                "flex-1 truncate text-xs transition-colors duration-200",
+                                                item.status === "done"
+                                                  ? "text-foreground/60"
+                                                  : item.status === "processing"
+                                                    ? "font-medium text-foreground"
+                                                    : "text-muted-foreground/50",
+                                              )}
+                                            >
+                                              {item.title}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </ScrollArea>
                                   </div>
                                 );
                               })()}

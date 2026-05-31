@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Alert01Icon,
@@ -140,7 +141,7 @@ export function ActivityPanel({ collapsed, expanded }: ActivityPanelProps) {
       <ScrollArea className="flex-1">
         {loading && events.length === 0 ? (
           <div className="flex h-40 items-center justify-center">
-            <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60" />
+            <Spinner size="sm" className="text-muted-foreground/50" />
           </div>
         ) : !hasNotifications ? (
           <div className="flex h-56 flex-col items-center justify-center px-4 text-center">

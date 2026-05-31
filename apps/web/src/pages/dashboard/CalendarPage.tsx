@@ -1036,7 +1036,7 @@ export function CalendarPage() {
             <div className="flex min-h-full w-full flex-col gap-6 p-6">
               {localCalendars.length > 0 ? (
                 <section className="space-y-6">
-                  <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
+                  <div className="rounded-3xl border border-border bg-card p-2">
                     <FullScreenCalendar
                       data={fullScreenCalendarData}
                       currentMonth={visibleMonth}

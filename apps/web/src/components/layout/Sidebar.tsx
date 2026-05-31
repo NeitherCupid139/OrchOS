@@ -99,9 +99,6 @@ import {
   profile_membership_plan,
   profile_membership_plan_desc,
   profile_membership_credits,
-  profile_membership_credits_desc,
-  profile_membership_tokens_used,
-  profile_membership_tokens_used_desc,
   profile_membership_upgrade,
   profile_membership_upgrade_desc,
   profile_membership_manage,
@@ -1725,7 +1722,7 @@ function ProfileEditDialog({
                         </div>
                       ) : subscription ? (
                         <div className="space-y-3">
-                          {/* Token balance */}
+                          {/* Remaining tokens */}
                           <div className="rounded-lg border border-border/50 px-3 py-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-muted-foreground">
@@ -1735,26 +1732,6 @@ function ProfileEditDialog({
                                 {(subscription.creditsBalance || 0).toLocaleString()}
                               </span>
                             </div>
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {profile_membership_credits_desc()}
-                            </p>
-                          </div>
-
-                          {/* Tokens used */}
-                          <div className="rounded-lg border border-border/50 px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
-                                {profile_membership_tokens_used()}
-                              </span>
-                              <span className="text-xs font-medium text-foreground">
-                                {(
-                                  subscription.tokensUsed || 0
-                                ).toLocaleString()}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {profile_membership_tokens_used_desc()}
-                            </p>
                           </div>
 
                           {/* Buy tokens CTA */}
